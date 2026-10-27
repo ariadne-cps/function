@@ -1,0 +1,8 @@
+Standalone Ariadne Function tutorial.
+
+Build after installing ariadne-function:
+
+    mkdir build && cd build
+    cmake .. -DCMAKE_PREFIX_PATH=/path/to/install
+    cmake --build .
+    ./tutorial_function
