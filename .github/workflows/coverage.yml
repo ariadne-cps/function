@@ -30,11 +30,11 @@ jobs:
 
     - name: Get macOS Concurrency
       if: runner.os == 'macOS'
-      run: echo NPROC="sysctl -n hw.ncpu" >> $GITHUB_ENV
+      run: echo "NPROC=$(sysctl -n hw.ncpu)" >> "$GITHUB_ENV"
 
     - name: Get Linux Concurrency
       if: runner.os == 'Linux'
-      run: echo NPROC="nproc" >> $GITHUB_ENV
+      run: echo "NPROC=$(nproc)" >> "$GITHUB_ENV"
 
     - name: Set Up macOS Dependencies
       if: runner.os == 'macOS'
@@ -51,9 +51,30 @@ jobs:
 
     - name: Configure CMake
       working-directory: ${{ runner.workspace }}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -G Ninja -DCOVERAGE=ON -DWARNINGS_AS_ERRORS=ON
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -G Ninja -DCOVERAGE=ON -DBUILD_PYTHON_BINDINGS=OFF -DWARNINGS_AS_ERRORS=ON
 
     - name: Build, Test and Generate Code Coverage
       working-directory: ${{ runner.workspace }}/build
-      run: cmake --build . --parallel $($NPROC) --target coverage
+      run: cmake --build . --parallel "$NPROC" --target coverage
 
+
+    - name: Check Codecov Token
+      if: runner.os == 'macOS'
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      run: |
+        if [ -z "$CODECOV_TOKEN" ]; then
+          echo "CODECOV_TOKEN is not available"
+          exit 1
+        fi
+        echo "CODECOV_TOKEN is available"
+
+    - name: Upload Code Coverage
+      if: runner.os == 'macOS'
+      uses: codecov/codecov-action@v7.1.1
+      with:
+        files: ${{ runner.workspace }}/build/coverage.info
+        disable_search: true
+        fail_ci_if_error: true
+        verbose: true
+        token: ${{ secrets.CODECOV_TOKEN }}

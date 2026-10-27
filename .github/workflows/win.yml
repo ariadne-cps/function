@@ -19,6 +19,10 @@ jobs:
         build_type: [Release, Debug]
 
     steps:
+      - name: Enable long paths in Git
+        shell: pwsh
+        run: git config --system core.longpaths true
+
       - uses: actions/checkout@v3
 
       - name: Set up MSVC environment
@@ -73,12 +77,15 @@ jobs:
           $env:PATH = "${{ runner.workspace }}\install\bin;$env:PATH"
           & ".\build\tutorial_function.exe"
 
-      - name: Check Python function tutorial
+      - name: Check installed Python function tutorial
         if: matrix.build_type == 'Release'
         shell: pwsh
         working-directory: ${{ github.workspace }}/python/tutorials
         run: |
-          $env:PYTHONPATH = "${{ runner.workspace }}\build\python"
+          $env:PYTHONPATH = "${{ runner.workspace }}\install\Lib\site-packages"
+          $env:PATH = "${{ runner.workspace }}\install\bin;$env:PATH"
+          python -c "import os, pathlib, pyariadne; p=pathlib.Path(pyariadne.__file__).resolve(); root=pathlib.Path(os.environ['PYTHONPATH']).resolve(); assert p.is_relative_to(root), (p, root)"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tutorial_function.py
 
       - name: Verify uninstallation

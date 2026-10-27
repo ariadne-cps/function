@@ -94,12 +94,16 @@ jobs:
           export DYLD_LIBRARY_PATH="${{ runner.workspace }}/install/lib:${DYLD_LIBRARY_PATH:-}"
           ./build/tutorial_function
 
-      - name: Check Python function tutorial
+      - name: Check installed Python function tutorial
         if: matrix.build_type == 'Release'
         working-directory: ${{ github.workspace }}/python/tutorials
         env:
-          PYTHONPATH: ${{ runner.workspace }}/build/python
-        run: python tutorial_function.py
+          PYTHONPATH: ${{ runner.workspace }}/install/lib/python3.13/site-packages
+          LD_LIBRARY_PATH: ${{ runner.workspace }}/install/lib
+          DYLD_LIBRARY_PATH: ${{ runner.workspace }}/install/lib
+        run: |
+          python -c "import os, pathlib, pyariadne; p=pathlib.Path(pyariadne.__file__).resolve(); root=pathlib.Path(os.environ['PYTHONPATH']).resolve(); assert p.is_relative_to(root), (p, root)"
+          python tutorial_function.py
 
       - name: Verify uninstallation
         if: matrix.build_type == 'Release'

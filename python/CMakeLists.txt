@@ -9,13 +9,22 @@ option(PYTHON_ENFORCE_TESTS "Enforce Python tests" OFF)
 if(Python3_FOUND)
     report_python_configuration_once()
 
+    if(NOT TARGET pyariadne-geometry)
+        message(FATAL_ERROR "The Geometry Python binding target is required to build pyariadne-function.")
+    endif()
     add_subdirectory(bindings)
 
     if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         ariadne_finalize_python_module(NAME function)
 
-        set(PYTHON_BINDINGS_INSTALL_DIR "${Python3_SITEARCH}"
-            CACHE STRING "Install destination for Python targets")
+        # Install into a prefix-relative destination, like Ariadne Symbolic.
+        if(WIN32)
+            set(_python_install_dir "Lib/site-packages")
+        else()
+            set(_python_install_dir "lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
+        endif()
+        set(PYTHON_BINDINGS_INSTALL_DIR "${_python_install_dir}"
+            CACHE STRING "Install destination for Python targets relative to the prefix")
         install(TARGETS pyariadne DESTINATION "${PYTHON_BINDINGS_INSTALL_DIR}")
 
         add_subdirectory(tests)
