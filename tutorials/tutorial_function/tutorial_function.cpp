@@ -1,3 +1,4 @@
+#include "ariadne-function.hpp"
 #include <iostream>
 
 #include "numeric/numeric.hpp"
