@@ -53,9 +53,6 @@ The extension installs under the chosen prefix (`lib/pythonX.Y/site-packages` on
 - C++: `tutorials/tutorial_function/tutorial_function.cpp`, built separately against an installed `ariadne-function`.
 - Python: `python/tutorials/tutorial_function.py`.
 
-## Extraction
-
-Source files and tests were extracted from `ariadne-cps/kernel`, branch `split`. Function-based constrained-image sets remain in the **Set** module and were not imported. Replacing Function inside Kernel is a separate integration step.
 
 ## Contribution guidelines
 
