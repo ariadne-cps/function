@@ -174,7 +174,7 @@ template<class P, class RES, class ARG> class Function<P,LocatedSet<P,RES>(ARG)>
 
 
 
-#include "../geometry/set_wrapper.hpp"
+#include "geometry/set_wrapper.hpp"
 
 namespace Ariadne {
 

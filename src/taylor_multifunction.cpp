@@ -37,7 +37,7 @@
 
 #include "taylor_model.tpl.hpp"
 #include "scaled_function_patch.tpl.hpp"
-#include "../geometry/box.tpl.hpp"
+#include "geometry/box.tpl.hpp"
 
 
 

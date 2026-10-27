@@ -43,8 +43,8 @@
 #include "algebra/differential.hpp"
 #include "algebra/evaluate.hpp"
 #include "interval/interval.hpp"
-#include "../geometry/box.hpp"
-#include "../geometry/set_wrapper.hpp"
+#include "geometry/box.hpp"
+#include "geometry/set_wrapper.hpp"
 #include "geometry/interval_set.hpp"
 
 
