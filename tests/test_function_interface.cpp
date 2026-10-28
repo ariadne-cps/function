@@ -263,7 +263,7 @@ template<class P> Void test_handle_derivative_mixin() {
     if constexpr (!Same<P,ApproximateTag>) {
         const FunctionInterface<ValidatedTag,Real(RealVector)>& validated=function.reference();
         const MultiplePrecision mp(128u);
-        ARIADNE_TEST_SAME(validated._call(Vector<FloatMP>({3,1},mp)),FloatMPBounds(10,mp));
+        ARIADNE_TEST_SAME(validated._call(Vector<FloatMP>{FloatMP(3,mp),FloatMP(1,mp)}),FloatMPBounds(10,mp));
         const auto a=ValidatedScalarMultivariateFunction::coordinate(2u,0u);
         const auto b=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
         const auto composed=validated._call(Vector<ValidatedScalarMultivariateFunction>{a+b,b});
