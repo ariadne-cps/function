@@ -333,8 +333,8 @@ class UnaryFunction
     template<class X> inline X operator() (const ElementType<D,X>& x) const {
         return this->_op(this->_arg(x)); }
     friend ScalarFunction<P,ARGS...> derivative(UnaryFunction<P,ARGS...> const& f, ArgumentIndexType j) {
-        return f._op.accept([&](auto op){
-            if constexpr(Same<decltype(op),Abs>) { assert(false); return f._arg.derivative(j); }
+        return f._op.accept([&](auto op) -> ScalarFunction<P,ARGS...> {
+            if constexpr(Same<decltype(op),Abs>) { ARIADNE_FAIL_MSG("Cannot differentiate a non-smooth absolute-value function."); }
             else { return op.derivative(f._arg,f._arg.derivative(j)); } } );
     }
     friend OutputStream& operator<<(OutputStream& os, UnaryFunction<P,ARGS...> const& f) {
@@ -381,8 +381,8 @@ class BinaryFunction
         return this->_op(this->_arg1(x),this->_arg2(x)); }
 
     friend ScalarFunction<P,ARGS...> derivative(BinaryFunction<P,ARGS...> const& f, ElementIndexType<D> j) {
-        return f._op.accept([&](auto op){
-            if constexpr(Same<decltype(op),Max> || Same<decltype(op),Min>) { assert(false); return f._arg1.derivative(j); }
+        return f._op.accept([&](auto op) -> ScalarFunction<P,ARGS...> {
+            if constexpr(Same<decltype(op),Max> || Same<decltype(op),Min>) { ARIADNE_FAIL_MSG("Cannot differentiate a non-smooth maximum or minimum function."); }
             else { return op.derivative(f._arg1,f._arg1.derivative(j),f._arg2,f._arg2.derivative(j)); }
         });
     }
@@ -443,7 +443,7 @@ template<class P, class... ARGS>
 class NonResizableScalarFunction : public CheckedAssignable<ScalarFunction<P,ARGS...>> {
   public:
     NonResizableScalarFunction<P,ARGS...>& operator=(const ScalarFunction<P,ARGS...>& f) {
-        ARIADNE_ASSERT_MSG(this->domain()==f.domain(), "this->domain()="<<this->domain()<<", f.domain()="<<f.domain()<<"\n\n*this="<<*this<<"\nf="<<f<<"\n");
+        ARIADNE_PRECONDITION_MSG(this->domain()==f.domain(), "this->domain()="<<this->domain()<<", f.domain()="<<f.domain()<<"\n\n*this="<<*this<<"\nf="<<f<<"\n");
         this->ScalarFunction<P,ARGS...>::operator=(f);
         return *this;
     }
@@ -535,7 +535,7 @@ class FunctionElement
     typedef typename SignatureTraits<SIG>::ArgumentIndexType ArgumentIndexType;
 
     FunctionElement(const VectorFunction<P,ARGS...>& vf, SizeType i)
-        : _vf(vf), _i(i) { ARIADNE_ASSERT(i<vf.result_size()); }
+        : _vf(vf), _i(i) { ARIADNE_PRECONDITION(i<vf.result_size()); }
 
     ArgumentSizeType argument_size() const { return _vf.argument_size(); }
     SizeOne result_size() const { return SizeOne(); }
@@ -581,7 +581,7 @@ class EmbeddedFunction
         return _f2.evaluate(px); }
     template<class I> inline decltype(auto) operator[](I i) const { return EmbeddedFunction<P,D1,D2,D3,RealDomain>(_dom1,_f2[i],_dom3); }
     friend EmbeddedFunction<P,D1,D2,D3,C> derivative(EmbeddedFunction<P,D1,D2,D3,C> const& f, ArgumentSizeType k) {
-        ARIADNE_ASSERT(k<f.argument_size());
+        ARIADNE_PRECONDITION(k<f.argument_size());
         const SizeType n1=f._dom1.dimension();
         const SizeType n2=f._f2.argument_size();
         if(k<n1 || k>=n1+n2) {
@@ -617,7 +617,7 @@ class ComposedFunction
     typedef ElementIndexType<C> ResultIndexType;
 
     ComposedFunction(const Function<P,R(T)>& f, const Function<P,T(AS...)>& g)
-        : _f(f), _g(g) { ARIADNE_ASSERT(f.argument_size()==g.result_size()); }
+        : _f(f), _g(g) { ARIADNE_PRECONDITION(f.argument_size()==g.result_size()); }
     DomainType domain() const { return _g.domain(); }
     CodomainType const codomain() const { return _f.codomain(); }
     ArgumentSizeType argument_size() const { return _g.argument_size(); }
@@ -684,7 +684,7 @@ class JoinedFunction
     typedef typename SignatureTraits<SIG>::ArgumentIndexType ArgumentIndexType;
 
     JoinedFunction(Function<P,RES1(ARG)> f1, Function<P,RES2(ARG)> f2)
-        : _f1(f1), _f2(f2) { ARIADNE_ASSERT(f1.argument_size()==f2.argument_size()); }
+        : _f1(f1), _f2(f2) { ARIADNE_PRECONDITION(f1.argument_size()==f2.argument_size()); }
     ScalarFunction<P,ARG> operator[](SizeType i) const {
         return (i<_f1.result_size()) ? _f1[i] : _f2[i-_f1.result_size()]; }
 

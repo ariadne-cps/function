@@ -8,6 +8,7 @@ set(UNIT_TESTS
     test_function_dispatch
     test_function_interface
     test_function_models
+    test_symbolic_function
     test_function_names
     test_function_patch_operations
     test_projection
