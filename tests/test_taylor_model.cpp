@@ -656,7 +656,47 @@ template<class F> Void TestTaylorModel<F>::test_recondition()
 
 
 
+Void test_taylor_model_named_constructors_and_contracts() {
+    using M=ValidatedTaylorModelDP;
+    const Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const Vector<FloatDPBounds> point{FloatDPBounds(0.5_x,dp)};
+    const auto error=M::error(1u,FloatDPError(0.25_x,dp),sweeper);
+    const auto ball=M::ball(1u,FloatDPError(0.25_x,dp),sweeper);
+    ARIADNE_TEST_SAME(evaluate(error,point),FloatDPBounds(-0.25_x,0.25_x,dp));
+    ARIADNE_TEST_ASSERT(same(error,ball));
+    const auto constant_two=M::constant(1u,FloatDPBounds(2,dp),sweeper);
+    const auto constant_three=M::constant(1u,FloatDPBounds(3,dp),sweeper);
+    ARIADNE_TEST_ASSERT(!same(constant_two,constant_three));
+    auto uncertain=constant_two;uncertain.set_error(FloatDPError(0.25_x,dp));
+    ARIADNE_TEST_ASSERT(!same(constant_two,uncertain));
+    ARIADNE_TEST_ASSERT(definitely(constant_two<constant_three));
+    ARIADNE_TEST_ASSERT(definitely(constant_three>constant_two));
+    ARIADNE_TEST_ASSERT(definitely(constant_two<3));
+    ARIADNE_TEST_ASSERT(definitely(constant_two>1));
+    FloatDPError invalid_error(0u,dp);invalid_error.raw()=FloatDP(-1,dp);
+    ARIADNE_TEST_FAIL(uncertain.set_error(invalid_error));
+    ARIADNE_TEST_FAIL(uncertain._set_error(FloatDP(-1,dp)));
+    uncertain._set_error(FloatDP(0.5_x,dp));
+    ARIADNE_TEST_EQUALS(uncertain.error().raw(),FloatDP(0.5_x,dp));
+    uncertain.set_sweeper(ThresholdSweeper<FloatDP>(dp,0.125));
+    ARIADNE_TEST_EQUALS(uncertain.tolerance(),FloatDP(0.125_x,dp));
+    uncertain.set_properties(ThresholdSweeper<FloatDP>(dp,0.25));
+    ARIADNE_TEST_EQUALS(uncertain.tolerance(),FloatDP(0.25_x,dp));
+    const auto scaling=M::scaling(1u,0u,IntervalDomainType(2,6),sweeper);
+    ARIADNE_TEST_SAME(evaluate(compose(Unscaling(IntervalDomainType(2,6)),scaling),point),point[0u]);
+    const auto unscaled=compose(VectorUnscaling(BoxDomainType{{2,6}}),Vector<M>{scaling});
+    ARIADNE_TEST_SAME(evaluate(unscaled[0u],point),point[0u]);
+    ARIADNE_TEST_FAIL(compose(VectorUnscaling(BoxDomainType{{2,6},{0,2}}),Vector<M>{scaling}));
+    using A=ApproximateTaylorModelDP;
+    const auto approximate=A::constant(1u,FloatDPApproximation(2,dp),sweeper);
+    ARIADNE_TEST_FAIL(approximate<approximate);
+    ARIADNE_TEST_FAIL(approximate>approximate);
+    ARIADNE_TEST_FAIL(approximate<1);
+    ARIADNE_TEST_FAIL(approximate>1);
+}
+
 Int main() {
+    ARIADNE_TEST_CALL(test_taylor_model_named_constructors_and_contracts());
     ThresholdSweeper<FloatDP> sweeper_dp(dp,1e-8);
     TestTaylorModel<FloatDP>(sweeper_dp).test();
     MultiplePrecision mp(128);

@@ -69,6 +69,9 @@ template<class F> class UnknownError {
     operator PositiveApproximation<F> () const;
 };
 
+template<> String class_name<UnknownError<FloatDP>>();
+template<> String class_name<UnknownError<FloatMP>>();
+
 template<class T1, class T2> struct Product;
 
 template<class P, class F> class TaylorModel;
@@ -373,7 +376,7 @@ class TaylorModel
     Void set_gradient(SizeType j,const Dyadic& c) {
         this->set_gradient(j,CoefficientType(c,this->precision())); }
      //! \brief Set the error of the expansion.
-    Void set_error(const ErrorType& ne) { ARIADNE_ASSERT(ne.raw()>=0.0_x); this->_error=ne; }
+    Void set_error(const ErrorType& ne) { ARIADNE_PRECONDITION(ne.raw()>=0.0_x); this->_error=ne; }
     Void set_error(Nat m) { this->_error=m; }
 
     //! \brief The coefficient of the term in $x^a$.
@@ -567,7 +570,7 @@ class TaylorModel
     OutputStream& str(OutputStream&) const;
     OutputStream& repr(OutputStream&) const;
   public: // FIXME: Should be private
-    Void _set_error(const RawFloat<PR>& ne) { ARIADNE_ASSERT(ne>=0); this->_error=ErrorType(ne); }
+    Void _set_error(const RawFloat<PR>& ne) { ARIADNE_PRECONDITION(ne>=0); this->_error=ErrorType(ne); }
     Void _append(MultiIndex const& a, CoefficientType const& v) { this->_expansion.append(a,v); }
     static Bool _consistent(const TaylorModel<P,F>& tm1, const TaylorModel<P,F>& tm2);
     static Bool _inconsistent(const TaylorModel<P,F>& tm1, const TaylorModel<P,F>& tm2);
@@ -642,7 +645,7 @@ template<class P, class F> Vector<TaylorModel<P,F>> unscale(const Vector<TaylorM
 }
 
 template<class P, class F> Vector<TaylorModel<P,F>> compose(const VectorUnscaling& u, const Vector<TaylorModel<P,F>>& g) {
-    ARIADNE_ASSERT_MSG(u.size()==g.size(),"u="<<u.domain()<<", g="<<g);
+    ARIADNE_PRECONDITION_MSG(u.size()==g.size(),"u="<<u.domain()<<", g="<<g);
     return Vector<TaylorModel<P,F>>(u.size(),[&u,&g](SizeType i){return compose(u[i],g[i]);});
 }
 

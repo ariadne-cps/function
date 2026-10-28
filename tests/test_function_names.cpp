@@ -6,6 +6,7 @@
  ****************************************************************************/
 #include "function/function.hpp"
 #include "function/symbolic_function.hpp"
+#include "function/taylor_model.hpp"
 #include "macro/testing.hpp"
 using namespace Ariadne;
 
@@ -45,6 +46,8 @@ template<class P> Void check_paradigm_names(const String& prefix) {
     check_name<ComposedFunction<P,RealVector,RealVector,RealVector>>(prefix+"VectorMultivariateComposedFunction");
 }
 Int main() {
+    check_name<UnknownError<FloatDP>>("UnknownError<FloatDP>");
+    check_name<UnknownError<FloatMP>>("UnknownError<FloatMP>");
     ARIADNE_TEST_CALL(check_paradigm_names<ApproximateTag>("Approximate"));
     ARIADNE_TEST_CALL(check_paradigm_names<ValidatedTag>("Validated"));
     ARIADNE_TEST_CALL(check_paradigm_names<EffectiveTag>("Effective"));
