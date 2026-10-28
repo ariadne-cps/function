@@ -81,6 +81,12 @@ template<class F> Void test_validated_model(typename F::PrecisionType pr) {
     using A=AffineModel<ValidatedTag,F>;using X=Bounds<F>;using E=typename A::ErrorType;
     A a(F(2,pr),{F(3,pr),F(-1,pr),F(0,pr)});a.set_error(E(F(0.5_x,pr)));
     const A& ca=a;
+    // The natural-number overload must replace the error, not accumulate it.
+    a.set_error(2u);
+    ARIADNE_TEST_EQUALS(a.error().raw(),F(2,pr));
+    ARIADNE_TEST_ASSERT(decide(a.range().lower_bound().raw()==F(-4,pr)));
+    ARIADNE_TEST_ASSERT(decide(a.range().upper_bound().raw()==F(8,pr)));
+    a.set_error(E(F(0.5_x,pr)));
     Vector<X> point({0.25_x,0.5_x,0.0_x},pr);
     auto value=a.evaluate(point);
     ARIADNE_TEST_SAME(value,X(1.75_x,2.75_x,pr));
