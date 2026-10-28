@@ -91,7 +91,48 @@ Void TestMeasurableFunction::test_scalar_univariate_function()
 }
 
 
+Void test_preimage_paths() {
+    const auto identity=ValidatedScalarUnivariateFunction::coordinate();
+    const IntervalDomainType domain(0,1);
+    const Accuracy accuracy(exp2(-4));
+    const UnionOfIntervals<Dyadic> covering({{-1,2}}),away({{2,3}}),middle({{0.25_dy,0.75_dy}});
+    const ValidatedRegularSet<Real> regular_cover(covering),regular_away(away),regular_middle(middle);
+    const ValidatedOpenSet<Real> open_cover(regular_cover.managed_pointer());
+    const ValidatedOpenSet<Real> open_away(regular_away.managed_pointer());
+    const ValidatedOpenSet<Real> open_middle(regular_middle.managed_pointer());
+    // A regular set can reject a disjoint image without bisecting. A plain
+    // open set uses bisection; both must enclose the same known preimages.
+    const auto covered=preimage_intervals(identity,regular_cover,domain,accuracy);
+    const auto disjoint=preimage_intervals(identity,regular_away,domain,accuracy);
+    const auto boundary=preimage_intervals(identity,regular_middle,domain,accuracy);
+    ARIADNE_TEST_EQUALS(covered.measure(),FloatDP(1,dp));
+    ARIADNE_TEST_EQUALS(disjoint.measure(),FloatDP(0,dp));
+    const auto unresolved=preimage_intervals(identity,regular_middle,
+        IntervalDomainType(0.234375_x,0.265625_x),accuracy);
+    ARIADNE_TEST_EQUALS(unresolved.measure(),FloatDP(0,dp));
+    ARIADNE_TEST_ASSERT(boundary.measure()<=FloatDP(0.5_x,dp));
+    ARIADNE_TEST_ASSERT(boundary.measure()>=FloatDP(0.375_x,dp));
+    const auto measure_of=[&](const ValidatedOpenSet<Real>& set) {
+        const auto computed_preimage=preimage(identity,set,domain,accuracy);
+        const auto intervals=dynamic_pointer_cast<const OpenSetWrapper<UnionOfIntervals<FloatDP>,ValidatedTag,Real>>(computed_preimage.managed_pointer());
+        ARIADNE_TEST_ASSERT(intervals!=nullptr);
+        return intervals->measure();
+    };
+    ARIADNE_TEST_EQUALS(measure_of(open_cover),FloatDP(1,dp));
+    ARIADNE_TEST_EQUALS(measure_of(open_away),FloatDP(0,dp));
+    ARIADNE_TEST_ASSERT(measure_of(open_middle)>=FloatDP(0.375_x,dp));
+    ARIADNE_TEST_EQUALS(measure_of(wrap_open(covering)),FloatDP(1,dp));
+    ARIADNE_TEST_EQUALS(measure_of(wrap_open(away)),FloatDP(0,dp));
+    ARIADNE_TEST_ASSERT(measure_of(wrap_open(middle))>=FloatDP(0.375_x,dp));
+    const FanModel<Real(Real),DP> model(domain,identity,FloatDPError(0.125_x,dp));
+    ARIADNE_TEST_EQUALS(model.domain(),domain);
+    ARIADNE_TEST_EQUALS(model.function()(FloatDPBounds(0.5_x,dp)),FloatDPBounds(0.5_x,dp));
+    ARIADNE_TEST_EQUALS(model.measure_error().raw(),FloatDP(0.125_x,dp));
+    ARIADNE_TEST_EQUALS(preimage(open_cover,model).measure().get(dp).raw(),FloatDP(0.875_x,dp));
+}
+
 Int main() {
+    ARIADNE_TEST_CALL(test_preimage_paths());
     TestMeasurableFunction().test();
 
     return ARIADNE_TEST_FAILURES;

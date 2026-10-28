@@ -158,8 +158,8 @@ FanModel<Real(Real),PR,PRE>::preimage(ValidatedOpenSet<Real> const& rng) const -
     Accuracy acc(exp2(-4));
 
     ValidatedOpenSet<Real> const prim=Ariadne::preimage(this->_function,rng,this->_domain,acc);
+    // Both paths of Ariadne::preimage construct this exact wrapper type.
     auto ivls_ptr=dynamic_pointer_cast<const OpenSetWrapper<UnionOfIntervals<FloatDP>,ValidatedTag,Real>>(prim.managed_pointer());
-    assert(ivls_ptr);
     UnionOfIntervals<FloatDP> const& ivls=*ivls_ptr;
     return LowerMeasurableSetModel(ivls,this->_measure_error);
 }
@@ -197,7 +197,7 @@ inline ValidatedOpenSet<Real> preimage(ValidatedContinuousFunction<Real(Real)> c
     DoublePrecision pr;
     Interval<FloatDP> ivl=cast_exact(Interval<UpperBound<FloatDP>>(dom,pr));
     auto rgsp=dynamic_pointer_cast<ValidatedRegularSet<Real>::Interface>(ops.managed_pointer());
-    if (false and rgsp) {
+    if (rgsp) {
         auto rgs=ValidatedRegularSet<Real>(rgsp);
         return ValidatedOpenSet<Real>(wrap_open(preimage_intervals(f,rgs,ivl,acc)));
     } else {
