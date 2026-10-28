@@ -108,7 +108,7 @@ template<class P, class SIG> class FunctionPatchInterface
     virtual Void _clobber() = 0;
     virtual Bool _refines(const FunctionPatchInterface<P,SIG>& fp) const = 0;
 
-    virtual FunctionPatchFactoryInterface<P>* _factory() const { ARIADNE_NOT_IMPLEMENTED; }
+    virtual FunctionPatchFactoryInterface<P>* _factory() const = 0;
 
     virtual DomainType const domain() const = 0;
     virtual CodomainType const codomain() const = 0;

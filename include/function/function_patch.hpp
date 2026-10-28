@@ -169,6 +169,12 @@ template<class P, class... ARGS> class FunctionPatch<P,RealScalar(ARGS...)>
 
     template<class X> using Argument = typename SignatureTraits<SIG>::template Argument<X>;
     template<class X> using Result = typename SignatureTraits<SIG>::template Result<X>;
+  private:
+    static Interface* clone_patch(const GenericType& function) {
+        const auto* patch=dynamic_cast<const Interface*>(function.raw_pointer());
+        ARIADNE_PRECONDITION(patch!=nullptr);
+        return patch->_concrete_clone();
+    }
   public:
     clone_on_copy_ptr< FunctionPatchInterface<P,SIG> > _ptr;
   public:
@@ -178,7 +184,7 @@ template<class P, class... ARGS> class FunctionPatch<P,RealScalar(ARGS...)>
     FunctionPatch(const FunctionPatch<P,SIG>& f) : _ptr(f._ptr.operator->() ? f._ptr->_concrete_clone() : nullptr) { }
     FunctionPatch& operator=(const FunctionPatch<P,SIG>& f) { this->_ptr=f._ptr.operator->() ? f._ptr->_concrete_clone() : nullptr; return *this; }
         FunctionPatch(const FunctionPatchInterface<P,SIG>& f) : _ptr(f._concrete_clone()) { }
-    FunctionPatch(const Function<P,SIG>& f) : _ptr(dynamic_cast<FunctionPatchInterface<P,SIG>*>(f.raw_pointer()->_clone())) { }
+    FunctionPatch(const Function<P,SIG>& f) : _ptr(clone_patch(f)) { }
     template<class PR, class PRE> FunctionPatch(FunctionModel<P,SIG,PR,PRE> fm);
     operator Function<P,SIG>() const { return Function<P,SIG>(this->_ptr->_clone()); } // DEPRECATED
     friend Function<P,SIG> cast_unchecked(FunctionPatch<P,SIG> const& fp) {
@@ -369,6 +375,10 @@ template<class P, class... ARGS> class VectorFunctionPatchElement
 template<class P, class... ARGS> class FunctionPatch<P,RealVector(ARGS...)>
 {
     using RES=RealVector; using SIG=RES(ARGS...);
+    template<class Container> static const ScalarFunctionPatch<P,ARGS...>& first_patch(const Container& patches) {
+        ARIADNE_PRECONDITION(patches.size()!=0u);
+        return patches[0u];
+    }
   public:
     clone_on_copy_ptr< VectorFunctionPatchInterface<P,ARGS...> > _ptr;
   public:
@@ -395,9 +405,9 @@ template<class P, class... ARGS> class FunctionPatch<P,RealVector(ARGS...)>
         FunctionPatchFactory<P> factory(sf._factory()); *this=factory.create_zeros(n,sf.domain());
         for(SizeType i=0; i!=n; ++i) { (*this)[i]=sf; } }
     inline FunctionPatch(Array<ScalarFunctionPatch<P,ARGS...>> const& asf)
-        : FunctionPatch(asf.size(),asf[0]) { for(SizeType i=0; i!=asf.size(); ++i) { (*this)[i]=asf[i]; } }
+        : FunctionPatch(asf.size(),first_patch(asf)) { for(SizeType i=0; i!=asf.size(); ++i) { (*this)[i]=asf[i]; } }
     inline FunctionPatch(List<ScalarFunctionPatch<P,ARGS...>> const& lsf)
-        : FunctionPatch(lsf.size(),lsf[0]) { for(SizeType i=0; i!=lsf.size(); ++i) { (*this)[i]=lsf[i]; } }
+        : FunctionPatch(lsf.size(),first_patch(lsf)) { for(SizeType i=0; i!=lsf.size(); ++i) { (*this)[i]=lsf[i]; } }
     inline explicit FunctionPatch(FunctionPatchInterface<P,SIG>* p) : _ptr(p) { }
     template<class PR, class PRE> FunctionPatch(FunctionModel<P,SIG,PR,PRE> fm);
     inline FunctionPatch(const FunctionPatchInterface<P,SIG>& f) : _ptr(f._concrete_clone()) { }
