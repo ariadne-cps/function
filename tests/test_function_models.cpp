@@ -8,6 +8,8 @@
 #include "function/taylor_function.hpp"
 #include "macro/testing.hpp"
 #include <sstream>
+#include <memory>
+#include <array>
 using namespace Ariadne;
 using ScalarModel=ScalarMultivariateFunctionModel<ValidatedTag,DoublePrecision>;
 using VectorModel=VectorMultivariateFunctionModel<ValidatedTag,DoublePrecision>;
@@ -157,7 +159,50 @@ Void test_model_handles_and_factories() {
     ARIADNE_TEST_ASSERT(!text.str().empty());
 }
 
+Void test_model_factory_interfaces() {
+    using FactoryInterface=FunctionModelFactoryInterface<ValidatedTag,DoublePrecision>;
+    const BoxDomainType domain{{-1,1},{-1,1}};
+    const Vector<FloatDPBounds> point({0.25_x,0.5_x},dp);
+    const auto x=ValidatedScalarMultivariateFunction::coordinate(2u,0u);
+    const auto y=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
+    const ValidatedVectorMultivariateFunction identity{x,y};
+    const Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
+    std::array<std::unique_ptr<FactoryInterface>,2> factories{
+        std::unique_ptr<FactoryInterface>(make_taylor_function_factory()),
+        std::unique_ptr<FactoryInterface>(make_taylor_function_factory(sweeper))};
+    for(const auto& ptr:factories) {
+        const auto& backend=*ptr;
+        ARIADNE_TEST_SAME(backend.create(ValidatedNumber(3)),FloatDPBounds(3,dp));
+        ARIADNE_TEST_SAME(backend.create_number(ValidatedNumber(3)),FloatDPBounds(3,dp));
+        ARIADNE_TEST_SAME(backend.create(domain,(x+y).reference())(point),FloatDPBounds(0.75_x,dp));
+        ARIADNE_TEST_EQUALS(backend.create(domain,identity.reference())(point),point);
+        ARIADNE_TEST_SAME(backend.create_zero(domain)(point),FloatDPBounds(0,dp));
+        ARIADNE_TEST_SAME(backend.create_constant(domain,ValidatedNumber(4))(point),FloatDPBounds(4,dp));
+        ARIADNE_TEST_SAME(backend.create_constant(domain,FloatDPBounds(5,dp))(point),FloatDPBounds(5,dp));
+        ARIADNE_TEST_SAME(backend.create_coordinate(domain,1u)(point),point[1u]);
+        ARIADNE_TEST_EQUALS(backend.create_zeros(2u,domain)(point),Vector<FloatDPBounds>({0,0},dp));
+        ARIADNE_TEST_EQUALS(backend.create_constants(domain,Vector<ValidatedNumber>{2,3})(point),Vector<FloatDPBounds>({2,3},dp));
+        ARIADNE_TEST_EQUALS(backend.create_projection(domain,Range(1u,2u))(point),Vector<FloatDPBounds>{point[1u]});
+        ARIADNE_TEST_EQUALS(backend.create_identity(domain)(point),point);
+        const Vector<FloatDPBounds> parameter{point[0u]};
+        ARIADNE_TEST_SAME(backend.create_identity(IntervalDomainType(-1,1))(parameter),point[0u]);
+        std::unique_ptr<FactoryInterface> copied(backend._copy());
+        ARIADNE_TEST_EQUALS(copied->create_identity(domain)(point),point);
+    }
+    std::array<FunctionPatchFactory<ValidatedTag>,2> patch_factories{
+        FunctionPatchFactory<ValidatedTag>(make_taylor_function_patch_factory()),
+        FunctionPatchFactory<ValidatedTag>(make_taylor_function_patch_factory(sweeper))};
+    for(const auto& backend:patch_factories) {
+        ARIADNE_TEST_SAME(backend.create_coordinate(domain,1u)(point),point[1u]);
+    }
+    FunctionModelFactory<ValidatedTag,DoublePrecision> backend(make_taylor_function_factory(sweeper));
+    auto creator=factory(backend.create_coordinate(domain,0u));
+    const FloatDPBounds coefficient(7,dp);
+    ARIADNE_TEST_ASSERT(&creator.create(coefficient)==&coefficient);
+}
+
 Int main() {
+    ARIADNE_TEST_CALL(test_model_factory_interfaces());
     ARIADNE_TEST_CALL(test_erased_factory_projection());
     ARIADNE_TEST_CALL(test_concrete_scaled_calculus());
     ARIADNE_TEST_CALL(test_scaled_enclosure_comparisons());
