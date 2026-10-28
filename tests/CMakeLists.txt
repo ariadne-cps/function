@@ -10,6 +10,7 @@ set(UNIT_TESTS
     test_function_models
     test_function_names
     test_function_patch_operations
+    test_projection
     test_domain_scaling
     test_taylor_series
     test_function
