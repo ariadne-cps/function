@@ -69,7 +69,7 @@ template<class P, class D> ScalarFunctionInterface<P,D>* heap_copy(ScalarFunctio
 
 
 template<class D> D make_domain(SizeType d);
-template<> inline IntervalDomainType make_domain(SizeType d) { static_cast<void>(d); assert(d==1u); return IntervalDomainType(-inf,+inf); }
+template<> inline IntervalDomainType make_domain(SizeType d) { ARIADNE_PRECONDITION(d==1u); return IntervalDomainType(-inf,+inf); }
 template<> inline BoxDomainType make_domain(SizeType d) { return BoxDomainType(d,IntervalDomainType(-inf,+inf)); }
 
 template<class F, class SIG, class I>
@@ -264,15 +264,15 @@ template<class P, class SIG> inline FunctionInterface<P,SIG>* _heap_move(Functio
 template<class F,class SIG,class I> FunctionInterface<ApproximateTag,SIG>* FunctionMixin<F,ApproximateTag,SIG,I>::_derivative(ElementIndexType<D> j) const {
     if constexpr (BaseOf<FunctionInterface<ApproximateTag,SIG>,decltype(derivative(static_cast<const F&>(*this),j))>) {
         return _heap_move(derivative(static_cast<const F&>(*this),j)); }
-    else { assert(false); std::abort(); } }
+    else { return Function<ApproximateTag,SIG>(derivative(static_cast<const F&>(*this),j)).raw_pointer()->_clone(); } }
 template<class F,class SIG,class I> FunctionInterface<ValidatedTag,SIG>* FunctionMixin<F,ValidatedTag,SIG,I>::_derivative(ElementIndexType<D> j) const {
     if constexpr (BaseOf<FunctionInterface<ValidatedTag,SIG>,decltype(derivative(static_cast<const F&>(*this),j))>) {
         return _heap_move(derivative(static_cast<const F&>(*this),j)); }
-    else { assert(false); std::abort(); } }
+    else { return Function<ValidatedTag,SIG>(derivative(static_cast<const F&>(*this),j)).raw_pointer()->_clone(); } }
 template<class F,class SIG,class I> FunctionInterface<EffectiveTag,SIG>* FunctionMixin<F,EffectiveTag,SIG,I>::_derivative(ElementIndexType<D> j) const {
     if constexpr (BaseOf<FunctionInterface<EffectiveTag,SIG>,decltype(derivative(static_cast<const F&>(*this),j))>) {
         return _heap_move(derivative(static_cast<const F&>(*this),j)); }
-    else { assert(false); std::abort(); } }
+    else { return Function<EffectiveTag,SIG>(derivative(static_cast<const F&>(*this),j)).raw_pointer()->_clone(); } }
 
 } // namespace Ariadne
 

@@ -235,7 +235,63 @@ template<class P> Void test_numeric_jets_and_taylor_arguments() {
     }
 }
 
+// A mixin-backed implementation may return its derivative as a public handle.
+// Ownership conversion must work for handles as well as concrete interfaces.
+template<class P> class HandleDifferentiableFunction
+    : public FunctionMixin<HandleDifferentiableFunction<P>,P,Real(RealVector)>
+{
+    SharedPointer<const ScalarMultivariateFunction<P>> _function;
+  public:
+    explicit HandleDifferentiableFunction(SharedPointer<const ScalarMultivariateFunction<P>> f) : _function(f) { }
+    SizeType argument_size() const override { return _function->argument_size(); }
+    SizeOne result_size() const override { return SizeOne(); }
+    template<class X> X operator()(const Vector<X>& values) const { return (*_function)(values); }
+    friend ScalarMultivariateFunction<P> derivative(const HandleDifferentiableFunction& f,SizeType j) {
+        return f._function->derivative(j); }
+    friend OutputStream& operator<<(OutputStream& os,const HandleDifferentiableFunction& f) { return os<<*f._function; }
+};
+
+template<class P> Void test_handle_derivative_mixin() {
+    using S=ScalarMultivariateFunction<P>;
+    auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);
+    const S function(new HandleDifferentiableFunction<P>(std::make_shared<const S>(sqr(x)+y)));
+    const Vector<FloatDPApproximation> point({3,1},dp);
+    ARIADNE_TEST_EQUALS(function.derivative(0u)(point),FloatDPApproximation(6,dp));
+    const FunctionInterface<ApproximateTag,Real(RealVector)>& approximate=function.reference();
+    std::unique_ptr<FunctionInterface<ApproximateTag,Real(RealVector)>> copy(approximate._copy());
+    ARIADNE_TEST_EQUALS(copy->_call(point),FloatDPApproximation(10,dp));
+    if constexpr (!Same<P,ApproximateTag>) {
+        const FunctionInterface<ValidatedTag,Real(RealVector)>& validated=function.reference();
+        const MultiplePrecision mp(128u);
+        ARIADNE_TEST_SAME(validated._call(Vector<FloatMP>({3,1},mp)),FloatMPBounds(10,mp));
+        const auto a=ValidatedScalarMultivariateFunction::coordinate(2u,0u);
+        const auto b=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
+        const auto composed=validated._call(Vector<ValidatedScalarMultivariateFunction>{a+b,b});
+        ARIADNE_TEST_EQUALS(composed(point),FloatDPApproximation(17,dp));
+    }
+}
+Void test_model_generic_getter() {
+    const BoxDomainType domain{{-1,1},{-1,1}};
+    const TaylorFunctionFactory backend(ThresholdSweeper<FloatDP>(dp,1e-12));
+    const ValidatedVectorMultivariateFunction function=backend.create_identity(domain);
+    const Vector<FloatDPBounds> point({0.25_x,0.5_x},dp);
+    ARIADNE_TEST_SAME(function.get(1u)(point),point[1u]);
+}
+Void test_mixin_domains() {
+    const auto line=make_domain<IntervalDomainType>(1u);
+    ARIADNE_TEST_EQUALS(line,IntervalDomainType(-inf,+inf));
+    ARIADNE_TEST_FAIL(make_domain<IntervalDomainType>(0u));
+    ARIADNE_TEST_FAIL(make_domain<IntervalDomainType>(2u));
+    ARIADNE_TEST_EQUALS(make_domain<BoxDomainType>(0u).dimension(),0u);
+    ARIADNE_TEST_EQUALS(make_domain<BoxDomainType>(2u),BoxDomainType(2u,IntervalDomainType(-inf,+inf)));
+}
+
 Int main() {
+    ARIADNE_TEST_CALL(test_model_generic_getter());
+    ARIADNE_TEST_CALL(test_mixin_domains());
+    ARIADNE_TEST_CALL(test_handle_derivative_mixin<ApproximateTag>());
+    ARIADNE_TEST_CALL(test_handle_derivative_mixin<ValidatedTag>());
+    ARIADNE_TEST_CALL(test_handle_derivative_mixin<EffectiveTag>());
     ARIADNE_TEST_CALL(test_optional_getter());
     ARIADNE_TEST_CALL(test_numeric_jets_and_taylor_arguments<ApproximateTag>());
     ARIADNE_TEST_CALL(test_numeric_jets_and_taylor_arguments<ValidatedTag>());
