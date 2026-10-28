@@ -98,7 +98,7 @@ template<class FM, class P, class ARG, class PR, class PRE> class FunctionModelM
             BinaryElementaryOperator op,
             ElementaryAlgebraInterface<CanonicalNumericType<P,PR,PRE>> const& other) const override {
         auto const* ptr=dynamic_cast<FM const*>(&other);
-        ARIADNE_ASSERT(ptr);
+        ARIADNE_PRECONDITION(ptr);
         return new FM(op(static_cast<FM const&>(*this),*ptr)); }
     ScalarFunctionModelInterface<P,ARG,PR,PRE>* _apply(
             BinaryElementaryOperator op, CanonicalNumericType<P,PR,PRE> const& value) const override {
@@ -111,7 +111,7 @@ template<class FM, class P, class ARG, class PR, class PRE> class FunctionModelM
             BinaryElementaryOperator op,
             ElementaryAlgebraInterface<Number<P>> const& other) const override {
         auto const* ptr=dynamic_cast<FM const*>(&other);
-        ARIADNE_ASSERT(ptr);
+        ARIADNE_PRECONDITION(ptr);
         return new FM(op(static_cast<FM const&>(*this),*ptr)); }
     ScalarFunctionModelInterface<P,ARG,PR,PRE>* _apply(
             BinaryElementaryOperator op, Number<P> const& value) const override {
@@ -177,13 +177,13 @@ template<class FM, class P, class ARG, class PR, class PRE> class FunctionModelM
     ScalarFunctionModelInterface<P,ARG,PR,PRE>* _embed(const BoxDomainType& d1, const BoxDomainType& d2) const override {
         return new FM(embed(d1,static_cast<const FM&>(*this),d2)); }
     Bool _refines(FunctionPatchInterface<P,SIG> const& fp) const override {
-        ARIADNE_ASSERT(dynamic_cast<const FM*>(&fp)); return refines(static_cast<const FM&>(*this),dynamic_cast<const FM&>(fp)); }
+        ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&fp)); return refines(static_cast<const FM&>(*this),dynamic_cast<const FM&>(fp)); }
     Boolean _concrete_refines(const ScalarFunctionModelInterface<P,ARG,PR,PRE>& f) const override {
-        ARIADNE_ASSERT(dynamic_cast<const FM*>(&f)); return refines(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f)); }
+        ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f)); return refines(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f)); }
     Boolean _concrete_inconsistent(const ScalarFunctionModelInterface<P,ARG,PR,PRE>& f) const override {
-        ARIADNE_ASSERT(dynamic_cast<const FM*>(&f)); return inconsistent(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f)); }
+        ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f)); return inconsistent(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f)); }
     ScalarFunctionModelInterface<P,ARG,PR,PRE>* _concrete_refinement(const ScalarFunctionModelInterface<P,ARG,PR,PRE>& f) const override {
-        ARIADNE_ASSERT(dynamic_cast<const FM*>(&f)); return new FM(refinement(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f))); }
+        ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f)); return new FM(refinement(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f))); }
 
     OutputStream& _write(OutputStream& os) const override {
         return os << static_cast<FM const&>(*this); }
@@ -293,13 +293,13 @@ template<class FM, class P, class ARG, class PR, class PRE> class FunctionModelM
         return static_cast<FM&>(*this).clobber(); }
 
     Bool _refines(FunctionPatchInterface<P,SIG> const& fp) const override {
-        ARIADNE_ASSERT(dynamic_cast<const FM*>(&fp)); return refines(static_cast<const FM&>(*this),dynamic_cast<const FM&>(fp)); }
+        ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&fp)); return refines(static_cast<const FM&>(*this),dynamic_cast<const FM&>(fp)); }
     Boolean _concrete_inconsistent(const VectorFunctionModelInterface<P,ARG,PR,PRE>& f) const override {
-        ARIADNE_ASSERT(dynamic_cast<const FM*>(&f)); return inconsistent(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f)); }
+        ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f)); return inconsistent(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f)); }
     Boolean _concrete_refines(const VectorFunctionModelInterface<P,ARG,PR,PRE>& f) const override {
-        ARIADNE_ASSERT(dynamic_cast<const FM*>(&f)); return refines(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f)); }
+        ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f)); return refines(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f)); }
     VectorFunctionModelInterface<P,ARG,PR,PRE>* _concrete_refinement(const VectorFunctionModelInterface<P,ARG,PR,PRE>& f) const override {
-        ARIADNE_ASSERT(dynamic_cast<const FM*>(&f)); return new FM(refinement(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f))); }
+        ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f)); return new FM(refinement(static_cast<const FM&>(*this),dynamic_cast<const FM&>(f))); }
 
     OutputStream& _write(OutputStream& os) const override {
         return os << static_cast<FM const&>(*this); }

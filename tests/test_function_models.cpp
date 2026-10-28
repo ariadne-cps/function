@@ -295,7 +295,70 @@ Void test_vector_model_interface_delegation() {
     ARIADNE_TEST_EQUALS(cleared(point),expected);
 }
 
+Void test_model_representation_contracts() {
+    const BoxDomainType domain{{-1,1},{-1,1}};
+    const Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const auto native=ScalarTaylor::constant(domain,FloatDPBounds(2,dp),sweeper);
+    using BoundsScalar=ValidatedScalarMultivariateBoundsTaylorFunctionModelDP;
+    using BoundsVector=ValidatedVectorMultivariateBoundsTaylorFunctionModelDP;
+    const auto alternate=BoundsScalar::constant(domain,FloatDPBounds(2,dp),sweeper);
+    const ScalarModel scalar=native,alien_scalar=alternate;
+    const auto& interface=scalar.reference();
+    const ElementaryAlgebraInterface<FloatDPBounds>& canonical=interface;
+    const ElementaryAlgebraInterface<ValidatedNumber>& generic=interface;
+    const ElementaryAlgebraInterface<FloatDPBounds>& alien_canonical=alien_scalar.reference();
+    const ElementaryAlgebraInterface<ValidatedNumber>& alien_generic=alien_scalar.reference();
+    ARIADNE_TEST_FAIL(canonical._apply(BinaryElementaryOperator(Add()),alien_canonical));
+    ARIADNE_TEST_FAIL(generic._apply(BinaryElementaryOperator(Add()),alien_generic));
+    ARIADNE_TEST_FAIL(interface._refines(alien_scalar.reference()));
+    ARIADNE_TEST_FAIL(interface._concrete_refines(alien_scalar.reference()));
+    ARIADNE_TEST_FAIL(interface._concrete_inconsistent(alien_scalar.reference()));
+    ARIADNE_TEST_FAIL(interface._concrete_refinement(alien_scalar.reference()));
+    const Vector<FloatDPBounds> point({0,0},dp);
+    const ScalarModel subtracted(dynamic_cast<ScalarModel::Interface*>(generic._rapply(BinaryElementaryOperator(Sub()),ValidatedNumber(5))));
+    ARIADNE_TEST_SAME(subtracted(point),FloatDPBounds(3,dp));
+    ARIADNE_TEST_ASSERT(definitely(interface._unchecked_evaluate(Vector<ValidatedNumber>{0,0})==ValidatedNumber(2)));
+    const VectorTaylor native_vector{native,native};
+    VectorModel vector=native_vector;
+    const VectorModel alien_vector=BoundsVector{alternate,alternate};
+    ARIADNE_TEST_FAIL(vector.reference()._set(0u,alien_scalar.reference()));
+    ARIADNE_TEST_FAIL(vector.reference()._concrete_set(0u,alien_scalar.reference()));
+    ARIADNE_TEST_FAIL(vector.reference()._refines(alien_vector.reference()));
+    ARIADNE_TEST_FAIL(vector.reference()._concrete_refines(alien_vector.reference()));
+    ARIADNE_TEST_FAIL(vector.reference()._concrete_inconsistent(alien_vector.reference()));
+    ARIADNE_TEST_FAIL(vector.reference()._concrete_refinement(alien_vector.reference()));
+    ARIADNE_TEST_EQUALS(vector(point),Vector<FloatDPBounds>({2,2},dp));
+    // The reusable mixin's default formatting must agree with the concrete
+    // model representation when selected explicitly by an implementation.
+    std::ostringstream scalar_base,scalar_concrete,vector_base,vector_concrete;
+    using ScalarMixin=ScalarMultivariateFunctionModelMixin<ScalarTaylor,ValidatedTag>;
+    static_cast<const ScalarMixin&>(native).ScalarMixin::_write(scalar_base);
+    using VectorMixin=VectorMultivariateFunctionModelMixin<VectorTaylor,ValidatedTag>;
+    static_cast<const VectorMixin&>(native_vector).VectorMixin::_write(vector_base);
+    scalar_concrete<<native;vector_concrete<<native_vector;
+    ARIADNE_TEST_EQUALS(scalar_base.str(),scalar_concrete.str());
+    ARIADNE_TEST_EQUALS(vector_base.str(),vector_concrete.str());
+}
+
+Void test_multivariate_factory_signature_contract() {
+    const FunctionPatchFactory<ValidatedTag> backend(make_taylor_function_patch_factory());
+    const IntervalDomainType interval(-1,1);
+    const auto t=ValidatedScalarUnivariateFunction::coordinate();
+    const ValidatedVectorUnivariateFunction curve{t,t};
+    // The multivariate Taylor backend cannot manufacture univariate patches;
+    // requests through the common factory interface must fail explicitly.
+    ARIADNE_TEST_FAIL(backend.create(interval,t));
+    ARIADNE_TEST_FAIL(backend.create(interval,curve));
+    ARIADNE_TEST_FAIL(backend.create_zero(interval));
+    ARIADNE_TEST_FAIL(backend.create_zeros(2u,interval));
+    ARIADNE_TEST_FAIL(backend.create_constant(interval,ValidatedNumber(2)));
+    ARIADNE_TEST_FAIL(backend.create_constants(interval,Vector<ValidatedNumber>{2,3}));
+    ARIADNE_TEST_FAIL(backend.create_identity(interval));
+}
+
 Int main() {
+    ARIADNE_TEST_CALL(test_model_representation_contracts());
+    ARIADNE_TEST_CALL(test_multivariate_factory_signature_contract());
     ARIADNE_TEST_CALL(test_scalar_model_interface_delegation());
     ARIADNE_TEST_CALL(test_vector_model_interface_delegation());
     ARIADNE_TEST_CALL(test_model_factory_interfaces());
