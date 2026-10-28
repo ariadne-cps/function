@@ -46,6 +46,8 @@ template<class X> class UnivariateSecondDifferential;
 extern template class Procedure<ApproximateNumber>;
 extern template class Procedure<ValidatedNumber>;
 
+template<class Y> SizeType Procedure<Y>::argument_size() const { return this->_argument_size; }
+
 template<class P> Procedure<Number<P>> make_procedure(ScalarMultivariateFunction<P> const& f) {
     typedef Number<P> Y;
     Formula<Y> e=f(Formula<Y>::identity(f.argument_size()));

@@ -147,7 +147,7 @@ class Procedure {
     template<ConvertibleTo<Y> X> explicit Procedure(const Expansion<MultiIndex,X>& e);
     friend OutputStream& operator<<(OutputStream& os, Procedure<Y> const& p) { return p._write(os); }
   public:
-    SizeType argument_size() const { return this->_argument_size; }
+    SizeType argument_size() const;
     template<class X, class YY> friend X evaluate(const Procedure<YY>& p, const Vector<X>& x);
   private: public:
     SizeType _argument_size;
@@ -165,6 +165,11 @@ class Procedure {
   private:
     OutputStream& _write(OutputStream& os) const;
 };
+
+
+// These exported specializations are emitted by procedure.cpp.
+extern template class Procedure<ApproximateNumber>;
+extern template class Procedure<ValidatedNumber>;
 
 
 //! \brief An algorithmic procedure for computing a function.

@@ -762,6 +762,16 @@ Void TestProcedure::test_nul_hlf_backpropagation()
 Void TestProcedure::test_elementary_empty_backpropagation()
 {
     UpperIntervalType empty=ExactIntervalType::empty_interval();
+    {
+        UpperIntervalType argument=ExactIntervalType(-1,1);
+        backpropagate(empty,Max(),argument,ValidatedNumber(0));
+        ARIADNE_TEST_ASSERT(definitely(argument.is_empty()));
+    }
+    {
+        UpperIntervalType argument=ExactIntervalType(-1,1);
+        backpropagate(empty,Min(),argument,ValidatedNumber(0));
+        ARIADNE_TEST_ASSERT(definitely(argument.is_empty()));
+    }
 
     {
         UpperIntervalType argument=ExactIntervalType(-1,1);
@@ -958,7 +968,20 @@ Void test_procedure_interval_contracts_and_empty_targets() {
     argument=I(-2,2);backpropagate(target,Pow(),argument,3);
     ARIADNE_TEST_ASSERT(definitely(argument.is_empty()));
 }
+Void test_function_procedure_construction() {
+    const auto x=ValidatedScalarMultivariateFunction::coordinate(2u,0u);
+    const auto y=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
+    const auto scalar=make_procedure(sqr(x)+y);
+    const Vector<ValidatedProcedure> vector(ValidatedVectorMultivariateFunction{sqr(x)+y,x-y});
+    const Vector<FloatDPBounds> point({2,3},dp);
+    ARIADNE_TEST_EQUALS(scalar.argument_size(),2u);
+    ARIADNE_TEST_EQUALS(evaluate(scalar,point),FloatDPBounds(7,dp));
+    ARIADNE_TEST_EQUALS(vector.result_size(),2u);
+    ARIADNE_TEST_EQUALS(evaluate(vector,point),Vector<FloatDPBounds>({7,-1},dp));
+}
+
 Int main() {
+    ARIADNE_TEST_CALL(test_function_procedure_construction());
     TestProcedure().test();
     ARIADNE_TEST_CALL(test_procedure_interval_contracts_and_empty_targets());
     ARIADNE_TEST_CALL(test_procedure_instruction_accessors());
