@@ -175,7 +175,8 @@ template<class Y> Bool identical_node(UnaryFormulaNode<Y> const& a, UnaryFormula
 template<class Y> Bool identical_node(BinaryFormulaNode<Y> const& a, BinaryFormulaNode<Y> const& b) {
     return a._op.code()==b._op.code() && identical(a._arg1,b._arg1) && identical(a._arg2,b._arg2); }
 template<class Y> Bool identical_node(GradedFormulaNode<Y> const& a, GradedFormulaNode<Y> const& b) {
-    return a._op.code()==b._op.code() && a._num==b._num && identical(a._arg,b._arg); }
+    // GradedElementaryOperator is OperatorVariant<Pow>: both nodes are powers.
+    return a._num==b._num && identical(a._arg,b._arg); }
 template<class Y> Bool identical_node(ScalarFormulaNode<Y> const& a, ScalarFormulaNode<Y> const& b) {
     return a._op.code()==b._op.code() && same(a._cnst,b._cnst) && identical(a._arg,b._arg); }
 template<class A, class B> Bool identical_node(A const&, B const&) { return false; }

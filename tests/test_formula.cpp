@@ -201,6 +201,7 @@ class TestFormula
         ARIADNE_TEST_ASSERT(identical(simplify(derivative(scaled,0)),two));
         ARIADNE_TEST_ASSERT(is_constant(simplify(derivative(scaled,1)),EffectiveNumber(0)));
         Vector<EffectiveNumber> values({EffectiveNumber(2),EffectiveNumber(3)});
+
         ARIADNE_TEST_ASSERT(same(evaluate(substitute(scaled,0,y),values),EffectiveNumber(6)));
         EffectiveFormula difference=scalar(Sub(),EffectiveNumber(5),x);
         ARIADNE_TEST_ASSERT(same(evaluate(substitute(difference,0,y),values),EffectiveNumber(2)));
@@ -217,6 +218,19 @@ class TestFormula
 
     Void test_evaluate() {
         Vector<EffectiveNumber> values({EffectiveNumber(2),EffectiveNumber(3)});
+        // Directly evaluated operation trees retain the same numeric semantics
+        // as formulas: variables, nested unary/binary nodes, scalars and powers.
+        OperationNode<Var,Nat> variable(0u);
+        OperationNode<Neg,decltype(variable)> negative(Neg(),variable);
+        OperationNode<Add,decltype(negative),decltype(variable)> cancellation(Add(),negative,variable);
+        OperationNode<Mul,EffectiveNumber,EffectiveFormula> scaled_node(Mul(),EffectiveNumber(3),x);
+        OperationNode<Pow,EffectiveFormula,Int> cubed(Pow(),x,3);
+        ARIADNE_TEST_ASSERT(same(FormulaDetail::evaluate(variable,values),EffectiveNumber(2)));
+        ARIADNE_TEST_ASSERT(same(FormulaDetail::evaluate(negative,values),EffectiveNumber(-2)));
+        ARIADNE_TEST_ASSERT(same(FormulaDetail::evaluate(cancellation,values),EffectiveNumber(0)));
+        ARIADNE_TEST_ASSERT(same(FormulaDetail::evaluate(scaled_node,values),EffectiveNumber(6)));
+        ARIADNE_TEST_ASSERT(same(FormulaDetail::evaluate(cubed,values),EffectiveNumber(8)));
+
         ARIADNE_TEST_ASSERT(same(direct_evaluate(two,values),EffectiveNumber(2)));
         EffectiveFormula scalar=EffectiveFormula::scalar(
             BinaryElementaryOperator(Mul::code()),EffectiveNumber(2),x);
