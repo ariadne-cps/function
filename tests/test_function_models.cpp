@@ -201,7 +201,103 @@ Void test_model_factory_interfaces() {
     ARIADNE_TEST_ASSERT(&creator.create(coefficient)==&coefficient);
 }
 
+Void test_scalar_model_interface_delegation() {
+    const BoxDomainType domain{{2,6},{-2,2}},prefix{{-1,1}},suffix{{0,1}};
+    const Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const auto x=ScalarTaylor::coordinate(domain,0u,sweeper),y=ScalarTaylor::coordinate(domain,1u,sweeper);
+    const ScalarModel model=2*x+y;
+    const auto& interface=model.reference();
+    const ElementaryAlgebraInterface<FloatDPBounds>& canonical=interface;
+    const ElementaryAlgebraInterface<ValidatedNumber>& generic=interface;
+    const auto from_algebra=[](auto* algebra) {
+        return ScalarModel(dynamic_cast<ScalarModel::Interface*>(algebra));
+    };
+    const Vector<FloatDPBounds> point({3,1},dp),reduced{FloatDPBounds(3,dp)},enlarged({0,3,1,0.5_x},dp);
+    ARIADNE_TEST_SAME(from_algebra(canonical._create_copy())(point),FloatDPBounds(7,dp));
+    ARIADNE_TEST_SAME(from_algebra(canonical._create_zero())(point),FloatDPBounds(0,dp));
+    ARIADNE_TEST_SAME(from_algebra(generic._create_constant(ValidatedNumber(5)))(point),FloatDPBounds(5,dp));
+    ARIADNE_TEST_SAME(from_algebra(canonical._create_constant(FloatDPBounds(6,dp)))(point),FloatDPBounds(6,dp));
+    ARIADNE_TEST_SAME(from_algebra(canonical._apply(BinaryElementaryOperator(Add()),FloatDPBounds(5,dp)))(point),FloatDPBounds(12,dp));
+    ARIADNE_TEST_SAME(from_algebra(canonical._rapply(BinaryElementaryOperator(Sub()),FloatDPBounds(5,dp)))(point),FloatDPBounds(-2,dp));
+    ARIADNE_TEST_SAME(from_algebra(generic._apply(BinaryElementaryOperator(Add()),ValidatedNumber(5)))(point),FloatDPBounds(12,dp));
+    ARIADNE_TEST_EQUALS(interface._errors().get(dp).raw(),FloatDP(0,dp));
+    ARIADNE_TEST_EQUALS(interface._error().get(dp).raw(),FloatDP(0,dp));
+    ARIADNE_TEST_EQUALS(interface._norm().get(dp).raw(),FloatDP(14,dp));
+    ARIADNE_TEST_EQUALS(interface._concrete_norm().raw(),FloatDP(14,dp));
+    const ScalarModel primitive(interface._antiderivative(0u));
+    ARIADNE_TEST_SAME(derivative(primitive,0u)(point),FloatDPBounds(7,dp));
+    ARIADNE_TEST_SAME(ScalarModel(interface._concrete_antiderivative(0u,FloatDPBounds(2,dp)))(point),FloatDPBounds(6,dp));
+    const MultiplePrecision mp(128u);
+    ARIADNE_TEST_SAME(interface._unchecked_evaluate(Vector<FloatMPBounds>({3,1},mp)),FloatMPBounds(7,mp));
+    ARIADNE_TEST_SAME(interface._concrete_unchecked_evaluate(point),FloatDPBounds(7,dp));
+    ARIADNE_TEST_SAME(from_algebra(interface._partial_evaluate(1u,ValidatedNumber(1)))(reduced),FloatDPBounds(7,dp));
+    ARIADNE_TEST_SAME(ScalarModel(interface._embed(prefix,suffix))(enlarged),FloatDPBounds(7,dp));
+    const ScalarModel broad=ScalarTaylor::constant(domain,FloatDPBounds(1,3,dp),sweeper);
+    const ScalarModel exact=ScalarTaylor::constant(domain,FloatDPBounds(2,dp),sweeper);
+    const ScalarModel far=ScalarTaylor::constant(domain,FloatDPBounds(7,dp),sweeper);
+    ARIADNE_TEST_ASSERT(exact.reference()._refines(broad.reference()));
+    ARIADNE_TEST_ASSERT(decide(exact.reference()._concrete_refines(broad.reference())));
+    ARIADNE_TEST_ASSERT(decide(exact.reference()._concrete_inconsistent(far.reference())));
+    ARIADNE_TEST_SAME(ScalarModel(exact.reference()._concrete_refinement(broad.reference()))(point),FloatDPBounds(2,dp));
+    ScalarTaylor uncertain=2*x+y;uncertain.set_error(FloatDPError(0.125_x,dp));
+    ScalarModel cleared=uncertain;cleared.reference()._clobber();
+    ARIADNE_TEST_EQUALS(cleared.error().raw(),FloatDP(0,dp));
+    ARIADNE_TEST_SAME(cleared(point),FloatDPBounds(7,dp));
+}
+
+Void test_vector_model_interface_delegation() {
+    const BoxDomainType domain{{2,6},{-2,2}},prefix{{-1,1}},suffix{{0,1}};
+    const Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const auto x=ScalarTaylor::coordinate(domain,0u,sweeper),y=ScalarTaylor::coordinate(domain,1u,sweeper);
+    const VectorModel model=VectorTaylor{2*x+y,x-y};
+    const auto& interface=model.reference();
+    const auto from_patch=[](auto* patch) {
+        return VectorModel(dynamic_cast<VectorModel::Interface*>(patch));
+    };
+    const Vector<FloatDPBounds> point({3,1},dp),expected({7,2},dp),reduced{FloatDPBounds(3,dp)},enlarged({0,3,1,0.5_x},dp);
+    ARIADNE_TEST_EQUALS(interface._range().dimension(),2u);
+    ARIADNE_TEST_EQUALS(interface._errors()[0u].get(dp).raw(),FloatDP(0,dp));
+    ARIADNE_TEST_EQUALS(interface._error().get(dp).raw(),FloatDP(0,dp));
+    ARIADNE_TEST_EQUALS(interface._concrete_error().raw(),FloatDP(0,dp));
+    ARIADNE_TEST_EQUALS(interface._norm().get(dp).raw(),FloatDP(14,dp));
+    const VectorModel primitive(interface._antiderivative(0u));
+    ARIADNE_TEST_EQUALS(VectorModel(primitive.reference()._concrete_derivative(0u))(point),expected);
+    ARIADNE_TEST_EQUALS(VectorModel(interface._antiderivative(0u,ValidatedNumber(2)))(point),Vector<FloatDPBounds>({6,1.5_x},dp));
+    ARIADNE_TEST_EQUALS(VectorModel(interface._concrete_antiderivative(0u,FloatDPBounds(2,dp)))(point),Vector<FloatDPBounds>({6,1.5_x},dp));
+    ARIADNE_TEST_EQUALS(VectorModel(interface._embed(prefix,suffix))(enlarged),expected);
+    VectorModel appended(interface._concrete_clone());
+    appended.reference()._concrete_adjoin(ScalarModel(x).reference());
+    ARIADNE_TEST_EQUALS(appended(point),Vector<FloatDPBounds>({7,2,3},dp));
+    ARIADNE_TEST_EQUALS(VectorModel(interface._concrete_join(interface))(point),Vector<FloatDPBounds>({7,2,7,2},dp));
+    const Vector<FloatDPBounds> doubled_point({3,1,3,1},dp);
+    ARIADNE_TEST_EQUALS(from_patch(interface._combine(interface))(doubled_point),Vector<FloatDPBounds>({7,2,7,2},dp));
+    ARIADNE_TEST_EQUALS(VectorModel(interface._concrete_combine(interface))(doubled_point),Vector<FloatDPBounds>({7,2,7,2},dp));
+    ARIADNE_TEST_EQUALS(Vector<FloatDPBounds>(interface._unchecked_evaluate(Vector<ValidatedNumber>{3,1}),dp),expected);
+    const MultiplePrecision mp(128u);
+    ARIADNE_TEST_EQUALS(interface._unchecked_evaluate(Vector<FloatMPBounds>({3,1},mp)),Vector<FloatMPBounds>({7,2},mp));
+    ARIADNE_TEST_EQUALS(interface._concrete_unchecked_evaluate(point),expected);
+    const auto a=ValidatedScalarMultivariateFunction::coordinate(2u,0u),b=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
+    ARIADNE_TEST_SAME(ScalarModel(interface._unchecked_compose(a+b))(point),FloatDPBounds(9,dp));
+    ARIADNE_TEST_EQUALS(VectorModel(interface._unchecked_compose(ValidatedVectorMultivariateFunction{a,b}))(point),expected);
+    ARIADNE_TEST_EQUALS(from_patch(interface._partial_evaluate(1u,ValidatedNumber(1)))(reduced),expected);
+    ARIADNE_TEST_EQUALS(VectorModel(interface._concrete_partial_evaluate(1u,FloatDPBounds(1,dp)))(reduced),expected);
+    const auto broad_scalar=ScalarTaylor::constant(domain,FloatDPBounds(1,3,dp),sweeper);
+    const auto exact_scalar=ScalarTaylor::constant(domain,FloatDPBounds(2,dp),sweeper);
+    const auto far_scalar=ScalarTaylor::constant(domain,FloatDPBounds(7,dp),sweeper);
+    const VectorModel broad=VectorTaylor{broad_scalar,broad_scalar},exact=VectorTaylor{exact_scalar,exact_scalar},far=VectorTaylor{exact_scalar,far_scalar};
+    ARIADNE_TEST_ASSERT(exact.reference()._refines(broad.reference()));
+    ARIADNE_TEST_ASSERT(decide(exact.reference()._concrete_refines(broad.reference())));
+    ARIADNE_TEST_ASSERT(decide(exact.reference()._concrete_inconsistent(far.reference())));
+    ARIADNE_TEST_EQUALS(VectorModel(exact.reference()._concrete_refinement(broad.reference()))(point),Vector<FloatDPBounds>({2,2},dp));
+    ScalarTaylor uncertain=2*x+y;uncertain.set_error(FloatDPError(0.125_x,dp));
+    VectorModel cleared=VectorTaylor{uncertain,x-y};cleared.reference()._clobber();
+    ARIADNE_TEST_EQUALS(cleared.error().raw(),FloatDP(0,dp));
+    ARIADNE_TEST_EQUALS(cleared(point),expected);
+}
+
 Int main() {
+    ARIADNE_TEST_CALL(test_scalar_model_interface_delegation());
+    ARIADNE_TEST_CALL(test_vector_model_interface_delegation());
     ARIADNE_TEST_CALL(test_model_factory_interfaces());
     ARIADNE_TEST_CALL(test_erased_factory_projection());
     ARIADNE_TEST_CALL(test_concrete_scaled_calculus());

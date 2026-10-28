@@ -151,11 +151,11 @@ template<class FM, class P, class ARG, class PR, class PRE> class FunctionModelM
         return unchecked_evaluate(static_cast<const FM&>(*this),x); }
     CanonicalNumericType<P,DP> _unchecked_evaluate(const Vector<CanonicalNumericType<P,DP>>& x) const override {
         auto r = unchecked_evaluate(static_cast<const FM&>(*this),x);
-        if constexpr (Convertible<decltype(r),CanonicalNumericType<P,DP>>) { return r; } else { ARIADNE_FAIL_MSG(""); }
+        return CanonicalNumericType<P,DP>(r,x.zero_element().precision());
     }
     CanonicalNumericType<P,MultiplePrecision> _unchecked_evaluate(const Vector<CanonicalNumericType<P,MultiplePrecision>>& x) const override {
         auto r = unchecked_evaluate(static_cast<const FM&>(*this),x);
-        if constexpr (Convertible<decltype(r),CanonicalNumericType<P,MultiplePrecision>>) { return r; } else {ARIADNE_FAIL_MSG(""); }
+        return CanonicalNumericType<P,MultiplePrecision>(r,x.zero_element().precision());
     }
     CanonicalNumericType<P,PR,PRE> _concrete_unchecked_evaluate(const Vector<CanonicalNumericType<P,PR,PRE>>& x) const override {
         return unchecked_evaluate(static_cast<const FM&>(*this),x); }
