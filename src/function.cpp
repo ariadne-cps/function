@@ -314,7 +314,9 @@ inline EffectiveScalarMultivariateFunction make_formula_function(SizeType as, co
     return EffectiveScalarMultivariateFunction(EuclideanDomain(as),fm); }
 
 template<class P, class R, class T, class... AS> Function<P,R(AS...)> make_composed_function(const Function<P,R(T)>& f, const Function<P,T(AS...)>& g) {
-    if constexpr (Same<T,RealVector>) { ARIADNE_PRECONDITION(f.argument_size()==g.result_size()); }
+    // Scalar argument/result sizes are both SizeOne, so this is also valid
+    // (and statically true) for a scalar intermediate value.
+    ARIADNE_PRECONDITION(f.argument_size()==g.result_size());
     return Function<P,R(AS...)>(ComposedFunction<P,R,T,AS...>(f,g)); }
 
 Formula<Real> make_formula(const EffectiveScalarMultivariateFunction& f) {
@@ -349,14 +351,13 @@ template<class P, class SIG> auto Function<P,SIG>::get(SizeType i) const -> Scal
 
 template<class P, class SIG> Void Function<P,SIG>::set(SizeType i, ScalarFunction<P,ARG> sf) requires Same<ResultSizeType,SizeType> {
     ARIADNE_PRECONDITION(i<this->result_size());
-    if constexpr (Same<ArgumentSizeType,SizeType>) { ARIADNE_PRECONDITION(sf.argument_size()==this->argument_size()); }
+    ARIADNE_PRECONDITION(sf.argument_size()==this->argument_size());
     const VectorOfScalarFunction<P,ARG>* cvf =
         dynamic_cast<const FunctionWrapper<VectorOfScalarFunction<P,ARG>,P,SIG>*>(this->_ptr.operator->());
     if(cvf==nullptr) {
         ARIADNE_THROW(std::runtime_error,
                       "Function<P,RealVector(ARGS...)>::set(SizeType i, Function<P,RealScalar(ARGS...)>)",
-                      "Cannot assign to component of vector-valued function "<<(*this)<<" as it is not a VectorOfScalarFunction.");
-    }
+                      "Cannot assign to component of vector-valued function "<<(*this)<<" as it is not a VectorOfScalarFunction."); }
     VectorOfScalarFunction<P,ARG>& vf = const_cast<VectorOfScalarFunction<P,ARG>&>(*cvf);
     vf[i]=sf;
 }
@@ -618,8 +619,7 @@ EffectiveScalarMultivariateFunction lie_derivative(const EffectiveScalarMultivar
         return r;
     }
     catch(...) {
-        ARIADNE_FAIL_MSG("Failed to compute Lie derivative of "<<g<<" under vector field "<<f);
-    }
+        ARIADNE_FAIL_MSG("Failed to compute Lie derivative of "<<g<<" under vector field "<<f); }
 }
 
 EffectiveVectorMultivariateFunction lie_derivative(const EffectiveVectorMultivariateFunction& g, const EffectiveVectorMultivariateFunction& f) {
@@ -632,8 +632,7 @@ EffectiveVectorMultivariateFunction lie_derivative(const EffectiveVectorMultivar
         return r;
     }
     catch(...) {
-        ARIADNE_FAIL_MSG("Failed to compute Lie derivative of vector function "<<g<<" under vector field "<<f);
-    }
+        ARIADNE_FAIL_MSG("Failed to compute Lie derivative of vector function "<<g<<" under vector field "<<f); }
 }
 
 
