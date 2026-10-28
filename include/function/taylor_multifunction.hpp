@@ -80,8 +80,9 @@ template<class F> class ScaledFunctionPatchMixin<ValidatedIntervalTaylorModel<F>
     using M=ValidatedIntervalTaylorModel<F>; using P=ValidatedTag; using RES=Real;
     ScaledFunctionPatch<M> const& _upcast() const { return static_cast<ScaledFunctionPatch<M>const&>(*this); }
   protected:
-    virtual CompactSet<P,RES> _call(Argument<Number<P>> const& x) const;
-    virtual OutputStream& _write(OutputStream& os) const { return os << this->_upcast(); }
+    virtual CompactSet<P,RES> _call(Argument<Number<P>> const& x) const override;
+    // The concrete scaled patch supplies its formatter.
+    virtual OutputStream& _write(OutputStream&) const override = 0;
 };
 
 template<class F> class VectorScaledFunctionPatchMixin<ValidatedIntervalTaylorModel<F>>
@@ -90,8 +91,9 @@ template<class F> class VectorScaledFunctionPatchMixin<ValidatedIntervalTaylorMo
     using M=ValidatedIntervalTaylorModel<F>; using P=ValidatedTag; using RES=RealVector;
     VectorScaledFunctionPatch<M> const& _upcast() const { return static_cast<VectorScaledFunctionPatch<M>const&>(*this); }
   protected:
-    virtual CompactSet<P,RES> _call(Argument<Number<P>> const& x) const;
-    virtual OutputStream& _write(OutputStream& os) const { return os << this->_upcast(); }
+    virtual CompactSet<P,RES> _call(Argument<Number<P>> const& x) const override;
+    // The concrete scaled patch supplies its formatter.
+    virtual OutputStream& _write(OutputStream&) const override = 0;
 };
 
 template<class F> class ValidatedIntervalTaylorFunctionModel
@@ -192,7 +194,7 @@ template<class F> class ValidatedIntervalTaylorMultiflow
         return CompactSet<P,RealVector(Real)>(std::make_shared<TrajectorySetType>(this->_flow_model,x0)); }
     virtual Function<P,CompactSet<P,RealVector>(RealVector)> _curry() const override {
         return Function<P,CompactSet<P,RealVector>(RealVector)>(std::make_shared<ReachMapType>(this->curry())); }
-    virtual OutputStream& _write(OutputStream& os) const override { return os << *this; }
+    virtual OutputStream& _write(OutputStream& os) const override { return os << "Multiflow(" << this->_flow_model << ")"; }
 };
 
 
