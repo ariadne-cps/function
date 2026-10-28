@@ -400,6 +400,7 @@ template<class Y> Bool identical(const Formula<Y>& a1, const Formula<Y>& a2)
 }
 
 template<class Y> Vector<Formula<Y>> simplify(const Vector<Formula<Y>>& f) {
+    if (f.size()==0u) { return f; }
     return Vector<Formula<Y>>(f.size(),[&f](SizeType i){return simplify(f[i]);},f.zero_element());
 }
 

@@ -256,6 +256,7 @@ template<class Y> Formula<Y> substitute(const Formula<Y>& a, const List<Pair<Nat
     Formula<Y> r=a; for(SizeType i=0; i!=as.size(); ++i) { r=substitute(r,as[i]); } return r; }
 
 template<class Y> Vector<Formula<Y>> substitute(const Vector<Formula<Y>>& av, const List<Pair<Nat,Formula<Y>>>& as) {
+    if (av.size()==0u) { return av; }
     return Vector<Formula<Y>>(av.size(),[&av,&as](SizeType i){return substitute(av[i],as);}); }
 
 

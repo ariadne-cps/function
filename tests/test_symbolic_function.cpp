@@ -52,6 +52,8 @@ Void test_input_components() {
     ARIADNE_TEST_EQUALS(input_derivatives(function,0u).size(),0u);
     ARIADNE_TEST_EQUALS(noise_independent_component(function,0u)(point),function(point));
     const V empty=EffectiveVectorMultivariateFormulaFunction(1u,Vector<F>{});
+    ARIADNE_TEST_EQUALS(substitute(Vector<F>{},CoordinateFormulaPairs{}).size(),0u);
+    ARIADNE_TEST_EQUALS(simplify(Vector<F>{}).size(),0u);
     ARIADNE_TEST_EQUALS(noise_independent_component(empty,1u)(Vector<X>({0},dp)).size(),0u);
     ARIADNE_TEST_EQUALS(input_derivatives(empty,1u)[0u](Vector<X>({0},dp)).size(),0u);
     const V non_formula{S::coordinate(3u,0u),S::coordinate(3u,1u)};
