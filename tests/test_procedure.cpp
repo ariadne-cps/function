@@ -121,13 +121,18 @@ Void TestProcedure::test_unsupported_graded_operations()
 {
     // The Graded algebra deliberately rejects non-analytic operations.
     // These must throw through the Procedure operator dispatcher as well.
-    Graded<FloatDP> value(FloatDP(2,dp));
-    FloatDP scalar(1,dp);
+    // RoundedFloatDP is the coefficient type used by algebra/test_graded.
+    // FloatDP is a raw float, whose arithmetic does not satisfy the Graded
+    // operator requirements when std::visit instantiates all alternatives.
+    Graded<RoundedFloatDP> value(RoundedFloatDP(2,dp));
+    RoundedFloatDP scalar(1,dp);
     ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,UnaryElementaryOperator(Abs()),value));
     ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Max()),value,value));
     ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Min()),value,value));
     ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Max()),scalar,value));
     ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Min()),scalar,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Sub()),scalar,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Div()),scalar,value));
 }
 
 Void TestProcedure::test_construct_from_formula()

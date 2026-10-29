@@ -252,6 +252,11 @@ Void propagate(X& r, OP op, Y const& y1, X const& x2) {
                   (Same<OP,Max> || Same<OP,Min>)) {
         static_cast<void>(r);
         static_cast<void>(op(y1,x2)); // Non-analytic: deliberately throws.
+    } else if constexpr (IsGradedProcedureValue<X>::value &&
+                         (Same<OP,Sub> || Same<OP,Div>)) {
+        // Scalar-left subtraction and division are not implemented for Graded.
+        // Do not instantiate an assignment around a guaranteed exception.
+        ARIADNE_NOT_IMPLEMENTED;
     } else {
         r=op(y1,x2);
     }
