@@ -226,8 +226,14 @@ template<class X, class OP>
 Void propagate(X& r, OP op, X const& x1, X const& x2) {
     if constexpr (IsGradedProcedureValue<X>::value &&
                   (Same<OP,Max> || Same<OP,Min>)) {
+        // A Graded max/min is non-analytic. Its implementation always throws,
+        // so avoid calling it here (MSVC ARM64 reports C4702).
         static_cast<void>(r);
-        static_cast<void>(op(x1,x2)); // Deliberately throws for Graded.
+        static_cast<void>(op);
+        static_cast<void>(x1);
+        static_cast<void>(x2);
+        ARIADNE_THROW(std::runtime_error,"propagate(Graded)",
+                      "Cannot apply non-analytic operation to Graded.");
     } else {
         r=op(x1,x2);
     }
@@ -235,8 +241,13 @@ Void propagate(X& r, OP op, X const& x1, X const& x2) {
 template<class X, class OP>
 Void propagate(X& r, OP op, X const& x) {
     if constexpr (IsGradedProcedureValue<X>::value && Same<OP,Abs>) {
+        // Graded abs is non-analytic and always throws. Do not invoke the
+        // guaranteed-throw function here (MSVC ARM64 reports C4702).
         static_cast<void>(r);
-        static_cast<void>(op(x)); // Non-analytic: deliberately throws.
+        static_cast<void>(op);
+        static_cast<void>(x);
+        ARIADNE_THROW(std::runtime_error,"propagate(Graded)",
+                      "Cannot apply non-analytic operation to Graded.");
     } else if constexpr (IsGradedProcedureValue<X>::value &&
                          (Same<OP,Tan> || Same<OP,Asin> ||
                           Same<OP,Acos> || Same<OP,Atan>)) {
