@@ -86,7 +86,8 @@ Void test_scaled_patch_construction_contracts() {
     ARIADNE_TEST_FAIL(S(domain,scalar,swp));
     const auto model=M::coordinate(1u,0u,swp);
     ARIADNE_TEST_FAIL(V(domain,Vector<M>{model}));
-    Vector<Expansion<MultiIndex,FloatDP>> expansions{x.expansion()};
+    // Avoid UniformArray's iterator-range constructor (-Wshadow with GCC 13).
+    Vector<Expansion<MultiIndex,FloatDP>> expansions(1u,x.expansion());
     Vector<M::ErrorType> errors{FloatDPError(0u,dp)};
     ARIADNE_TEST_FAIL(V(domain,expansions,Vector<M::ErrorType>{},swp));
     ARIADNE_TEST_FAIL(V(BoxDomainType{{-1,1}},expansions,errors,swp));
