@@ -23,6 +23,7 @@
  */
 
 #include <iostream>
+#include <type_traits>
 
 #include "utility/container.hpp"
 #include "algebra/vector.hpp"
@@ -215,8 +216,46 @@ template<class OP> struct AlgebraScalar { }
 
 namespace ProcedureDetail {
 
-template<class X, class OP> Void propagate(X& r, OP op, X const& x1, X const& x2) { r=op(x1,x2); }
-template<class X, class OP> Void propagate(X& r, OP op, X const& x) { r=op(x); }
+// Some Graded operations intentionally throw rather than produce a value.
+// Keep those cases out of the value-assignment branch: MSVC ARM64 correctly
+// diagnoses an assignment following a guaranteed throw as unreachable.
+template<class X> struct IsGradedProcedureValue : std::false_type {};
+template<class A> struct IsGradedProcedureValue<Graded<A>> : std::true_type {};
+
+template<class X, class OP>
+Void propagate(X& r, OP op, X const& x1, X const& x2) {
+    if constexpr (IsGradedProcedureValue<X>::value &&
+                  (Same<OP,Max> || Same<OP,Min>)) {
+        static_cast<void>(r);
+        static_cast<void>(op(x1,x2)); // Deliberately throws for Graded.
+    } else {
+        r=op(x1,x2);
+    }
+}
+template<class X, class OP>
+Void propagate(X& r, OP op, X const& x) {
+    if constexpr (IsGradedProcedureValue<X>::value && Same<OP,Abs>) {
+        static_cast<void>(r);
+        static_cast<void>(op(x)); // Non-analytic: deliberately throws.
+    } else if constexpr (IsGradedProcedureValue<X>::value &&
+                         (Same<OP,Tan> || Same<OP,Asin> ||
+                          Same<OP,Acos> || Same<OP,Atan>)) {
+        // The matching Graded compute implementations are not implemented.
+        ARIADNE_NOT_IMPLEMENTED;
+    } else {
+        r=op(x);
+    }
+}
+template<class X, class OP, class Y> requires (not Same<X,Y>)
+Void propagate(X& r, OP op, Y const& y1, X const& x2) {
+    if constexpr (IsGradedProcedureValue<X>::value &&
+                  (Same<OP,Max> || Same<OP,Min>)) {
+        static_cast<void>(r);
+        static_cast<void>(op(y1,x2)); // Non-analytic: deliberately throws.
+    } else {
+        r=op(y1,x2);
+    }
+}
 
 template<class X> Void propagate(UnivariateSecondDifferential<X>& r, Asin op, UnivariateSecondDifferential<X> const& x) {
     const X one=nul(x.value())+1;
@@ -240,7 +279,7 @@ template<class X> Void propagate(UnivariateSecondDifferential<X>& r, Acos op, Un
         first*x.half_hessian()+half_second*sqr(x.gradient()));
 }
 
-template<class X> Void propagate(X& r, BinaryElementaryOperator eop, X const& x1, X const& x2) { eop.accept([&](auto op){r=op(x1,x2);}); }
+template<class X> Void propagate(X& r, BinaryElementaryOperator eop, X const& x1, X const& x2) { eop.accept([&](auto op){propagate(r,op,x1,x2);}); }
 template<class X> Void propagate(X& r, UnaryElementaryOperator eop, X const& x) { eop.accept([&](auto op){propagate(r,op,x);}); }
 template<class X, class N> Void propagate(X& r, GradedElementaryOperator eop, X const& x, N n) { eop.accept([&](auto op){r=op(x,n);}); }
 template<class Y, class X> requires (not Same<Y,UnivariateSecondDifferential<X>>)
@@ -253,7 +292,7 @@ Void propagate(UnivariateSecondDifferential<X>& r, BinaryElementaryOperator eop,
         }
     });
 }
-template<class Y, class X> Void propagate(X& r, BinaryElementaryOperator eop, Y const& y1, X const& x2) { eop.accept([&](auto op){r=op(y1,x2);}); }
+template<class Y, class X> Void propagate(X& r, BinaryElementaryOperator eop, Y const& y1, X const& x2) { eop.accept([&](auto op){propagate(r,op,y1,x2);}); }
 
 template<class X, class Y> Void _execute_impl(SizeType r, List<X>& v, const ProcedureInstruction& pri, const List<Y>& c, const Vector<X>& x) {
     struct Visitor {

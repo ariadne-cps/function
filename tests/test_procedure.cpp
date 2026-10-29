@@ -89,6 +89,7 @@ class TestProcedure
     Void test_elementary_empty_backpropagation();
     Void test_derivative();
     Void test_scalar_formula_conversion();
+    Void test_unsupported_graded_operations();
 };
 
 TestProcedure::TestProcedure()
@@ -111,8 +112,22 @@ Void TestProcedure::test()
     ARIADNE_TEST_CALL(test_elementary_empty_backpropagation());
     ARIADNE_TEST_CALL(test_derivative());
     ARIADNE_TEST_CALL(test_scalar_formula_conversion());
+    ARIADNE_TEST_CALL(test_unsupported_graded_operations());
 }
 
+
+Void TestProcedure::test_unsupported_graded_operations()
+{
+    // The Graded algebra deliberately rejects non-analytic operations.
+    // These must throw through the Procedure operator dispatcher as well.
+    Graded<FloatDP> value(FloatDP(2,dp));
+    FloatDP scalar(1,dp);
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,UnaryElementaryOperator(Abs()),value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Max()),value,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Min()),value,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Max()),scalar,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Min()),scalar,value));
+}
 
 Void TestProcedure::test_construct_from_formula()
 {
