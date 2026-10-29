@@ -250,8 +250,14 @@ template<class X, class OP, class Y> requires (not Same<X,Y>)
 Void propagate(X& r, OP op, Y const& y1, X const& x2) {
     if constexpr (IsGradedProcedureValue<X>::value &&
                   (Same<OP,Max> || Same<OP,Min>)) {
+        // The non-analytic scalar/Graded operation always fails. Do not
+        // instantiate op(y1,x2): not every scalar type admits this overload.
         static_cast<void>(r);
-        static_cast<void>(op(y1,x2)); // Non-analytic: deliberately throws.
+        static_cast<void>(op);
+        static_cast<void>(y1);
+        static_cast<void>(x2);
+        ARIADNE_THROW(std::runtime_error,"propagate(Graded)",
+                      "Cannot apply non-analytic operation to Graded.");
     } else if constexpr (IsGradedProcedureValue<X>::value &&
                          (Same<OP,Sub> || Same<OP,Div>)) {
         // Scalar-left subtraction and division are not implemented for Graded.

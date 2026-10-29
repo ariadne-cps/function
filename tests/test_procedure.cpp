@@ -119,20 +119,18 @@ Void TestProcedure::test()
 
 Void TestProcedure::test_unsupported_graded_operations()
 {
-    // The Graded algebra deliberately rejects non-analytic operations.
-    // These must throw through the Procedure operator dispatcher as well.
-    // RoundedFloatDP is the coefficient type used by algebra/test_graded.
-    // FloatDP is a raw float, whose arithmetic does not satisfy the Graded
-    // operator requirements when std::visit instantiates all alternatives.
+    // Test the typed dispatch branches: visiting a variant operator would
+    // instantiate all arithmetic alternatives, including combinations not
+    // supported by this standalone Graded coefficient type.
     Graded<RoundedFloatDP> value(RoundedFloatDP(2,dp));
     RoundedFloatDP scalar(1,dp);
-    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,UnaryElementaryOperator(Abs()),value));
-    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Max()),value,value));
-    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Min()),value,value));
-    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Max()),scalar,value));
-    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Min()),scalar,value));
-    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Sub()),scalar,value));
-    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,BinaryElementaryOperator(Div()),scalar,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,Abs(),value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,Max(),value,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,Min(),value,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,Max(),scalar,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,Min(),scalar,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,Sub(),scalar,value));
+    ARIADNE_TEST_FAIL(ProcedureDetail::propagate(value,Div(),scalar,value));
 }
 
 Void TestProcedure::test_construct_from_formula()
