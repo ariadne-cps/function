@@ -582,7 +582,6 @@ class TaylorModel
     static TaylorModel<P,F> _embed(SizeType as1, const TaylorModel<P,F>& tm2, SizeType as3);
     static TaylorModel<P,F> _compose(TaylorModel<P,F> const& tf, const Vector<TaylorModel<P,F>>& tg);
     static TaylorModel<P,F> _compose(Unscaling const& uf, TaylorModel<P,F> const& tg);
-    static TaylorModel<P,F> _compose(TaylorModel<P,F> const& tf, VectorUnscaling const& u, const Vector<TaylorModel<P,F>>& tg);
     static TaylorModel<P,F> _partial_evaluate(const TaylorModel<P,F>& x, SizeType k, NumericType c);
     static Covector<X> _gradient(const TaylorModel<P,F>& x, Vector<X> const& v);
     static ArithmeticType<CoefficientType,IntervalNumericType> _evaluate(const TaylorModel<P,F>& x, Vector<IntervalNumericType> const& v);

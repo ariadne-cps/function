@@ -91,7 +91,7 @@ template<class F> Bounds<F>& operator/=(Bounds<F>& x, TwoExp y) { return x*=Dyad
 
 template<class F> Approximation<F>& operator/=(Approximation<F>& x, TwoExp y) { return x/=Dyadic(y); }
 template<class F> Approximation<F> fma(Approximation<F>const& x, Approximation<F> const& y, Approximation<F> z) {
-    z._a = fma(near,x._a,y._a,z._a);; return std::move(z); }
+    z._a = fma(near,x._a,y._a,z._a); return std::move(z); }
 template<class F> Approximation<F> pm(UnknownError<F> e) { return Approximation<F>(e.precision()); }
 
 
@@ -169,24 +169,14 @@ template<class F> ValidatedIntervalTaylorModel<F> max(Bounds<F> const& x1, Valid
 template<class F> ValidatedIntervalTaylorModel<F> min(ValidatedIntervalTaylorModel<F> const& x1, Bounds<F> const& x2);
 template<class F> ValidatedIntervalTaylorModel<F> max(Bounds<F> const& x1, ValidatedIntervalTaylorModel<F> const& x2);
 
-struct UnitMultiIndex {
-    SizeType n; DegreeType j;
-    friend MultiIndex& operator+=(MultiIndex& a, UnitMultiIndex const& aj) { a[aj.j]+=1u; return a; }
-};
-struct SumMultiIndex {
-    MultiIndex const& a1; MultiIndex const& a2;
-    SizeType size() const { return a1.size(); }
-    DegreeType operator[] (SizeType j) const { return a1[j]+a2[j]; }
-    DegreeType degree() const { return a1.degree()+a2.degree(); }
-};
-
-
 inline Bool operator<(const MultiIndex& a1, const MultiIndex& a2) {
     return reverse_lexicographic_less(a1,a2); }
 
-namespace {
+namespace TaylorModelDetail {
 
-static const ExactDouble MACHINE_EPSILON(2.2204460492503131e-16);
+using Ariadne::convert_interval;
+
+inline const ExactDouble MACHINE_EPSILON(2.2204460492503131e-16);
 
 
 inline Interval<FloatDPUpperBound> const& convert_interval(Interval<FloatDPUpperBound> const& ivl, DoublePrecision) {
@@ -244,7 +234,7 @@ template<class P, class F> TaylorModel<P,F>::TaylorModel(const Expansion<MultiIn
 
 template<class P, class F> TaylorModel<P,F> TaylorModel<P,F>::scaling(SizeType as, SizeType j, const IntervalDomainType& codom, SweeperType swp) {
     TaylorModel<P,F> r(as,swp);
-    auto ivl=convert_interval(codom,r.precision());
+    auto ivl=TaylorModelDetail::convert_interval(codom,r.precision());
     r.set_gradient(j,1);
     r*=ivl.radius();
     r+=static_cast<NumericType>(ivl.midpoint());
@@ -287,7 +277,7 @@ template<class P, class F> TaylorModel<P,F> TaylorModel<P,F>::create_coordinate(
 }
 
 template<class P, class F> TaylorModel<P,F> TaylorModel<P,F>::create_ball(ErrorType e) const {
-    ARIADNE_DEBUG_PRECONDITION(e.raw()>=0);
+    ARIADNE_PRECONDITION(e.raw()>=0);
     TaylorModel<P,F> r(this->argument_size(),this->_sweeper);
     r._error=e;
     return r;
@@ -329,7 +319,7 @@ template<class F> Approximation<F> const& set_err(Approximation<F> const& x, Unk
 template<class P, class F> TaylorModel<P,F>& TaylorModel<P,F>::operator=(const NumericType& c) {
     this->clear();
     CoefficientType m=set_err(c,this->_error);
-    if(not is_same_as_zero(m)) {
+    if(not TaylorModelDetail::is_same_as_zero(m)) {
         this->_expansion.append(MultiIndex::zero(this->argument_size()),m);
     }
     return *this;
@@ -339,7 +329,7 @@ template<class P, class F> TaylorModel<P,F>& TaylorModel<P,F>::operator=(const G
     return *this = NumericType(c,this->precision());
 }
 
-namespace { // Internal code for arithmetic
+namespace TaylorModelDetail { // Shared implementation of Taylor arithmetic
 
 template<class F> struct ValidatedApproximation {
     Bounds<F> _v; Approximation<F> _a;
@@ -729,7 +719,6 @@ template<class F> Void _scal(TaylorModel<ValidatedTag,F>& r, const Bounds<F>& c)
 }
 */
 
-struct UnitMultiIndex { SizeType argument_size; SizeType unit_index; };
 
 
 template<class P, class F> inline Void _incr(TaylorModel<P,F>& r, const MultiIndex& a) {
@@ -786,7 +775,7 @@ template<class P, class F> inline TaylorModel<P,F> _sub(const TaylorModel<P,F>& 
     _sparse_apply(SubErr(),r,x,y);
     r.error()+=(x.error()+y.error());
     r.sweep();
-    ARIADNE_DEBUG_ASSERT(r.error().raw()>=0);
+    // Error constructors and upward-rounded error addition preserve nonnegativity.
     return r;
 }
 
@@ -872,6 +861,8 @@ template<class P, class F> inline Void _ifma(TaylorModel<P,F>& r, const TaylorMo
             }
             maximum_degree=std::max(maximum_degree,x_degree+y_degree);
 
+            static_assert(std::numeric_limits<SizeType>::max()>
+                          2ull*std::numeric_limits<DegreeType>::max()+1ull);
             const SizeType base=static_cast<SizeType>(maximum_degree+1u);
 
             // The mixed-radix workspace is excellent for low-dimensional
@@ -882,16 +873,14 @@ template<class P, class F> inline Void _ifma(TaylorModel<P,F>& r, const TaylorMo
             SizeType slot_count=1u;
             Bool use_dense=true;
             for(SizeType j=0u; j!=as; ++j) {
-                if(base!=0u
-                   && slot_count>maximum_dense_slots/base) {
+                if(slot_count>maximum_dense_slots/base) {
                     use_dense=false;
                     break;
                 }
                 slot_count*=base;
             }
-            if(slot_count>maximum_dense_slots) {
-                use_dense=false;
-            }
+            // The division guard bounds every successful multiplication;
+            // on early exit slot_count still holds the previous bounded value.
 
             if(!use_dense) {
                 // Sparse full-product fallback: preserve the production
@@ -1184,17 +1173,17 @@ template<class P, class F> auto AlgebraOperations<TaylorModel<P,F>>::apply(Nul, 
 template<class P, class F> auto AlgebraOperations<TaylorModel<P,F>>::apply(Pos, ModelType x) -> ModelType {
     return x; }
 template<class P, class F> auto AlgebraOperations<TaylorModel<P,F>>::apply(Neg, ModelType x) -> ModelType {
-    _neg(x); return x; }
+    TaylorModelDetail::_neg(x); return x; }
 template<class P, class F> auto AlgebraOperations<TaylorModel<P,F>>::apply(Add, ModelType const& x, ModelType const& y) -> ModelType {
-    return _add(x,y); }
+    return TaylorModelDetail::_add(x,y); }
 template<class P, class F> auto AlgebraOperations<TaylorModel<P,F>>::apply(Sub, ModelType const& x, ModelType const& y) -> ModelType {
-    return _sub(x,y); }
+    return TaylorModelDetail::_sub(x,y); }
 template<class P, class F> auto AlgebraOperations<TaylorModel<P,F>>::apply(Mul, ModelType const& x, ModelType const& y) -> ModelType {
-    return _mul(x,y); }
+    return TaylorModelDetail::_mul(x,y); }
 template<class P, class F> auto AlgebraOperations<TaylorModel<P,F>>::apply(Add, ModelType x, NumericType const& c) -> ModelType {
-    _acc(x,c); return x; }
+    TaylorModelDetail::_acc(x,c); return x; }
 template<class P, class F> auto AlgebraOperations<TaylorModel<P,F>>::apply(Mul, ModelType x, NumericType const& c) -> ModelType {
-    _scal(x,c); return x; }
+    TaylorModelDetail::_scal(x,c); return x; }
 
 // TODO: Should be able to automatically generate these operations
 /*
@@ -1230,7 +1219,7 @@ template<class P, class F> TaylorModel<P,F>& TaylorModel<P,F>::unique()
         ++advanced;
         while(advanced!=end && advanced->index()==current->index()) {
             UniformConstReference<CoefficientType> xv=advanced->coefficient();
-            rv=add_err(rv,xv,e);
+            rv=TaylorModelDetail::add_err(rv,xv,e);
             ++advanced;
         }
         current->coefficient()=rv;
@@ -1299,9 +1288,9 @@ template<class P, class F> auto TaylorModel<P,F>::codomain() const -> CodomainTy
 {
     if constexpr(Same<P,ValidatedTag>) {
         RangeType rng=this->range();
-        return cast_exact_interval(convert_interval(rng,dp));
+        return cast_exact_interval(TaylorModelDetail::convert_interval(rng,dp));
     } else {
-        ARIADNE_FAIL_MSG("Codomain only available for a Validated TaylorModel.");
+        throw std::runtime_error("Codomain only available for a Validated TaylorModel.");
     }
 }
 
@@ -1321,14 +1310,14 @@ template<class P, class F> auto TaylorModel<P,F>::range() const -> RangeType {
         if(iter->index().degree()==0) {
             constant_term=iter->coefficient();
         } else if(iter->index().degree()==1) {
-            for(SizeType j=0; j!=tm.argument_size(); ++j) {
-                if(iter->index()[j]==1) { linear_terms[j]=iter->coefficient(); break; }
-            }
+            SizeType j=0u;
+            while(iter->index()[j]==0u) { ++j; }
+            linear_terms[j]=iter->coefficient();
         } else if(iter->index().degree()==2) {
-            for(SizeType j=0; j!=tm.argument_size(); ++j) {
-                if(iter->index()[j]==2) { quadratic_terms[j]=iter->coefficient(); break; }
-                if(iter->index()[j]==1) { err+=mag(iter->coefficient()); break; }
-            }
+            SizeType j=0u;
+            while(iter->index()[j]==0u) { ++j; }
+            if(iter->index()[j]==2u) { quadratic_terms[j]=iter->coefficient(); }
+            else { err+=mag(iter->coefficient()); }
         } else {
             err+=mag(iter->coefficient());
         }
@@ -1348,7 +1337,7 @@ template<class P, class F> auto TaylorModel<P,F>::range() const -> RangeType {
             const CoefficientType& a=quadratic_terms[j];
             const CoefficientType& b=linear_terms[j];
             RangeType ql=abs(a)*unit_ivl + abs(b)*unit_ivl;
-            if(not is_same_as_zero(a)) { // Explicitly test for zero
+            if(not TaylorModelDetail::is_same_as_zero(a)) { // Explicitly test for zero
                 RangeType qf=a*(sqr(unit_ivl+b/a/2))-sqr(b)/a/4;
                 r += refinement(ql,qf); // NOTE: ql must be the first term in case of NaN in qf
             } else {
@@ -1357,7 +1346,7 @@ template<class P, class F> auto TaylorModel<P,F>::range() const -> RangeType {
         }
         return r;
     } else {
-        ARIADNE_FAIL_MSG("Range only available for a Validated TaylorModel.");
+        throw std::runtime_error("Range only available for a Validated TaylorModel.");
     }
 }
 
@@ -1377,7 +1366,7 @@ template<class P, class F> TaylorModel<P,F> AlgebraOperations<TaylorModel<P,F>>:
     } else if(definitely(yr.lower_bound()>=xr.upper_bound())) {
         return y;
     } else {
-        return hlf((x+y)+abs(x-y));;
+        return hlf((x+y)+abs(x-y));
     }
 }
 
@@ -1438,7 +1427,8 @@ template<class P, class F> TaylorModel<P,F> AlgebraOperations<TaylorModel<P,F>>:
         if(definitely(xr.lower_bound()>=0)) {
             ModelType e=exp(-2*x);
             ModelType denominator=1+e;
-            if(definitely(denominator.range().lower_bound()>0)) {
+            // Match the convergence condition used by the reciprocal series.
+            if(decide(cast_exact(denominator.radius())<abs(cast_exact(denominator.average())))) {
                 return (1-e)/denominator;
             }
             return fallback();
@@ -1446,7 +1436,8 @@ template<class P, class F> TaylorModel<P,F> AlgebraOperations<TaylorModel<P,F>>:
         if(definitely(xr.upper_bound()<=0)) {
             ModelType e=exp(2*x);
             ModelType denominator=1+e;
-            if(definitely(denominator.range().lower_bound()>0)) {
+            // Match the convergence condition used by the reciprocal series.
+            if(decide(cast_exact(denominator.radius())<abs(cast_exact(denominator.average())))) {
                 return (e-1)/denominator;
             }
             return fallback();
@@ -1459,19 +1450,19 @@ template<class P, class F> TaylorModel<P,F> AlgebraOperations<TaylorModel<P,F>>:
 
 template<class P, class F> TaylorModel<P,F> AlgebraOperations<TaylorModel<P,F>>::apply(Max op, const TaylorModel<P,F>& x, const NumericType& c) {
     if constexpr(Same<P,ValidatedTag>) { return apply(op, x, x.create_constant(c)); }
-    else { ARIADNE_FAIL_MSG("Maximum only available for a Validated TaylorModel."); }
+    else { throw std::runtime_error("Maximum only available for a Validated TaylorModel."); }
 }
 template<class P, class F> TaylorModel<P,F> AlgebraOperations<TaylorModel<P,F>>::apply(Min op, const TaylorModel<P,F>& x, const NumericType& c) {
     if constexpr(Same<P,ValidatedTag>) { return apply(op, x, x.create_constant(c)); }
-    else { ARIADNE_FAIL_MSG("Minimum only available for a Validated TaylorModel."); }
+    else { throw std::runtime_error("Minimum only available for a Validated TaylorModel."); }
 }
 template<class P, class F> TaylorModel<P,F> AlgebraOperations<TaylorModel<P,F>>::apply(Max op, const NumericType& c, const TaylorModel<P,F>& x) {
     if constexpr(Same<P,ValidatedTag>) { return apply(op, x.create_constant(c), x); }
-    else { ARIADNE_FAIL_MSG("Maximum only available for a Validated TaylorModel."); }
+    else { throw std::runtime_error("Maximum only available for a Validated TaylorModel."); }
 }
 template<class P, class F> TaylorModel<P,F> AlgebraOperations<TaylorModel<P,F>>::apply(Min op, const NumericType& c, const TaylorModel<P,F>& x) {
     if constexpr(Same<P,ValidatedTag>) { return apply(op, x.create_constant(c), x); }
-    else { ARIADNE_FAIL_MSG("Minimum only available for a Validated TaylorModel."); }
+    else { throw std::runtime_error("Minimum only available for a Validated TaylorModel."); }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1503,7 +1494,7 @@ template<class P, class F> TaylorModel<P,F>
 compose(const TaylorSeries<typename F::PrecisionType>& ts, const TaylorModel<P,F>& tv)
 {
     using CoefficientType = typename TaylorModel<P,F>::CoefficientType;
-    Sweeper<F> threshold_sweeper(new ThresholdSweeper<F>(tv.precision(),MACHINE_EPSILON));
+    Sweeper<F> threshold_sweeper(new ThresholdSweeper<F>(tv.precision(),TaylorModelDetail::MACHINE_EPSILON));
     CoefficientType& vref=const_cast<CoefficientType&>(tv.value());
     CoefficientType vtmp=vref;
     vref=0;
@@ -1532,7 +1523,7 @@ compose(const AnalyticFunction& fn, const TaylorModel<P,F>& tm) {
     using ErrorType = typename TaylorModel<P,F>::ErrorType;
 
     static const DegreeType MAX_DEGREE=20;
-    static const ExactDouble MAX_TRUNCATION_ERROR=MACHINE_EPSILON;
+    static const ExactDouble MAX_TRUNCATION_ERROR=TaylorModelDetail::MACHINE_EPSILON;
     SweeperInterface<F> const& sweeper=tm.sweeper();
 
     F max_truncation_error(MAX_TRUNCATION_ERROR,sweeper.precision());
@@ -1612,6 +1603,7 @@ template<class P, class F> TaylorModel<P,F> TaylorModel<P,F>::_embed_error(const
 }
 
 template<class P, class F> TaylorModel<P,F> TaylorModel<P,F>::_discard_variables(const TaylorModel<P,F>& tm, Array<SizeType> const& discarded_variables) {
+    if(discarded_variables.empty()) { return tm; }
     for(SizeType i=0; i!=discarded_variables.size()-1u; ++i) {
         ARIADNE_PRECONDITION(discarded_variables[i]<discarded_variables[i+1u]);
     }
@@ -1674,7 +1666,7 @@ template<class P, class F> Void TaylorModel<P,F>::antidifferentiate(SizeType k) 
         UniformReference<CoefficientType> xv=xiter->coefficient();
         xa[k]+=1;
         Nat c=xa[k];
-        xv=div_err(xv,c,e);
+        xv=TaylorModelDetail::div_err(xv,c,e);
     }
     x.error()+=e;
 }
@@ -1705,7 +1697,7 @@ template<class P, class F> Void TaylorModel<P,F>::differentiate(SizeType k) {
             UniformReference<MultiIndex> ra=riter->index();
             UniformReference<CoefficientType> rv=riter->coefficient();
             ra=xa; ra[k]-=1;
-            rv=mul_err(xv,c,re);
+            rv=TaylorModelDetail::mul_err(xv,c,re);
             ++riter;
         }
     }
@@ -1733,7 +1725,7 @@ template<class P, class F> TaylorModel<P,F> derivative(const TaylorModel<P,F>& x
         if(c!=0) {
             ra=xa;
             ra[k]-=1;
-            rv=mul_err(xv,c,re);
+            rv=TaylorModelDetail::mul_err(xv,c,re);
             r._append(ra,rv);
         }
     }
@@ -1791,8 +1783,8 @@ template<class P, class F> Void TaylorModel<P,F>::unscale(IntervalDomainType con
     // The motivation for mapping to everything is that any function on the
     // resulting interval should be independent of the unneeded component
     TaylorModel<P,F>& tm=*this;
-    auto ivl=convert_interval(codom,this->precision());
-    ARIADNE_ASSERT_MSG(decide(ivl.lower_bound()<=ivl.upper_bound()),"Cannot unscale TaylorModel<P,F> "<<tm<<" from empty interval "<<ivl);
+    auto ivl=TaylorModelDetail::convert_interval(codom,this->precision());
+    ARIADNE_PRECONDITION_MSG(decide(ivl.lower_bound()<=ivl.upper_bound()),"Cannot unscale TaylorModel<P,F> "<<tm<<" from empty interval "<<ivl);
 
     if(codom.lower_bound()==codom.upper_bound()) {
         tm=0;
@@ -1810,10 +1802,6 @@ template<class P, class F> TaylorModel<P,F> TaylorModel<P,F>::_compose(const Uns
     TaylorModel<P,F> r=y; r.unscale(u.domain()); return r;
 }
 
-template<class P, class F> TaylorModel<P,F>
-TaylorModel<P,F>::_compose(const TaylorModel<P,F>& x, const VectorUnscaling& u, const Vector<TaylorModel<P,F>>& y) {
-    return compose(x,compose(u,y));
-}
 
 
 
@@ -1850,6 +1838,7 @@ template<class P, class F> TaylorModel<P,F>
 TaylorModel<P,F>::_partial_evaluate(const TaylorModel<P,F>& x, SizeType k, NumericType c)
 {
     const SizeType as=x.argument_size();
+    ARIADNE_PRECONDITION(k<as);
     Vector<TaylorModel<P,F>> y(as,TaylorModel<P,F>(as-1u,x.sweeper()));
     for(SizeType i=0; i!=k; ++i) { y[i]=TaylorModel<P,F>::coordinate(as-1u,i,x.sweeper()); }
     y[k]=TaylorModel<P,F>::constant(as-1u,c,x.sweeper());
@@ -1965,7 +1954,7 @@ template<class P, class F> typename TaylorModel<P,F>::NormType norm(const Taylor
 
 template<class P, class F> Bool TaylorModel<P,F>::_refines(const TaylorModel<P,F>& tm1, const TaylorModel<P,F>& tm2)
 {
-    ARIADNE_ASSERT(tm1.argument_size()==tm2.argument_size());
+    ARIADNE_PRECONDITION(tm1.argument_size()==tm2.argument_size());
     TaylorModel<P,F> d=tm2;
     d.error()=0u;
     d-=tm1;
@@ -2045,17 +2034,18 @@ template<class P, class F> TaylorModel<P,F> TaylorModel<P,F>::_refinement(const 
             if constexpr (AnInterval<CoefficientType>) {
                 auto xve=xv+pm(xe); auto yve=yv+pm(ye);
                 if (definitely(disjoint(xve,yve))) {
-                    ARIADNE_THROW(IntersectionException,"refinement(TaylorModel<ValidatedTag,F>,TaylorModel<ValidatedTag,F>)",x<<" and "<<y<<" are inconsistent.");
+                    throw IntersectionException("refinement: "+to_str(x)+" and "+to_str(y)+" are inconsistent.");
                 }
                 auto rve=refinement( xve, yve );
                 // FIXME: This adds the error to all coefficients,
                 // resulting in an overly-large refinement
                 r.expansion().append(a,rve);
             } else {
-                auto rve=refinement( xv.pm(xe), yv.pm(ye) );
-                if(rve.error().raw()<0.0_x) {
-                    ARIADNE_THROW(IntersectionException,"refinement(TaylorModel<ValidatedTag,F>,TaylorModel<ValidatedTag,F>)",x<<" and "<<y<<" are inconsistent.");
+                const auto xve=xv.pm(xe),yve=yv.pm(ye);
+                if(inconsistent(Bounds<RawFloatType>(xve),Bounds<RawFloatType>(yve))) {
+                    throw IntersectionException("refinement: "+to_str(x)+" and "+to_str(y)+" are inconsistent.");
                 }
+                auto rve=refinement(xve,yve);
                 if(rve.value()!=0.0_x) { r.expansion().append(a,rve.value()); }
                 max_error=max(max_error,rve.error());
             }
@@ -2064,7 +2054,7 @@ template<class P, class F> TaylorModel<P,F> TaylorModel<P,F>::_refinement(const 
         return r;
     } else {
         // Refinement for Approximate models doesn't really make sense
-        ARIADNE_NOT_IMPLEMENTED;
+        throw std::runtime_error("Refinement is unavailable for approximate Taylor models.");
     }
 }
 

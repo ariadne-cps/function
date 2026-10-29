@@ -48,7 +48,7 @@
 
 namespace Ariadne {
 
-namespace {
+namespace ScaledFunctionPatchDetail {
 
 template<class PR> auto convert_box(BoxDomainType const& bx, PR pr) {
     if constexpr (Same<PR,DoublePrecision>) {
@@ -67,10 +67,10 @@ inline decltype(auto) contains(IntervalDomainType const& bx, Scalar<FloatMPBound
 inline decltype(auto) contains(IntervalDomainType const& bx, Scalar<FloatMPApproximation> const& x) { return contains(convert_interval(bx,x.precision()),x); }
 template<class F> inline decltype(auto) contains(IntervalDomainType const& bx, UpperInterval<F> const& x) {
     return subset(x,convert_interval(bx,x.upper_bound().precision())); }
-inline decltype(auto) contains(BoxDomainType const& bx, Vector<FloatMPBounds> const& x) { return contains(convert_box(bx,x.zero_element().precision()),x); }
-inline decltype(auto) contains(BoxDomainType const& bx, Vector<FloatMPApproximation> const& x) { return contains(convert_box(bx,x.zero_element().precision()),x); }
+inline decltype(auto) contains(BoxDomainType const& bx, Vector<FloatMPBounds> const& x) { return contains(ScaledFunctionPatchDetail::convert_box(bx,x.zero_element().precision()),x); }
+inline decltype(auto) contains(BoxDomainType const& bx, Vector<FloatMPApproximation> const& x) { return contains(ScaledFunctionPatchDetail::convert_box(bx,x.zero_element().precision()),x); }
 template<class F> inline decltype(auto) contains(BoxDomainType const& bx, Vector<UpperInterval<F>> const& x) {
-    return subset(Box<UpperInterval<F>>(x),convert_box(bx,x.zero_element().upper_bound().precision())); }
+    return subset(Box<UpperInterval<F>>(x),ScaledFunctionPatchDetail::convert_box(bx,x.zero_element().upper_bound().precision())); }
 
 
 template<class M> Void _set_scaling(ScaledFunctionPatch<M>& x, const IntervalDomainType& ivl, SizeType j)
@@ -183,7 +183,7 @@ template<class F> inline OutputStream& operator<<(OutputStream& os, const Repres
 template<class T> inline OutputStream& operator<<(OutputStream& os, const Representation< List<T> >& lst_repr)
 {
     const List<T>& lst=*lst_repr.pointer;
-    ARIADNE_ASSERT(lst.size()!=0);
+    ARIADNE_PRECONDITION(lst.size()!=0);
     os << "(";
     for(SizeType i=0; i!=lst.size(); ++i) {
         if(i!=0) { os << ","; }
@@ -226,7 +226,7 @@ template<class M> ScaledFunctionPatch<M>::ScaledFunctionPatch(const BoxDomainTyp
     if constexpr (AnInterval<typename M::NumericType>) {
         ARIADNE_FAIL_MSG("Cannot convert multivalued IntervalTaylorFunctionModel "<<*this<<" to a single-valued function.");
     } else {
-        ARIADNE_ASSERT_MSG(d.size()==f.argument_size(),"d="<<d<<" f="<<f);
+        ARIADNE_PRECONDITION_MSG(d.size()==f.argument_size(),"d="<<d<<" f="<<f);
         Vector<ModelType> x=ModelType::scalings(d,prp);
         this->_model=f.evaluate(x);
         this->_model.simplify();
@@ -236,7 +236,7 @@ template<class M> ScaledFunctionPatch<M>::ScaledFunctionPatch(const BoxDomainTyp
 template<class M> ScaledFunctionPatch<M>::ScaledFunctionPatch(const ScalarFunctionModelType<M>& f)
     : ScaledFunctionPatch(dynamic_cast<const ScaledFunctionPatch<M>&>(f.reference()))
 {
-    ARIADNE_ASSERT_MSG(dynamic_cast<const ScaledFunctionPatch<M>*>(f.raw_pointer())," f="<<f);
+    ARIADNE_PRECONDITION_MSG(dynamic_cast<const ScaledFunctionPatch<M>*>(f.raw_pointer())," f="<<f);
 }
 
 template<class M> ScaledFunctionPatch<M>& ScaledFunctionPatch<M>::operator=(const ScalarFunctionModelType<M>& f)
@@ -267,7 +267,7 @@ template<class M> ScaledFunctionPatch<M> ScaledFunctionPatch<M>::unit_ball(const
 
 template<class M> ScaledFunctionPatch<M> ScaledFunctionPatch<M>::coordinate(const BoxDomainType& d, SizeType j, PropertiesType prp)
 {
-    ARIADNE_ASSERT(j<d.size());
+    ARIADNE_PRECONDITION(j<d.size());
     return ScaledFunctionPatch<M>(d,ModelType::scaling(d.size(),j,d[j],prp));
 }
 
@@ -314,7 +314,7 @@ template<class M> ScaledFunctionPatchFactory<M>* ScaledFunctionPatch<M>::_factor
 
 template<class M> Void VectorScaledFunctionPatch<M>::adjoin(const ScaledFunctionPatch<M>& sf)
 {
-    ARIADNE_ASSERT_MSG(sf.domain()==this->domain(),"sf="<<sf);
+    ARIADNE_PRECONDITION_MSG(sf.domain()==this->domain(),"sf="<<sf);
     this->_models=join(this->_models,sf.model());
 }
 
@@ -372,7 +372,7 @@ template<class M> auto ScaledFunctionPatch<M>::operator() (const Vector<FloatApp
 {
     const ScaledFunctionPatch<M>& f=*this;
     if(!decide(contains(f.domain(),x))) {
-        ARIADNE_THROW(DomainException,"tf.evaluate(ax) with tf="<<f<<", ax="<<x," ax is not an element of tf.domain()="<<f.domain());
+        ScaledFunctionPatchDetail::throw_domain_error("evaluate",f,x);
     }
     Vector<FloatApproximation<PR>> sx=Ariadne::unscale(x,f._domain);
     return evaluate(this->_model,sx);
@@ -383,7 +383,7 @@ template<class M> auto ScaledFunctionPatch<M>::operator()(const Vector<FloatBoun
 {
     const ScaledFunctionPatch<M>& f=*this;
     if(!definitely(contains(f.domain(),x))) {
-        ARIADNE_THROW(DomainException,"evaluate(f,x) with f="<<f<<", x="<<x,"x is not definitely an element of f.domain()="<<f.domain());
+        ScaledFunctionPatchDetail::throw_domain_error("evaluate",f,x);
     }
     return unchecked_evaluate(f,x);
 }
@@ -538,13 +538,13 @@ template<class M> VectorScaledFunctionPatch<M>::VectorScaledFunctionPatch(SizeTy
 template<class M> VectorScaledFunctionPatch<M>::VectorScaledFunctionPatch(const VectorFunctionModelType<M>& f)
     : _domain(), _models()
 {
-    ARIADNE_ASSERT(dynamic_cast<const VectorScaledFunctionPatch<M>*>(&f.reference()));
+    ARIADNE_PRECONDITION(dynamic_cast<const VectorScaledFunctionPatch<M>*>(&f.reference()));
     *this = dynamic_cast<const VectorScaledFunctionPatch<M>&>(f.reference());
 }
 
 template<class M> VectorScaledFunctionPatch<M>& VectorScaledFunctionPatch<M>::operator=(const VectorFunctionModelType<M>& f)
 {
-    ARIADNE_ASSERT(dynamic_cast<const VectorScaledFunctionPatch<M>*>(&f.reference()));
+    ARIADNE_PRECONDITION(dynamic_cast<const VectorScaledFunctionPatch<M>*>(&f.reference()));
     *this = dynamic_cast<const VectorScaledFunctionPatch<M>&>(f.reference());
     return *this;
 }
@@ -557,7 +557,7 @@ template<class M> VectorScaledFunctionPatch<M>::VectorScaledFunctionPatch(const 
     : _domain(d), _models(f)
 {
     for(SizeType i=0; i!=f.size(); ++i) {
-        ARIADNE_ASSERT_MSG(d.size()==f[i].argument_size(),"d="<<d<<", f="<<f<<", i="<<i<<", f[i]="<<f[i]<<", f[i].argument_size()="<<f[i].argument_size());
+        ARIADNE_PRECONDITION_MSG(d.size()==f[i].argument_size(),"d="<<d<<", f="<<f<<", i="<<i<<", f[i]="<<f[i]<<", f[i].argument_size()="<<f[i].argument_size());
     }
 }
 
@@ -567,9 +567,9 @@ template<class M> VectorScaledFunctionPatch<M>::VectorScaledFunctionPatch(const 
                                            PropertiesType prp)
     : _domain(d), _models(f.size(),ModelType(d.size(),prp))
 {
-    ARIADNE_ASSERT(f.size()==e.size());
+    ARIADNE_PRECONDITION(f.size()==e.size());
     for(SizeType i=0; i!=f.size(); ++i) {
-        ARIADNE_ASSERT(d.size()==f[i].argument_size());
+        ARIADNE_PRECONDITION(d.size()==f[i].argument_size());
         _models[i]=ModelType(f[i],e[i],prp);
     }
 }
@@ -587,16 +587,19 @@ template<class M> VectorScaledFunctionPatch<M>::VectorScaledFunctionPatch(const 
                                            const Vector<Expansion<MultiIndex,RawFloat<PR>>>& f,
                                            const Vector<RawFloat<PR>>& e,
                                            PropertiesType prp)
-    : VectorScaledFunctionPatch<M>(d,Vector<M>(f.size(),[&](SizeType i){return M(f[i],e[i],prp);}))
+    : VectorScaledFunctionPatch<M>(d,[&]() {
+        ARIADNE_PRECONDITION(f.size()==e.size());
+        return Vector<M>(f.size(),[&](SizeType i){return M(f[i],e[i],prp);});
+      }())
 {
 }
 
 
 
 template<class C, class F> decltype(auto) common(C const& c, F const& f) {
-    assert(c.size()>0);
+    ARIADNE_PRECONDITION(c.size()>0);
     auto r=f(c[0]);
-    for(SizeType i=1; i!=c.size(); ++i) { ARIADNE_ASSERT(f(c[i])==r); }
+    for(SizeType i=1; i!=c.size(); ++i) { ARIADNE_PRECONDITION(f(c[i])==r); }
     return r;
 }
 
@@ -606,19 +609,19 @@ template<class M> VectorScaledFunctionPatch<M>::VectorScaledFunctionPatch(const 
                                            const PropertiesType& prp)
     : _domain(d), _models()
 {
-    //ARIADNE_ASSERT_MSG(f.result_size()>0, "d="<<d<<", f="<<f<<", prp="<<prp);
-    ARIADNE_ASSERT(d.size()==f.argument_size());
+    //ARIADNE_PRECONDITION_MSG(f.result_size()>0, "d="<<d<<", f="<<f<<", prp="<<prp);
+    ARIADNE_PRECONDITION(d.size()==f.argument_size());
     Vector<ModelType> x=ModelType::scalings(d,prp);
     this->_models=f(x);
-    ARIADNE_DEBUG_ASSERT(this->argument_size()==f.argument_size());
-    ARIADNE_DEBUG_ASSERT_MSG(this->result_size()==f.result_size(),"  f="<<f<<"\n  r="<<*this);
+    // scalings supplies exactly the checked argument dimension; evaluation
+    // returns one model per component of the source function.
     this->simplify();
 }
 
 template<class M> VectorScaledFunctionPatch<M>::VectorScaledFunctionPatch(const Vector<ScaledFunctionPatch<M>>& v)
     : _domain(v.zero_element().domain()),_models(v.size(),[&v](SizeType i){return v[i].model();})
 {
-    for(SizeType i=0; i!=v.size(); ++i) { ARIADNE_ASSERT(v[i].domain()==v.zero_element().domain()); }
+    for(SizeType i=0; i!=v.size(); ++i) { ARIADNE_PRECONDITION(v[i].domain()==v.zero_element().domain()); }
 }
 
 template<class M> VectorScaledFunctionPatch<M>::VectorScaledFunctionPatch(const List<ScaledFunctionPatch<M>>& v)
@@ -822,9 +825,9 @@ template<class M> ScaledFunctionPatch<M> VectorScaledFunctionPatch<M>::get(SizeT
 
 template<class M> Void VectorScaledFunctionPatch<M>::set(SizeType i, const ScaledFunctionPatch<M>& e)
 {
-    ARIADNE_ASSERT_MSG(this->size()>i,"Cannot set "<<i<<"th element of VectorScaledFunctionPatch<M> "<<(*this));
+    ARIADNE_PRECONDITION_MSG(this->size()>i,"Cannot set "<<i<<"th element of VectorScaledFunctionPatch<M> "<<(*this));
     if(this->domain().size()!=0) {
-        ARIADNE_ASSERT_MSG(e.domain()==this->domain(),"Domain of "<<e<<" conflicts with existing domain "<<this->domain());
+        ARIADNE_PRECONDITION_MSG(e.domain()==this->domain(),"Domain of "<<e<<" conflicts with existing domain "<<this->domain());
     } else {
         this->_domain=e.domain();
     }
@@ -866,7 +869,7 @@ template<class M> auto VectorScaledFunctionPatch<M>::operator()(const Vector<Flo
 {
     const VectorScaledFunctionPatch<M>& f=*this;
     if(!decide(contains(f.domain(),x))) {
-        ARIADNE_THROW(DomainException,"tf.evaluate(ax) with tf="<<f<<", ax="<<x,"ax is not an element of tf.domain()="<<f.domain());
+        ScaledFunctionPatchDetail::throw_domain_error("evaluate",f,x);
     }
     Vector<FloatApproximation<PR>> sx=Ariadne::unscale(x,f._domain);
     Vector<ArithmeticType<CoefficientType,FloatApproximation<PR>>> r(this->result_size(),x.zero_element());
@@ -881,7 +884,7 @@ template<class M> auto VectorScaledFunctionPatch<M>::operator()(const Vector<Flo
 {
     const VectorScaledFunctionPatch<M>& f=*this;
     if(!definitely(contains(f.domain(),x))) {
-        ARIADNE_THROW(DomainException,"tf.evaluate(vx) with tf="<<f<<", x="<<x,"vx is not a definitely an element of tf.domain()="<<f.domain());
+        ScaledFunctionPatchDetail::throw_domain_error("evaluate",f,x);
     }
     Vector<FloatBounds<PR>> sx=Ariadne::unscale(x,f._domain);
     return Ariadne::evaluate(f._models,sx);

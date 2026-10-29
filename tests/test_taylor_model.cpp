@@ -24,6 +24,8 @@
 
 #include <iostream>
 #include <iomanip>
+#include <sstream>
+#include "function/taylor_model.tpl.hpp"
 #include "numeric/numeric.hpp"
 #include "algebra/vector.hpp"
 #include "algebra/matrix.hpp"
@@ -695,7 +697,207 @@ Void test_taylor_model_named_constructors_and_contracts() {
     ARIADNE_TEST_FAIL(approximate>1);
 }
 
+// Model construction, simplification and the constant_two multiplication workspaces.
+Void test_taylor_model_lifecycle_and_accumulation() {
+    using M=ValidatedTaylorModelDP;
+    const Sweeper<FloatDP> swp=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const auto x=M::coordinate(2u,0u,swp);
+    auto a=x.create_coordinate(1u),b=x.create_constant(3);
+    ARIADNE_TEST_FAIL(x.create_coordinate(2u));
+    a.swap(b);
+    const Vector<FloatDPBounds> point({0.5_x,-0.25_x},dp);
+    ARIADNE_TEST_SAME(evaluate(a,point),FloatDPBounds(3,dp));
+    ARIADNE_TEST_SAME(evaluate(b,point),FloatDPBounds(-0.25_x,dp));
+    ARIADNE_TEST_EQUALS(x.domain().dimension(),2u);
+    ARIADNE_TEST_SAME(evaluate(nul(x),point),FloatDPBounds(0,dp));
+    auto small=x+FloatDPBounds(0.0001_dec,dp);
+    small.sweep(ThresholdSweeper<FloatDP>(dp,0.001));
+    ARIADNE_TEST_ASSERT(decide(refines(point[0u],evaluate(small,point))));
+    small.simplify(ThresholdSweeper<FloatDP>(dp,0.001));
+    std::ostringstream text;small.repr(text);
+    ARIADNE_TEST_ASSERT(!text.str().empty());
+    auto zeros=M::zeros(2u,2u,swp);
+    ARIADNE_TEST_EQUALS(zeros.size(),2u);
+    ARIADNE_TEST_EQUALS(zeros[0u].argument_size(),2u);
+    ARIADNE_TEST_SAME(evaluate(zeros[1u],point),FloatDPBounds(0,dp));
+    // Exercise repeated-index compaction, with a surviving term after it.
+    M repeated(2u,swp);
+    repeated._append(MultiIndex{1,0},FloatDP(1,dp));
+    repeated._append(MultiIndex{1,0},FloatDP(2,dp));
+    repeated._append(MultiIndex{0,0},FloatDP(4,dp));
+    repeated.unique();
+    ARIADNE_TEST_EQUALS(repeated.number_of_terms(),2u);
+    ARIADNE_TEST_SAME(evaluate(repeated,point),FloatDPBounds(5.5_x,dp));
+    for(SizeType dimension : {2u,14u}) {
+        const auto u=M::coordinate(dimension,0u,swp);
+        const auto v=M::coordinate(dimension,dimension-1u,swp);
+        auto result=3+u;
+        TaylorModelDetail::_ifma(result,1+u,1+v);
+        Vector<FloatDPBounds> argument(dimension,FloatDPBounds(0,dp));
+        argument[0u]=FloatDPBounds(0.5_x,dp);
+        argument[dimension-1u]=FloatDPBounds(-0.25_x,dp);
+        ARIADNE_TEST_SAME(evaluate(result,argument),FloatDPBounds(4.625_x,dp));
+        // Reuse the workspace, including a previously occupied rank.
+        auto product=(1+u)*(1+v);
+        ARIADNE_TEST_SAME(evaluate(product,argument),FloatDPBounds(1.125_x,dp));
+    }
+}
+
+Void test_taylor_model_absolute_value_and_refinement() {
+    using M=ValidatedTaylorModelDP;
+    using B=TaylorModel<ValidatedTag,FloatDPBounds>;
+    const Sweeper<FloatDP> swp=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const auto x=M::coordinate(1u,0u,swp);
+    const Vector<FloatDPBounds> point{FloatDPBounds(0.5_x,dp)};
+    ARIADNE_TEST_SAME(evaluate(abs(2+x),point),FloatDPBounds(2.5_x,dp));
+    ARIADNE_TEST_SAME(evaluate(abs(-2+x),point),FloatDPBounds(1.5_x,dp));
+    for(const auto& model : {abs(x),max(x,-x),-min(x,-x)}) {
+        for(ExactDouble value : {-0.75_x,0.0_x,0.5_x,1.0_x}) {
+            Vector<FloatDPBounds> argument{FloatDPBounds(value,dp)};
+            ARIADNE_TEST_ASSERT(decide(refines(FloatDPBounds(abs(FloatDP(value,dp))),evaluate(model,argument))));
+        }
+    }
+    const FloatDPBounds constant_two(2,dp);
+    using O=AlgebraOperations<M>;
+    ARIADNE_TEST_SAME(evaluate(O::apply(Max(),x,constant_two),point),constant_two);
+    ARIADNE_TEST_SAME(evaluate(O::apply(Max(),constant_two,x),point),constant_two);
+    ARIADNE_TEST_SAME(evaluate(O::apply(Min(),x,constant_two),point),point[0u]);
+    ARIADNE_TEST_SAME(evaluate(O::apply(Min(),constant_two,x),point),point[0u]);
+    ARIADNE_TEST_THROWS(refinement(x,x+4),IntersectionException);
+    auto uncertain_x=x;uncertain_x.set_error(1u);
+    auto uncertain_constant=M::constant(1u,FloatDPBounds(0,dp),swp);
+    uncertain_constant.set_error(1u);
+    ARIADNE_TEST_ASSERT(consistent(refinement(uncertain_x,uncertain_constant),uncertain_x));
+    ARIADNE_TEST_ASSERT(consistent(refinement(uncertain_constant,uncertain_x),uncertain_x));
+    const auto bx=B::coordinate(1u,0u,swp);
+    auto bx_error=bx;bx_error.set_error(1u);
+    ARIADNE_TEST_THROWS(refinement(bx,bx+4),IntersectionException);
+    ARIADNE_TEST_ASSERT(consistent(refinement(bx_error,bx),bx));
+    const auto three=M::coordinate(3u,0u,swp);
+    ARIADNE_TEST_EQUALS(discard_variables(three,{0u,2u}).argument_size(),1u);
+    ARIADNE_TEST_FAIL(discard_variables(three,{2u,0u}));
+    ARIADNE_TEST_FAIL(discard_variables(three,{0u,3u}));
+}
+
+Void test_approximate_taylor_model_contracts() {
+    using M=ApproximateTaylorModelDP;
+    using O=AlgebraOperations<M>;
+    const Sweeper<FloatDP> swp=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const auto x=M::coordinate(1u,0u,swp);
+    const auto y=x+FloatDPApproximation(2,dp);
+    ARIADNE_TEST_EQUALS(norm(y).raw(),FloatDP(3,dp));
+    ARIADNE_TEST_EQUALS(y.radius().raw(),FloatDP(1,dp));
+    ARIADNE_TEST_ASSERT(consistent(x,y));
+    ARIADNE_TEST_FAIL(x.codomain());
+    ARIADNE_TEST_FAIL(x.range());
+    ARIADNE_TEST_FAIL(refinement(x,y));
+    const FloatDPApproximation constant_two(2,dp);
+    ARIADNE_TEST_FAIL(O::apply(Max(),x,constant_two));
+    ARIADNE_TEST_FAIL(O::apply(Max(),constant_two,x));
+    ARIADNE_TEST_FAIL(O::apply(Min(),x,constant_two));
+    ARIADNE_TEST_FAIL(O::apply(Min(),constant_two,x));
+    UnknownError<FloatDP> unknown;
+    ARIADNE_TEST_EQUALS(unknown.raw(),FloatDP(0,dp));
+    PositiveFloatDPApproximation estimate=unknown;
+    ARIADNE_TEST_EQUALS(estimate.raw(),FloatDP(0,dp));
+    ARIADNE_TEST_EQUALS(pm(unknown).raw(),FloatDP(0,dp));
+    std::ostringstream text;text<<mag(unknown);
+    ARIADNE_TEST_EQUALS(text.str(),"???");
+    UnknownError<FloatMP> unknown_mp;
+    ARIADNE_TEST_EQUALS(unknown_mp.precision(),MultiplePrecision(64_bits));
+}
+
+Void test_taylor_numeric_and_interval_models() {
+    using B=ValidatedBoundsTaylorModelDP;
+    using I=ValidatedIntervalTaylorModelDP;
+    using A=ApproximateTaylorModelDP;
+    const Sweeper<FloatDP> swp=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const Vector<FloatDPBounds> point{FloatDPBounds(0.5_x,dp)};
+    const auto bx=B::coordinate(1u,0u,swp);
+    ARIADNE_TEST_SAME(evaluate((bx+1)+(bx+2),point),FloatDPBounds(4,dp));
+    auto bproduct=(bx+1)*(bx+2);
+    ARIADNE_TEST_SAME(evaluate(bproduct,point),FloatDPBounds(3.75_x,dp));
+    ARIADNE_TEST_SAME(evaluate(antiderivative(bx,0u),point),FloatDPBounds(0.125_x,dp));
+    const auto ix=I::coordinate(1u,0u,swp);
+    ARIADNE_TEST_ASSERT(refines(FloatDPUpperInterval(0.125_x,dp),evaluate(antiderivative(ix,0u),point)));
+    ARIADNE_TEST_ASSERT(refines(FloatDPUpperInterval(-1.5_x,dp),evaluate(ix-FloatDP(2,dp),point)));
+    ARIADNE_TEST_THROWS(refinement(ix,ix+4),IntersectionException);
+    auto interval_refinement=refinement(ix,ix);
+    ARIADNE_TEST_ASSERT(refines(ix,interval_refinement));
+    const auto ax=A::coordinate(1u,0u,swp);
+    const Vector<FloatDPApproximation> approximate_point{FloatDPApproximation(0.5_x,dp)};
+    ARIADNE_TEST_EQUALS(evaluate((ax+1)+(ax+2),approximate_point).raw(),FloatDP(4,dp));
+    ARIADNE_TEST_EQUALS(evaluate((ax+1)-(ax+2),approximate_point).raw(),FloatDP(-1,dp));
+    ARIADNE_TEST_EQUALS(evaluate((ax+1)*(ax+2),approximate_point).raw(),FloatDP(3.75_x,dp));
+    ARIADNE_TEST_EQUALS(evaluate(antiderivative(ax,0u),approximate_point).raw(),FloatDP(0.125_x,dp));
+    // Integer and power-of-two scaling preserve their numeric meanings.
+    FloatDPBounds bounds(4,dp);bounds/=TwoExp(1);
+    ARIADNE_TEST_SAME(bounds,FloatDPBounds(2,dp));
+    FloatDPApproximation approximate(4,dp);approximate/=TwoExp(1);
+    ARIADNE_TEST_EQUALS(approximate.raw(),FloatDP(2,dp));
+    FloatDPUpperInterval interval(4,dp);interval/=Dyadic(2);
+    ARIADNE_TEST_ASSERT(same(interval,FloatDPUpperInterval(2,dp)));
+    FloatDPApproximateInterval approximate_interval(-1,1,dp);
+    ARIADNE_TEST_ASSERT(same(approximate_interval*FloatDPUpperInterval(2,dp),FloatDPApproximateInterval(-2,2,dp)));
+    const auto local=TaylorModelDetail::convert_interval(approximate_interval,dp);
+    ARIADNE_TEST_ASSERT(same(local,approximate_interval));
+    const MultiplePrecision mp(128_bits);
+    const auto converted=TaylorModelDetail::convert_interval(FloatMPApproximateInterval(-1,1,mp),dp);
+    ARIADNE_TEST_ASSERT(same(converted,approximate_interval));
+}
+
+Void test_taylor_model_remaining_contracts() {
+    using M=ValidatedTaylorModelDP;
+    const Sweeper<FloatDP> swp=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const auto x=M::coordinate(1u,0u,swp),xy=M::coordinate(2u,0u,swp);
+    ARIADNE_TEST_FAIL(x*xy);
+    ARIADNE_TEST_FAIL(refines(x,xy));
+    ARIADNE_TEST_FAIL(consistent(x,xy));
+    ARIADNE_TEST_FAIL(inconsistent(x,xy));
+    auto copy=x;
+    ARIADNE_TEST_FAIL(copy.antidifferentiate(1u));
+    ARIADNE_TEST_FAIL(copy.differentiate(1u));
+    ARIADNE_TEST_FAIL(copy.unscale(IntervalDomainType(1,-1)));
+    FloatDPError invalid(0u,dp);invalid.raw()=FloatDP(-1,dp);
+    ARIADNE_TEST_FAIL(copy.create_ball(invalid));
+    const Vector<FloatDPBounds> point{FloatDPBounds(0.5_x,dp)};
+    // The exponential enclosure can overestimate a wide one-sided range;
+    // tanh must still return a valid enclosure without dividing by zero.
+    const auto coarse=M::coordinate(1u,0u,ThresholdSweeper<FloatDP>(dp,0.1));
+    for(const auto& model : {tanh(2+2*coarse),tanh(-2+2*coarse)}) {
+        ARIADNE_TEST_EQUALS(model.error().raw(),FloatDP(1,dp));
+        ARIADNE_TEST_ASSERT(refines(model.range(),FloatDPUpperInterval(-1,1,dp)));
+    }
+    const auto two_variables=M::coordinate(2u,1u,swp);
+    ARIADNE_TEST_SAME(evaluate(partial_evaluate(two_variables,1u,FloatDPBounds(0.25_x,dp)),point),FloatDPBounds(0.25_x,dp));
+}
+
+Void test_taylor_dense_seed_and_empty_discard() {
+    using M=ValidatedTaylorModelDP;
+    const Sweeper<FloatDP> swp=ThresholdSweeper<FloatDP>(dp,1e-12);
+    const auto x=M::coordinate(1u,0u,swp);
+    M seed(1u,swp);
+    seed._append(MultiIndex{1},FloatDP(1,dp));
+    seed._append(MultiIndex{1},FloatDP(2,dp));
+    seed._append(MultiIndex{0},FloatDP(4,dp));
+    TaylorModelDetail::_ifma(seed,x,M::constant(1u,FloatDPBounds(1,dp),swp));
+    ARIADNE_TEST_SAME(evaluate(seed,Vector<FloatDPBounds>{FloatDPBounds(0.5_x,dp)}),FloatDPBounds(6,dp));
+    ARIADNE_TEST_ASSERT(same(discard_variables(x,{}),x));
+    ARIADNE_TEST_FAIL(partial_evaluate(x,1u,FloatDPBounds(0,dp)));
+    const auto first=M::coordinate(2u,0u,swp);
+    const auto partial=partial_evaluate(first,0u,FloatDPBounds(0.25_x,dp));
+    ARIADNE_TEST_SAME(evaluate(partial,Vector<FloatDPBounds>{FloatDPBounds(0.5_x,dp)}),FloatDPBounds(0.25_x,dp));
+    const auto approximate=ApproximateTaylorModelDP::coordinate(1u,0u,swp);
+    ARIADNE_TEST_FAIL(tanh(approximate));
+}
+
 Int main() {
+    ARIADNE_TEST_CALL(test_taylor_dense_seed_and_empty_discard());
+    ARIADNE_TEST_CALL(test_taylor_numeric_and_interval_models());
+    ARIADNE_TEST_CALL(test_taylor_model_remaining_contracts());
+    ARIADNE_TEST_CALL(test_taylor_model_lifecycle_and_accumulation());
+    ARIADNE_TEST_CALL(test_taylor_model_absolute_value_and_refinement());
+    ARIADNE_TEST_CALL(test_approximate_taylor_model_contracts());
     ARIADNE_TEST_CALL(test_taylor_model_named_constructors_and_contracts());
     ThresholdSweeper<FloatDP> sweeper_dp(dp,1e-8);
     TestTaylorModel<FloatDP>(sweeper_dp).test();

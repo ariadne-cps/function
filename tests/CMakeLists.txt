@@ -19,6 +19,7 @@ set(UNIT_TESTS
     test_measurable_function
     test_multifunction
     test_procedure
+    test_scaled_function_patch
     test_taylor_function
     test_taylor_model
 )

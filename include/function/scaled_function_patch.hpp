@@ -30,6 +30,7 @@
 #define ARIADNE_SCALED_FUNCTION_PATCH_HPP
 
 #include <iosfwd>
+#include <sstream>
 #include "utility/container.hpp"
 #include "utility/exceptions.hpp"
 #include "function/declarations.hpp"
@@ -49,6 +50,28 @@
 #include "function/formula.hpp"
 
 namespace Ariadne {
+
+namespace ScaledFunctionPatchDetail {
+
+// Keep exception construction in ordinary noreturn functions: callers have
+// a single, explicit failure path, including in template instantiations.
+template<class F, class X> [[noreturn]] Void throw_domain_error(
+        char const* operation, F const& function, X const& argument) {
+    std::ostringstream message;
+    message << operation << ": function=" << function << ", argument=" << argument
+            << " is outside the function domain " << function.domain();
+    throw DomainException(message.str());
+}
+
+template<class F, class X> [[noreturn]] Void throw_incompatible_call(
+        F const& function, X const& argument) {
+    std::ostringstream message;
+    message << "evaluate scaled patch: function=" << function << ", argument="
+            << argument << ": incompatible types for function call";
+    throw std::runtime_error(message.str());
+}
+
+} // namespace ScaledFunctionPatchDetail
 
 template<class I, class X> class Polynomial;
 template<class X> using MultivariatePolynomial = Polynomial<MultiIndex,X>;
@@ -376,7 +399,7 @@ template<class M> class ScaledFunctionPatch
 
     //! \brief Restrict to a subdomain.
     friend ScaledFunctionPatch<M> restriction(const ScaledFunctionPatch<M>& f, const BoxDomainType& dom) {
-        if(not(subset(dom,f.domain()))) { ARIADNE_THROW(DomainException,"restiction(ScaledFunctionPatch<M>,BoxDomainType)","f="<<f<<", dom="<<dom); }
+        if(not(subset(dom,f.domain()))) { ScaledFunctionPatchDetail::throw_domain_error("restriction",f,dom); }
         return unchecked_compose(f,ScaledFunctionPatch<M>::identity(dom,f.properties())); }
 
 
@@ -406,7 +429,7 @@ template<class M> class ScaledFunctionPatch
     friend ScaledFunctionPatch<M> antiderivative(const ScaledFunctionPatch<M>& f, SizeType k) {
         return ScaledFunctionPatch<M>(f.domain(),antiderivative(f.model(),k)*rad(f.domain()[k])); }
     friend ScaledFunctionPatch<M> antiderivative(const ScaledFunctionPatch<M>& f, SizeType k, const NumericType& c) {
-        ARIADNE_ASSERT(k<f.argument_size()); ARIADNE_ASSERT(decide(contains(f.domain()[k],c)));
+        ARIADNE_PRECONDITION(k<f.argument_size()); ARIADNE_PRECONDITION(decide(contains(f.domain()[k],c)));
         ScaledFunctionPatch<M> g = antiderivative(f,k);
         VectorScaledFunctionPatch<M> h ( VectorScaledFunctionPatch<M>::identity(f.domain(),f.properties()) );
         h[k] = ScaledFunctionPatch<M>::constant(f.domain(),c,f.properties());
@@ -415,19 +438,19 @@ template<class M> class ScaledFunctionPatch
         return antiderivative(f,k,NumericType(c,f.precision())); }
 
     friend ScaledFunctionPatch<M> partial_evaluate(const ScaledFunctionPatch<M>& f, SizeType k, const NumericType& c) {
-        ARIADNE_ASSERT(decide(contains(f.domain()[k],c)));
+        ARIADNE_PRECONDITION(decide(contains(f.domain()[k],c)));
         return ScaledFunctionPatch<M>(remove(f.domain(),k),partial_evaluate(f.model(),k,unscale(c,f.domain()[k]))); }
     friend ScaledFunctionPatch<M> partial_evaluate(const ScaledFunctionPatch<M>& f, SizeType k, const GenericNumericType& c) {
-        ARIADNE_ASSERT(decide(contains(f.domain()[k],c)));
+        ARIADNE_PRECONDITION(decide(contains(f.domain()[k],c)));
         return partial_evaluate(f,k,NumericType(c,f.precision())); }
     friend ArithmeticType<CoefficientType,NumericType> evaluate(const ScaledFunctionPatch<M>& f, const Vector<NumericType>& x) {
         // TODO: Simplify
         if constexpr (AnInterval<CoefficientType>) {
             for(SizeType i=0; i!=x.size(); ++i) {
                 if (!definitely(contains(f.domain()[i],cast_singleton(x[i])))) {
-                    ARIADNE_THROW(DomainException,"evaluate(f,x) with f="<<f<<", x="<<x,"x is not a subset of f.domain()="<<f.domain()); } }
+                    ScaledFunctionPatchDetail::throw_domain_error("evaluate",f,x); } }
         } else {
-            if(!definitely(contains(f.domain(),x))) { ARIADNE_THROW(DomainException,"evaluate(f,x) with f="<<f<<", x="<<x,"x is not an element of f.domain()="<<f.domain()); }
+            if(!definitely(contains(f.domain(),x))) { ScaledFunctionPatchDetail::throw_domain_error("evaluate",f,x); }
         }
         return unchecked_evaluate(f,x); }
     friend ArithmeticType<CoefficientType,NumericType> evaluate(const ScaledFunctionPatch<M>& f, const Vector<GenericNumericType>& x) {
@@ -464,22 +487,19 @@ template<class M> template<class X> X ScaledFunctionPatch<M>::operator()(const V
     if constexpr (CanCall<X,M,Vector<X>>) {
         return this->_model(unscale(a,this->_domain));
     } else {
-        ARIADNE_ASSERT_MSG((CanCall<X,M,Vector<X>>),
-                           "evaluate(ScaledFunctionPatch<M> f, Vector<X> x) with f="<<*this<<" x="<<a<<": "
-                           "Incompatible types for function call");
-        std::abort();
+        ScaledFunctionPatchDetail::throw_incompatible_call(*this,a);
     }
 }
 
 template<class FP1, class FP2> Void check_function_patch_domain(String const& op_str, const FP1& f1, const FP2& f2) {
-    ARIADNE_ASSERT_MSG(!is_empty(intersection(f1.domain(),f2.domain())),
+    ARIADNE_PRECONDITION_MSG(!is_empty(intersection(f1.domain(),f2.domain())),
                     op_str<<"((Vector)ScaledFunctionPatch<M> f1, (Vector)ScaledFunctionPatch<M> f2) with f1="<<f1<<" f2="<<f2<<
                     ": domains are disjoint");
 }
 
 
 template<class M> ScaledFunctionPatch<M> AlgebraOperations<ScaledFunctionPatch<M>>::apply(BinaryElementaryOperator op, ScaledFunctionPatch<M> const& f1, ScaledFunctionPatch<M> const& f2) {
-    ARIADNE_ASSERT_MSG(f1.domain()==f2.domain(),"f1="<<f1<<", f2="<<f2);
+    ARIADNE_PRECONDITION_MSG(f1.domain()==f2.domain(),"f1="<<f1<<", f2="<<f2);
     return ScaledFunctionPatch<M>(f1.domain(),op(f1.model(),f2.model()));
 }
 template<class M> ScaledFunctionPatch<M> AlgebraOperations<ScaledFunctionPatch<M>>::apply(UnaryElementaryOperator op, ScaledFunctionPatch<M> const& f) {
@@ -521,7 +541,7 @@ template<class M> Bool inconsistent(const ScaledFunctionPatch<M>& tv1, const Sca
 }
 //! \brief Compute an over-approximation to the common refinement of \a x1 and \a x2.
 template<class M> ScaledFunctionPatch<M> refinement(const ScaledFunctionPatch<M>& tv1, const ScaledFunctionPatch<M>& tv2) {
-    ARIADNE_ASSERT(tv1.domain()==tv2.domain());
+    ARIADNE_PRECONDITION(tv1.domain()==tv2.domain());
     return ScaledFunctionPatch<M>(tv1.domain(),refinement(tv1.model(),tv2.model()));
 }
 //! \brief Remove the error term.
@@ -748,19 +768,19 @@ template<class M> class VectorScaledFunctionPatch
   public:
     //! \brief Compute the function \f$(f \oplus g)(x)=(f(x),g(x))\f$.
     friend VectorScaledFunctionPatch<M> join(const VectorScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2) {
-        ARIADNE_ASSERT_MSG(f1.domain()==f2.domain(),"f1="<<f1<<", f2="<<f2);
+        ARIADNE_PRECONDITION_MSG(f1.domain()==f2.domain(),"f1="<<f1<<", f2="<<f2);
         return VectorScaledFunctionPatch<M>(f1.domain(),join(f1.models(),f2.model()));
     }
     friend VectorScaledFunctionPatch<M> join(const VectorScaledFunctionPatch<M>& f, const VectorScaledFunctionPatch<M>& g) {
-        ARIADNE_ASSERT(f.domain()==g.domain());
+        ARIADNE_PRECONDITION(f.domain()==g.domain());
         return VectorScaledFunctionPatch<M>(f.domain(),join(f.models(),g.models()));
     }
     friend VectorScaledFunctionPatch<M> join(const ScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2) {
-        ARIADNE_ASSERT(f1.domain()==f2.domain());
+        ARIADNE_PRECONDITION(f1.domain()==f2.domain());
         return VectorScaledFunctionPatch<M>(f1.domain(),{f1.model(),f2.model()});
     }
     friend VectorScaledFunctionPatch<M> join(const ScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
-        ARIADNE_ASSERT(f1.domain()==f2.domain());
+        ARIADNE_PRECONDITION(f1.domain()==f2.domain());
         return VectorScaledFunctionPatch<M>(f1.domain(),join(f1.model(),f2.models()));
     }
 
@@ -792,7 +812,7 @@ template<class M> class VectorScaledFunctionPatch
     }
 
     friend VectorScaledFunctionPatch<M> restriction(const VectorScaledFunctionPatch<M>& f, const BoxDomainType& d) {
-        ARIADNE_ASSERT_MSG(subset(d,f.domain()),"Cannot restriction "<<f<<" to non-sub-domain "<<d);
+        ARIADNE_PRECONDITION_MSG(subset(d,f.domain()),"Cannot restriction "<<f<<" to non-sub-domain "<<d);
         if(d==f.domain()) { return f; }
         VectorScaledFunctionPatch<M> r(f.result_size(),d,f.properties());
         for(SizeType i=0; i!=r.result_size(); ++i) {
@@ -820,26 +840,24 @@ template<class M> class VectorScaledFunctionPatch
     }
 
     friend VectorScaledFunctionPatch<M>& operator+=(VectorScaledFunctionPatch<M>& f, const VectorScaledFunctionPatch<M>& g) {
-        ARIADNE_ASSERT(f.result_size()==g.result_size());
-        ARIADNE_ASSERT(subset(f.domain(),g.domain()));
-        ARIADNE_ASSERT(f.domain()==g.domain());
+        ARIADNE_PRECONDITION(f.result_size()==g.result_size());
+        ARIADNE_PRECONDITION(f.domain()==g.domain());
         f.models()+=g.models();
         return f;
     }
     friend VectorScaledFunctionPatch<M>& operator-=(VectorScaledFunctionPatch<M>& f, const VectorScaledFunctionPatch<M>& g) {
-        ARIADNE_ASSERT(f.result_size()==g.result_size());
-        ARIADNE_ASSERT(subset(f.domain(),g.domain()));
-        ARIADNE_ASSERT(f.domain()==g.domain());
-        f.models()+=g.models();
+        ARIADNE_PRECONDITION(f.result_size()==g.result_size());
+        ARIADNE_PRECONDITION(f.domain()==g.domain());
+        f.models()-=g.models();
         return f;
     }
     friend VectorScaledFunctionPatch<M>& operator+=(VectorScaledFunctionPatch<M>& f, const Vector<NumericType>& c) {
-        ARIADNE_ASSERT(f.result_size()==c.size());
+        ARIADNE_PRECONDITION(f.result_size()==c.size());
         f.models()+=c;
         return f;
     }
     friend VectorScaledFunctionPatch<M>& operator-=(VectorScaledFunctionPatch<M>& f, const Vector<NumericType>& c) {
-        ARIADNE_ASSERT(f.result_size()==c.size());
+        ARIADNE_PRECONDITION(f.result_size()==c.size());
         f.models()-=c;
         return f;
     }
@@ -908,7 +926,7 @@ template<class M> class VectorScaledFunctionPatch
         return tf1/ScaledFunctionPatch<M>(tf1.domain(),f2,tf1.properties()); }
 
     friend VectorScaledFunctionPatch<M> partial_evaluate(const VectorScaledFunctionPatch<M>& tf, SizeType k, const NumericType& c) {
-        ARIADNE_ASSERT(decide(contains(tf.domain()[k],c)));
+        ARIADNE_PRECONDITION(decide(contains(tf.domain()[k],c)));
         return VectorScaledFunctionPatch<M>(remove(tf.domain(),k),partial_evaluate(tf.models(),k,unscale(c,tf.domain()[k])));
     }
     friend VectorScaledFunctionPatch<M> partial_evaluate(const VectorScaledFunctionPatch<M>& tf, SizeType k, const GenericNumericType& c) {
@@ -916,7 +934,7 @@ template<class M> class VectorScaledFunctionPatch
 
     friend Vector<ArithmeticType<CoefficientType,NumericType>> evaluate(const VectorScaledFunctionPatch<M>& f, const Vector<NumericType>& x) {
         if(!definitely(contains(f.domain(),x))) {
-            ARIADNE_THROW(DomainException,"evaluate(f,x) with f="<<f<<", x="<<x,"x is not a subset of f.domain()="<<f.domain());
+            ScaledFunctionPatchDetail::throw_domain_error("evaluate",f,x);
         }
         return unchecked_evaluate(f,x);
     }
@@ -935,7 +953,7 @@ template<class M> class VectorScaledFunctionPatch
     }
     friend ScaledFunctionPatch<M> compose(const ScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f) {
         if(!subset(f.codomain(),g.domain())) {
-            ARIADNE_THROW(DomainException,"compose(g,f) with g="<<g<<", f="<<f,"f.codomain()="<<f.codomain()<<" is not a subset of g.domain()="<<g.domain());
+            ScaledFunctionPatchDetail::throw_domain_error("compose",g,f);
         }
         return unchecked_compose(g,f);
     }
@@ -951,7 +969,7 @@ template<class M> class VectorScaledFunctionPatch
     }
     friend VectorScaledFunctionPatch<M> compose(const VectorScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f) {
         if(!subset(f.codomain(),g.domain())) {
-            ARIADNE_THROW(DomainException,"compose(g,f) with g="<<g<<", f="<<f,"f.codomain()="<<f.codomain()<<" is not a subset of g.domain()="<<g.domain());
+            ScaledFunctionPatchDetail::throw_domain_error("compose",g,f);
         }
         return unchecked_compose(g,f);
     }
@@ -961,7 +979,7 @@ template<class M> class VectorScaledFunctionPatch
 
 
     friend VectorScaledFunctionPatch<M> derivative(const VectorScaledFunctionPatch<M>& f, SizeType k) {
-        ARIADNE_ASSERT_MSG(k<f.argument_size(),"f="<<f<<"\n f.argument_size()="<<f.argument_size()<<" k="<<k);
+        ARIADNE_PRECONDITION_MSG(k<f.argument_size(),"f="<<f<<"\n f.argument_size()="<<f.argument_size()<<" k="<<k);
         VectorScaledFunctionPatch<M> g=f;
         for(SizeType i=0; i!=g.size(); ++i) {
             g[i]=derivative(f[i],k);
@@ -969,7 +987,7 @@ template<class M> class VectorScaledFunctionPatch
         return g;
     }
     friend VectorScaledFunctionPatch<M> antiderivative(const VectorScaledFunctionPatch<M>& f, SizeType k) {
-        ARIADNE_ASSERT_MSG(k<f.argument_size(),"f="<<f<<"\n f.argument_size()="<<f.argument_size()<<" k="<<k);
+        ARIADNE_PRECONDITION_MSG(k<f.argument_size(),"f="<<f<<"\n f.argument_size()="<<f.argument_size()<<" k="<<k);
         VectorScaledFunctionPatch<M> g=f;
         for(SizeType i=0; i!=g.size(); ++i) {
             g[i]=antiderivative(f[i],k);
@@ -977,7 +995,7 @@ template<class M> class VectorScaledFunctionPatch
         return g;
     }
     friend VectorScaledFunctionPatch<M> antiderivative(const VectorScaledFunctionPatch<M>& f, SizeType k, NumericType c) {
-        ARIADNE_ASSERT_MSG(k<f.argument_size(),"f="<<f<<"\n f.argument_size()="<<f.argument_size()<<" k="<<k);
+        ARIADNE_PRECONDITION_MSG(k<f.argument_size(),"f="<<f<<"\n f.argument_size()="<<f.argument_size()<<" k="<<k);
         VectorScaledFunctionPatch<M> g=f;
         for(SizeType i=0; i!=g.size(); ++i) {
             g[i]=antiderivative(f[i],k,c);
@@ -1018,10 +1036,7 @@ template<class M> template<class X> Vector<X> VectorScaledFunctionPatch<M>::oper
         }
         return r;
     } else {
-        ARIADNE_ASSERT_MSG((CanCall<X,M,Vector<X>>),
-                           "evaluate(VectorScaledFunctionPatch<M> f, Vector<X> x) with f="<<*this<<" x="<<a<<": "
-                           "Incompatible types for function call");
-        std::abort();
+        ScaledFunctionPatchDetail::throw_incompatible_call(*this,a);
     }
 }
 
@@ -1066,6 +1081,7 @@ template<class M> template<class E> VectorScaledFunctionPatch<M>::VectorScaledFu
 
 //! \brief Test if the function models have the same representation.
 template<class M> Bool same(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
+    if(f1.result_size()!=f2.result_size()) { return false; }
     if(!same(f1.domain(),f2.domain())) { return false; }
     for(SizeType i=0; i!=f1.result_size(); ++i) {
         if(!same(f1[i],f2[i])) { return false; }
@@ -1075,21 +1091,21 @@ template<class M> Bool same(const VectorScaledFunctionPatch<M>& f1, const Vector
 //! \brief Tests if a function \a f refines another function \a g.
 //! To be a refinement, the domain of \a f must contain the domain of \a g.
 template<class M> Bool refines(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
-    ARIADNE_ASSERT(f1.result_size()==f2.result_size());
+    ARIADNE_PRECONDITION(f1.result_size()==f2.result_size());
     for(SizeType i=0; i!=f1.result_size(); ++i) {
         if(!refines(f1[i],f2[i])) { return false; }
     }
     return true;
 }
 template<class M> Bool inconsistent(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
-    ARIADNE_ASSERT(f1.result_size()==f2.result_size());
+    ARIADNE_PRECONDITION(f1.result_size()==f2.result_size());
     for(SizeType i=0; i!=f1.result_size(); ++i) {
         if(inconsistent(f1[i],f2[i])) { return true; }
     }
     return false;
 }
 template<class M> VectorScaledFunctionPatch<M> refinement(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
-    ARIADNE_ASSERT(f1.result_size()==f2.result_size());
+    ARIADNE_PRECONDITION(f1.result_size()==f2.result_size());
     VectorScaledFunctionPatch<M> r(f1.result_size(),f1.zero_element());
     for(SizeType i=0; i!=r.result_size(); ++i) {
         r[i]=refinement(f1[i],f2[i]);
