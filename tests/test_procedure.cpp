@@ -50,6 +50,7 @@ inline Void restrict(FloatDPBounds& r, FloatDPBounds const& x) {
 } // namespace Ariadne
 
 #include "function/procedure.tpl.hpp"
+#include "algebra/graded.hpp"
 #include "algebra/vector.hpp"
 #include "algebra/expansion.hpp"
 #include "algebra/evaluate.hpp"
