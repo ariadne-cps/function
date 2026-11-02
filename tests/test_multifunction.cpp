@@ -35,7 +35,7 @@
 #include "numeric/numeric.hpp"
 
 
-#include "macro/testing.hpp"
+#include "ariadne-testing.hpp"
 
 using namespace std;
 using namespace Ariadne;
@@ -56,27 +56,22 @@ static_assert(CanMeasureGenericDistance<ScaledFunctionPatch<ValidatedTaylorModel
 static_assert(!CanMeasureGenericDistance<ScaledFunctionPatch<ValidatedIntervalTaylorModelDP>>);
 static_assert(!CanMeasureGenericDistance<ScaledFunctionPatch<ValidatedIntervalTaylorModelMP>>);
 
-class TestMultifunction
+class TestMultifunction : public Ariadne::Testing::ContextFixture
 {
     using ScalarIntervalFunctionModel = ValidatedIntervalTaylorFunctionModel<FloatMP>;
     using VectorIntervalFunctionModel = ValidatedVectorIntervalTaylorFunctionModel<FloatMP>;
     using UpperInterval = Interval<FloatMPUpperBound>;
   public:
-    Void test();
-  private:
+    using ContextFixture::ContextFixture;
+    void set_up() { Dyadic::set_default_writer(DecimalWriter()); }
+
     Void test_taylor_concept();
     Void test_taylor_evaluate();
     Void test_function_set();
     Void test_inclusion_solutions();
 };
 
-Void TestMultifunction::test()
-{
-    Dyadic::set_default_writer(DecimalWriter());
-    ARIADNE_TEST_CALL(test_taylor_evaluate());
-    ARIADNE_TEST_CALL(test_function_set());
-    ARIADNE_TEST_CALL(test_inclusion_solutions());
-}
+
 
 Void TestMultifunction::test_taylor_concept()
 {
@@ -125,16 +120,16 @@ Void TestMultifunction::test_taylor_evaluate()
     Vector<FloatMPBounds> v(u,pr);
     Vector<FloatDPBounds> w(u,dp);
 
-    ARIADNE_TEST_SAME(xc(v),c);
-    ARIADNE_TEST_SAME(x0(v),one*v[0]);
-    ARIADNE_TEST_SAME(x1(v),one*v[1]);
-    ARIADNE_TEST_CONSTRUCT(ScalarIntervalFunctionModel,sf,(c01*x0*x1+c));
-    ARIADNE_TEST_SAME(sf(v),c01*v[0]*v[1]+c);
-    //ARIADNE_TEST_SAME(sf(w),c01*w[0]*w[1]+c);
-    ARIADNE_TEST_PRINT(sf(w));
+    ARIADNE_TESTING_EXPECT_SAME(xc(v), c);
+    ARIADNE_TESTING_EXPECT_SAME(x0(v), one*v[0]);
+    ARIADNE_TESTING_EXPECT_SAME(x1(v), one*v[1]);
+    [[maybe_unused]] ScalarIntervalFunctionModel sf(c01*x0*x1+c);
+    ARIADNE_TESTING_EXPECT_SAME(sf(v), c01*v[0]*v[1]+c);
+    //ARIADNE_TESTING_EXPECT_SAME(sf(w), c01*w[0]*w[1]+c);
+    ARIADNE_TESTING_INSPECT("sf(w)", sf(w));
 
-    ARIADNE_TEST_CONSTRUCT(VectorIntervalFunctionModel,vf,({c01*x0*x1+c,x0+x1}));
-    ARIADNE_TEST_SAME(vf(v),Box<UpperInterval>({c01*v[0]*v[1]+c,one*v[0]+v[1]}));
+    [[maybe_unused]] VectorIntervalFunctionModel vf({c01*x0*x1+c,x0+x1});
+    ARIADNE_TESTING_EXPECT_SAME(vf(v), Box<UpperInterval>({c01*v[0]*v[1]+c,one*v[0]+v[1]}));
 }
 
 Void TestMultifunction::test_function_set()
@@ -155,31 +150,31 @@ Void TestMultifunction::test_function_set()
     CompactSet<ValidatedTag,Real(RealVector)> gfset(fset);
     const Vector<ValidatedNumber> origin{0,0};
     const CompactSet<ValidatedTag,Real(RealVector)>::Interface& scalar_set_interface=fset;
-    ARIADNE_TEST_ASSERT(same(cast_exact_interval(scalar_set_interface._call(origin).bounding_box()),ExactIntervalType(7,11)));
+    ARIADNE_TESTING_PROVE(same(cast_exact_interval(scalar_set_interface._call(origin).bounding_box()),ExactIntervalType(7,11)));
     const MultifunctionInterface<ValidatedTag,Real(RealVector),CompactSet>& scalar_interface=sf;
     ScaledFunctionPatchFactory<ValidatedIntervalTaylorModelMP> interval_factory(swp);
-    ARIADNE_TEST_EQUALS(interval_factory.properties().precision(),pr);
+    ARIADNE_TESTING_EXPECT_EQUAL(interval_factory.properties().precision(), pr);
     const auto scalar_image=gset(origin);
-    ARIADNE_TEST_ASSERT(same(cast_exact_interval(scalar_image.bounding_box()),ExactIntervalType(7,11)));
-    ARIADNE_TEST_ASSERT(same(cast_exact_interval(gfset(origin).bounding_box()),ExactIntervalType(7,11)));
+    ARIADNE_TESTING_PROVE(same(cast_exact_interval(scalar_image.bounding_box()),ExactIntervalType(7,11)));
+    ARIADNE_TESTING_PROVE(same(cast_exact_interval(gfset(origin).bounding_box()),ExactIntervalType(7,11)));
     Multifunction<ValidatedTag,Real(RealVector),CompactSet> multifunction(sf);
-    ARIADNE_TEST_ASSERT(same(cast_exact_interval(multifunction(origin).bounding_box()),ExactIntervalType(7,11)));
+    ARIADNE_TESTING_PROVE(same(cast_exact_interval(multifunction(origin).bounding_box()),ExactIntervalType(7,11)));
     VectorIntervalFunctionModel vf{sf,x0+x1};
     ValidatedVectorIntervalTaylorFunctionSet<FloatMP> vfset(vf);
     CompactSet<ValidatedTag,RealVector(RealVector)> vector_set(vfset);
     const CompactSet<ValidatedTag,RealVector(RealVector)>::Interface& vector_set_interface=vfset;
-    ARIADNE_TEST_ASSERT(same(vector_set_interface._call(origin).bounding_box(),vector_set(origin).bounding_box()));
+    ARIADNE_TESTING_PROVE(same(vector_set_interface._call(origin).bounding_box(),vector_set(origin).bounding_box()));
     const MultifunctionInterface<ValidatedTag,RealVector(RealVector),CompactSet>& vector_interface=vf;
     const auto vector_image=vector_set(origin).bounding_box();
-    ARIADNE_TEST_EQUALS(vector_image.dimension(),2u);
-    ARIADNE_TEST_ASSERT(vector_image[0].lower_bound().raw()<=FloatDP(7,dp));
-    ARIADNE_TEST_ASSERT(vector_image[0].upper_bound().raw()>=FloatDP(11,dp));
-    ARIADNE_TEST_EQUALS(vector_image[1].lower_bound().raw(),FloatDP(0,dp));
-    ARIADNE_TEST_EQUALS(vector_image[1].upper_bound().raw(),FloatDP(0,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(vector_image.dimension(), 2u);
+    ARIADNE_TESTING_PROVE(vector_image[0].lower_bound().raw()<=FloatDP(7,dp));
+    ARIADNE_TESTING_PROVE(vector_image[0].upper_bound().raw()>=FloatDP(11,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(vector_image[1].lower_bound().raw(), FloatDP(0,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(vector_image[1].upper_bound().raw(), FloatDP(0,dp));
     std::ostringstream text;text<<gset<<gfset<<multifunction<<vector_set;
     scalar_interface._write(text);vector_interface._write(text);
     scalar_set_interface._write(text);vector_set_interface._write(text);
-    ARIADNE_TEST_ASSERT(text.str().find("FunctionSet(")!=String::npos);
+    ARIADNE_TESTING_PROVE(text.str().find("FunctionSet(")!=String::npos);
 
 
 }
@@ -213,29 +208,36 @@ Void TestMultifunction::test_inclusion_solutions()
 
     const auto reach=phi.curry();
     const auto erased_reach=phif._curry();
-    ARIADNE_TEST_ASSERT(same(reach(join(w0,s)).bounding_box(),phi_w0_s.bounding_box()));
-    ARIADNE_TEST_ASSERT(same(erased_reach(join(w0,s)).bounding_box(),phi_w0_s.bounding_box()));
+    ARIADNE_TESTING_PROVE(same(reach(join(w0,s)).bounding_box(),phi_w0_s.bounding_box()));
+    ARIADNE_TESTING_PROVE(same(erased_reach(join(w0,s)).bounding_box(),phi_w0_s.bounding_box()));
     std::ostringstream flow_text;flow_text<<phi;
-    ARIADNE_TEST_ASSERT(flow_text.str().find("Multiflow(")==0u);
+    ARIADNE_TESTING_PROVE(flow_text.str().find("Multiflow(")==0u);
 
-    ARIADNE_TEST_PRINT(phi_w0);
-    ARIADNE_TEST_PRINT(phif_w0);
-    ARIADNE_TEST_PRINT(phi_w0_s);
-    ARIADNE_TEST_PRINT(phif_w0_s);
+    ARIADNE_TESTING_INSPECT("phi_w0", phi_w0);
+    ARIADNE_TESTING_INSPECT("phif_w0", phif_w0);
+    ARIADNE_TESTING_INSPECT("phi_w0_s", phi_w0_s);
+    ARIADNE_TESTING_INSPECT("phif_w0_s", phif_w0_s);
 }
 
-Void test_mixed_precision_comparisons() {
+class TestMultifunctionExtra : public Ariadne::Testing::ContextFixture {
+public:
+    using ContextFixture::ContextFixture;
+    void test_mixed_precision_comparisons();
+};
+
+Void TestMultifunctionExtra::test_mixed_precision_comparisons() {
     const MultiplePrecision mp(128u);
-    ARIADNE_TEST_ASSERT(definitely(FloatMPUpperBound(1,mp)<FloatDPLowerBound(2,dp)));
-    ARIADNE_TEST_ASSERT(is_indeterminate(FloatMPUpperBound(2,mp)<FloatDPLowerBound(2,dp)));
-    ARIADNE_TEST_ASSERT(definitely(FloatMPLowerBound(2,mp)>FloatDPUpperBound(1,dp)));
-    ARIADNE_TEST_ASSERT(is_indeterminate(FloatMPLowerBound(2,mp)>FloatDPUpperBound(2,dp)));
+    ARIADNE_TESTING_PROVE(definitely(FloatMPUpperBound(1,mp)<FloatDPLowerBound(2,dp)));
+    ARIADNE_TESTING_PROVE(is_indeterminate(FloatMPUpperBound(2,mp)<FloatDPLowerBound(2,dp)));
+    ARIADNE_TESTING_PROVE(definitely(FloatMPLowerBound(2,mp)>FloatDPUpperBound(1,dp)));
+    ARIADNE_TESTING_PROVE(is_indeterminate(FloatMPLowerBound(2,mp)>FloatDPUpperBound(2,dp)));
 }
 
-Int main() {
-    ARIADNE_TEST_CALL(test_mixed_precision_comparisons());
-    TestMultifunction().test();
-
-    return ARIADNE_TEST_FAILURES;
+int main(int argc, char** argv) {
+    ARIADNE_TESTING_SUITE("test_multifunction");
+    ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_taylor_evaluate);
+    ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_function_set);
+    ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_inclusion_solutions);
+    ARIADNE_TESTING_ADD_TEST(TestMultifunctionExtra, test_mixed_precision_comparisons);
+    return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }
-

@@ -9,16 +9,41 @@
 #include "function/taylor_function.hpp"
 #include "function/formula.tpl.hpp"
 #include "algebra/algebra.hpp"
-#include "macro/testing.hpp"
+#include "ariadne-testing.hpp"
 #include <array>
 #include <memory>
 #include <sstream>
 using namespace Ariadne;
 
+class TestFunctionInterface : public Ariadne::Testing::ContextFixture {
+public:
+    using ContextFixture::ContextFixture;
+    template<class P> void check_vector_api();
+    void test_optional_getter();
+    void test_function_factory();
+    template<class P> void test_generic_numeric_interfaces();
+    template<class P> void test_numeric_jets_and_taylor_arguments();
+    template<class P> void test_handle_derivative_mixin();
+    void test_model_generic_getter();
+    void test_mixin_domains();
+    void check_vector_api_approximate() { check_vector_api<ApproximateTag>(); }
+    void check_vector_api_validated() { check_vector_api<ValidatedTag>(); }
+    void check_vector_api_effective() { check_vector_api<EffectiveTag>(); }
+    void test_generic_numeric_interfaces_approximate() { test_generic_numeric_interfaces<ApproximateTag>(); }
+    void test_generic_numeric_interfaces_validated() { test_generic_numeric_interfaces<ValidatedTag>(); }
+    void test_generic_numeric_interfaces_effective() { test_generic_numeric_interfaces<EffectiveTag>(); }
+    void test_numeric_jets_and_taylor_arguments_approximate() { test_numeric_jets_and_taylor_arguments<ApproximateTag>(); }
+    void test_numeric_jets_and_taylor_arguments_validated() { test_numeric_jets_and_taylor_arguments<ValidatedTag>(); }
+    void test_numeric_jets_and_taylor_arguments_effective() { test_numeric_jets_and_taylor_arguments<EffectiveTag>(); }
+    void test_handle_derivative_mixin_approximate() { test_handle_derivative_mixin<ApproximateTag>(); }
+    void test_handle_derivative_mixin_validated() { test_handle_derivative_mixin<ValidatedTag>(); }
+    void test_handle_derivative_mixin_effective() { test_handle_derivative_mixin<EffectiveTag>(); }
+};
+
 template<class F> concept HasVectorIndexing = requires(F& f,const F& cf) {
     cf.get(0u);f.set(0u,cf.create_zero());f[0u];cf[0u];
 };
-template<class P> Void check_vector_api() {
+template<class P> Void TestFunctionInterface::check_vector_api() {
     using S=ScalarMultivariateFunction<P>;using V=VectorMultivariateFunction<P>;
     using U=ScalarUnivariateFunction<P>;using W=VectorUnivariateFunction<P>;
     static_assert(!HasVectorIndexing<S> && !HasVectorIndexing<U>);
@@ -29,26 +54,26 @@ template<class P> Void check_vector_api() {
     auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);
     V vector{x,y};const V& cv=vector;
     Vector<FloatDPApproximation> point({3,4},dp);
-    ARIADNE_TEST_EQUALS(cv[Range(0u,2u)](point),point);
-    ARIADNE_TEST_EQUALS(cv[Range(1u,1u)](point).size(),0u);
-    ARIADNE_TEST_FAIL(vector.get(2u));
-    ARIADNE_TEST_FAIL(cv[Range(0u,3u)]);
-    ARIADNE_TEST_FAIL(S::coordinate(2u,2u));
-    ARIADNE_TEST_FAIL(vector.set(2u,x));
-    ARIADNE_TEST_FAIL(vector.set(0u,S::coordinate(1u,0u)));
+    ARIADNE_TESTING_EXPECT_EQUAL(cv[Range(0u,2u)](point), point);
+    ARIADNE_TESTING_EXPECT_EQUAL(cv[Range(1u,1u)](point).size(), 0u);
+    ARIADNE_TESTING_EXPECT_EXCEPTION(vector.get(2u));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(cv[Range(0u,3u)]);
+    ARIADNE_TESTING_EXPECT_EXCEPTION(S::coordinate(2u,2u));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(vector.set(2u,x));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(vector.set(0u,S::coordinate(1u,0u)));
     vector[0u]=vector[1u];
-    ARIADNE_TEST_EQUALS(vector[0u](point),point[1]);
-    ARIADNE_TEST_EQUALS(vector[0u].evaluate(point),point[1]);
-    ARIADNE_TEST_EQUALS(vector[0u].domain().dimension(),2u);
+    ARIADNE_TESTING_EXPECT_EQUAL(vector[0u](point), point[1]);
+    ARIADNE_TESTING_EXPECT_EQUAL(vector[0u].evaluate(point), point[1]);
+    ARIADNE_TESTING_EXPECT_EQUAL(vector[0u].domain().dimension(), 2u);
     std::ostringstream text;text<<vector[0u];
-    ARIADNE_TEST_ASSERT(!text.str().empty());
+    ARIADNE_TESTING_PROVE(!text.str().empty());
     auto composed=compose(V::identity(2u),vector);
-    ARIADNE_TEST_FAIL(composed.set(0u,x));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(composed.set(0u,x));
     auto t=U::coordinate();W curve{t,t};
     auto composed_curve=compose(curve,t);
-    ARIADNE_TEST_FAIL(composed_curve.set(0u,t));
-    ARIADNE_TEST_FAIL(curve.get(2u));
-    ARIADNE_TEST_FAIL(curve.set(2u,t));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(composed_curve.set(0u,t));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(curve.get(2u));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(curve.set(2u,t));
 }
 
 // A valid directly implemented vector interface can evaluate and differentiate
@@ -81,18 +106,18 @@ class EvaluatedCurveFunction
     friend OutputStream& operator<<(OutputStream& os,const EvaluatedCurveFunction& f) {
         return os<<"EvaluatedCurveFunction("<<*f._function<<")"; }
 };
-Void test_optional_getter() {
+Void TestFunctionInterface::test_optional_getter() {
     using S=EffectiveScalarMultivariateFunction;using V=EffectiveVectorMultivariateFunction;
     auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);
     V function(new EvaluatedVectorFunction(std::make_shared<const V>(V{x+y,x-y})));
     Vector<FloatDPApproximation> point({3,1},dp);
-    ARIADNE_TEST_EQUALS(function.get(0u)(point),FloatDPApproximation(4,dp));
-    ARIADNE_TEST_EQUALS(function.get(1u)(point),FloatDPApproximation(2,dp));
-    ARIADNE_TEST_EQUALS(function.get(1u).derivative(1u)(point),FloatDPApproximation(-1,dp));
-    ARIADNE_TEST_EQUALS(function.get(0u).result_size(),1u);
+    ARIADNE_TESTING_EXPECT_EQUAL(function.get(0u)(point), FloatDPApproximation(4,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(function.get(1u)(point), FloatDPApproximation(2,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(function.get(1u).derivative(1u)(point), FloatDPApproximation(-1,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(function.get(0u).result_size(), 1u);
     auto check_field=[&](const auto& field) {
-        ARIADNE_TEST_EQUALS(field.get(0u)(point),FloatDPApproximation(4,dp));
-        ARIADNE_TEST_EQUALS(field.get(1u)(point),FloatDPApproximation(2,dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(field.get(0u)(point), FloatDPApproximation(4,dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(field.get(1u)(point), FloatDPApproximation(2,dp));
     };
     check_field(ValidatedVectorMultivariateFunction(function));
     check_field(ApproximateVectorMultivariateFunction(function));
@@ -101,15 +126,15 @@ Void test_optional_getter() {
         std::make_shared<const EffectiveVectorUnivariateFunction>(EffectiveVectorUnivariateFunction{t,t+2})));
     FloatDPApproximation parameter(3,dp);
     auto check_curve=[&](const auto& input_curve) {
-        ARIADNE_TEST_EQUALS(input_curve.get(0u)(parameter),FloatDPApproximation(3,dp));
-        ARIADNE_TEST_EQUALS(input_curve.get(1u)(parameter),FloatDPApproximation(5,dp));
-        ARIADNE_TEST_EQUALS(input_curve.get(1u).derivative(IndexZero())(parameter),FloatDPApproximation(1,dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(input_curve.get(0u)(parameter), FloatDPApproximation(3,dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(input_curve.get(1u)(parameter), FloatDPApproximation(5,dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(input_curve.get(1u).derivative(IndexZero())(parameter), FloatDPApproximation(1,dp));
     };
     check_curve(curve);
     check_curve(ValidatedVectorUnivariateFunction(curve));
     check_curve(ApproximateVectorUnivariateFunction(curve));
     std::ostringstream text;text<<function.get(0u);
-    ARIADNE_TEST_ASSERT(!text.str().empty());
+    ARIADNE_TESTING_PROVE(!text.str().empty());
 }
 
 class TaylorBackedFactory : public FunctionFactoryInterface<ValidatedTag> {
@@ -124,7 +149,7 @@ class TaylorBackedFactory : public FunctionFactoryInterface<ValidatedTag> {
     ValidatedVectorMultivariateFunction::Interface* _create(const BoxDomainType& domain,const ValidatedVectorMultivariateFunction::Interface& f) const override {
         auto model=_factory.create(domain,f);return new decltype(model)(model); }
 };
-Void test_function_factory() {
+Void TestFunctionInterface::test_function_factory() {
     TaylorBackedFactory backend;
     std::array<ValidatedFunctionFactory,3> factories{
         ValidatedFunctionFactory(backend),
@@ -135,17 +160,17 @@ Void test_function_factory() {
     auto identity=ValidatedVectorMultivariateFunction::identity(2u);
     Vector<FloatDPBounds> point({0.25_x,0.5_x},dp);
     for(const auto& factory:factories) {
-        ARIADNE_TEST_ASSERT(definitely(factory.create(domain,source.reference())(point)==FloatDPBounds(0.75_x,dp)));
-        ARIADNE_TEST_EQUALS(factory.create(domain,identity.reference())(point),point);
-        ARIADNE_TEST_ASSERT(definitely(factory.create_zero(domain)(point)==FloatDPBounds(0,dp)));
-        ARIADNE_TEST_EQUALS(factory.create_identity(domain)(point),point);
+        ARIADNE_TESTING_PROVE(definitely(factory.create(domain,source.reference())(point)==FloatDPBounds(0.75_x,dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(factory.create(domain,identity.reference())(point), point);
+        ARIADNE_TESTING_PROVE(definitely(factory.create_zero(domain)(point)==FloatDPBounds(0,dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(factory.create_identity(domain)(point), point);
         std::ostringstream text;text<<factory;
-        ARIADNE_TEST_EQUALS(text.str(),String("TaylorBackedFactory"));
+        ARIADNE_TESTING_EXPECT_EQUAL(text.str(), String("TaylorBackedFactory"));
     }
     std::unique_ptr<FunctionFactoryInterface<ValidatedTag>> copy(backend._copy());
-    ARIADNE_TEST_EQUALS(copy->create_identity(domain)(point),point);
+    ARIADNE_TESTING_EXPECT_EQUAL(copy->create_identity(domain)(point), point);
     std::ostringstream text;text<<*copy;
-    ARIADNE_TEST_EQUALS(text.str(),String("TaylorBackedFactory"));
+    ARIADNE_TESTING_EXPECT_EQUAL(text.str(), String("TaylorBackedFactory"));
 }
 
 // Each numeric paradigm promises evaluation with its own numbers and weaker
@@ -154,17 +179,17 @@ Void test_function_factory() {
 template<class Y,class P> Void check_generic_polynomial(const ScalarMultivariateFunction<P>& function) {
     using X=FloatDPApproximation;using F=Formula<Y>;using A=ElementaryAlgebra<Y>;
     Vector<Y> numbers{Y(2),Y(3)};
-    ARIADNE_TEST_EQUALS(X(function(numbers),dp),X(8,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(X(function(numbers),dp), X(8,dp));
     Vector<X> point({2,3},dp);
     auto formula=function(F::identity(2u));
-    ARIADNE_TEST_EQUALS(evaluate(formula,point),X(8,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(formula,point), X(8,dp));
     Vector<A> algebra_arguments{A(F::coordinate(0u)),A(F::coordinate(1u))};
     auto algebra_result=function(algebra_arguments);
     auto extracted=algebra_result.template extract<F>();
-    ARIADNE_TEST_EQUALS(evaluate(extracted,point),X(8,dp));
-    ARIADNE_TEST_EQUALS(evaluate(derivative(extracted,0u),point),X(4,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(extracted,point), X(8,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(derivative(extracted,0u),point), X(4,dp));
 }
-template<class P> Void test_generic_numeric_interfaces() {
+template<class P> Void TestFunctionInterface::test_generic_numeric_interfaces() {
     using S=ScalarMultivariateFunction<P>;
     auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);auto polynomial=sqr(x)+y+Number<P>(1);
     check_generic_polynomial<ApproximateNumber>(polynomial);
@@ -187,12 +212,12 @@ template<class MT,class P> Void check_taylor_argument(const ScalarMultivariateFu
     Sweeper<F> sweeper=ThresholdSweeper<F>(pr,1e-12);
     auto variables=MT::coordinates(2u,sweeper);
     auto polynomial=function(variables);
-    ARIADNE_TEST_EQUALS(polynomial.argument_size(),2u);
-    ARIADNE_TEST_EQUALS(polynomial.precision(),pr);
+    ARIADNE_TESTING_EXPECT_EQUAL(polynomial.argument_size(), 2u);
+    ARIADNE_TESTING_EXPECT_EQUAL(polynomial.precision(), pr);
     if constexpr (Same<typename MT::Paradigm,ApproximateTag>) {
         Vector<Approximation<F>> point({0.25_x,0.5_x},pr);
-        ARIADNE_TEST_EQUALS(evaluate(polynomial,point),Approximation<F>(1.5625_x,pr));
-        ARIADNE_TEST_EQUALS(evaluate(derivative(polynomial,0u),point),Approximation<F>(0.5_x,pr));
+        ARIADNE_TESTING_EXPECT_EQUAL(evaluate(polynomial,point), Approximation<F>(1.5625_x,pr));
+        ARIADNE_TESTING_EXPECT_EQUAL(evaluate(derivative(polynomial,0u),point), Approximation<F>(0.5_x,pr));
     } else {
         Vector<Bounds<F>> point({0.25_x,0.5_x},pr);
         auto as_interval=[](const auto& value) {
@@ -200,33 +225,33 @@ template<class MT,class P> Void check_taylor_argument(const ScalarMultivariateFu
             else { return make_interval(value); }
         };
         auto actual=as_interval(evaluate(polynomial,point));
-        ARIADNE_TEST_ASSERT(decide(actual.lower_bound()<=F(1.5625_x,pr)));
-        ARIADNE_TEST_ASSERT(decide(actual.upper_bound()>=F(1.5625_x,pr)));
+        ARIADNE_TESTING_PROVE(decide(actual.lower_bound()<=F(1.5625_x,pr)));
+        ARIADNE_TESTING_PROVE(decide(actual.upper_bound()>=F(1.5625_x,pr)));
         auto gradient=as_interval(evaluate(derivative(polynomial,0u),point));
-        ARIADNE_TEST_ASSERT(decide(gradient.lower_bound()<=F(0.5_x,pr)));
-        ARIADNE_TEST_ASSERT(decide(gradient.upper_bound()>=F(0.5_x,pr)));
+        ARIADNE_TESTING_PROVE(decide(gradient.lower_bound()<=F(0.5_x,pr)));
+        ARIADNE_TESTING_PROVE(decide(gradient.upper_bound()>=F(0.5_x,pr)));
     }
 }
-template<class P> Void test_numeric_jets_and_taylor_arguments() {
+template<class P> Void TestFunctionInterface::test_numeric_jets_and_taylor_arguments() {
     using S=ScalarMultivariateFunction<P>;
     auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);
     auto polynomial=sqr(x)+y+Number<P>(1);
     MultiplePrecision mp(128u);
     Vector<FloatMPApproximation> point({0.25_x,0.5_x},mp);
-    ARIADNE_TEST_EQUALS(polynomial(point),FloatMPApproximation(1.5625_x,mp));
+    ARIADNE_TESTING_EXPECT_EQUAL(polynomial(point), FloatMPApproximation(1.5625_x,mp));
     auto jet=polynomial(Differential<FloatMPApproximation>::variables(2u,point));
-    ARIADNE_TEST_EQUALS(jet.value(),FloatMPApproximation(1.5625_x,mp));
-    ARIADNE_TEST_EQUALS(jet.gradient()[0u],FloatMPApproximation(0.5_x,mp));
-    ARIADNE_TEST_EQUALS(jet.gradient()[1u],FloatMPApproximation(1,mp));
-    ARIADNE_TEST_EQUALS(jet.hessian().get(0u,0u),FloatMPApproximation(2,mp));
+    ARIADNE_TESTING_EXPECT_EQUAL(jet.value(), FloatMPApproximation(1.5625_x,mp));
+    ARIADNE_TESTING_EXPECT_EQUAL(jet.gradient()[0u], FloatMPApproximation(0.5_x,mp));
+    ARIADNE_TESTING_EXPECT_EQUAL(jet.gradient()[1u], FloatMPApproximation(1,mp));
+    ARIADNE_TESTING_EXPECT_EQUAL(jet.hessian().get(0u,0u), FloatMPApproximation(2,mp));
     check_taylor_argument<TaylorModel<ApproximateTag,FloatDP>>(polynomial,dp);
     check_taylor_argument<TaylorModel<ApproximateTag,FloatMP>>(polynomial,mp);
     if constexpr (!Same<P,ApproximateTag>) {
         Vector<FloatMPBounds> bounded_point({0.25_x,0.5_x},mp);
-        ARIADNE_TEST_ASSERT(definitely(polynomial(bounded_point)==FloatMPBounds(1.5625_x,mp)));
+        ARIADNE_TESTING_PROVE(definitely(polynomial(bounded_point)==FloatMPBounds(1.5625_x,mp)));
         auto bounded_jet=polynomial(Differential<FloatMPBounds>::variables(2u,bounded_point));
-        ARIADNE_TEST_ASSERT(definitely(bounded_jet.gradient()[0u]==FloatMPBounds(0.5_x,mp)));
-        ARIADNE_TEST_ASSERT(definitely(bounded_jet.hessian().get(0u,0u)==FloatMPBounds(2,mp)));
+        ARIADNE_TESTING_PROVE(definitely(bounded_jet.gradient()[0u]==FloatMPBounds(0.5_x,mp)));
+        ARIADNE_TESTING_PROVE(definitely(bounded_jet.hessian().get(0u,0u)==FloatMPBounds(2,mp)));
         check_taylor_argument<TaylorModel<ValidatedTag,FloatMP>>(polynomial,mp);
         check_taylor_argument<TaylorModel<ValidatedTag,FloatDPBounds>>(polynomial,dp);
         check_taylor_argument<TaylorModel<ValidatedTag,FloatMPBounds>>(polynomial,mp);
@@ -251,57 +276,58 @@ template<class P> class HandleDifferentiableFunction
     friend OutputStream& operator<<(OutputStream& os,const HandleDifferentiableFunction& f) { return os<<*f._function; }
 };
 
-template<class P> Void test_handle_derivative_mixin() {
+template<class P> Void TestFunctionInterface::test_handle_derivative_mixin() {
     using S=ScalarMultivariateFunction<P>;
     auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);
     const S function(new HandleDifferentiableFunction<P>(std::make_shared<const S>(sqr(x)+y)));
     const Vector<FloatDPApproximation> point({3,1},dp);
-    ARIADNE_TEST_EQUALS(function.derivative(0u)(point),FloatDPApproximation(6,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(function.derivative(0u)(point), FloatDPApproximation(6,dp));
     const FunctionInterface<ApproximateTag,Real(RealVector)>& approximate=function.reference();
     std::unique_ptr<FunctionInterface<ApproximateTag,Real(RealVector)>> copy(approximate._copy());
-    ARIADNE_TEST_EQUALS(copy->_call(point),FloatDPApproximation(10,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(copy->_call(point), FloatDPApproximation(10,dp));
     if constexpr (!Same<P,ApproximateTag>) {
         const FunctionInterface<ValidatedTag,Real(RealVector)>& validated=function.reference();
         const MultiplePrecision mp(128u);
-        ARIADNE_TEST_SAME(validated._call(Vector<FloatMP>{FloatMP(3,mp),FloatMP(1,mp)}),FloatMPBounds(10,mp));
+        ARIADNE_TESTING_EXPECT_SAME(validated._call(Vector<FloatMP>{FloatMP(3,mp),FloatMP(1,mp)}), FloatMPBounds(10,mp));
         const auto a=ValidatedScalarMultivariateFunction::coordinate(2u,0u);
         const auto b=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
         const auto composed=validated._call(Vector<ValidatedScalarMultivariateFunction>{a+b,b});
-        ARIADNE_TEST_EQUALS(composed(point),FloatDPApproximation(17,dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(composed(point), FloatDPApproximation(17,dp));
     }
 }
-Void test_model_generic_getter() {
+Void TestFunctionInterface::test_model_generic_getter() {
     const BoxDomainType domain{{-1,1},{-1,1}};
     const TaylorFunctionFactory backend(ThresholdSweeper<FloatDP>(dp,1e-12));
     const ValidatedVectorMultivariateFunction function=backend.create_identity(domain);
     const Vector<FloatDPBounds> point({0.25_x,0.5_x},dp);
-    ARIADNE_TEST_SAME(function.get(1u)(point),point[1u]);
+    ARIADNE_TESTING_EXPECT_SAME(function.get(1u)(point), point[1u]);
 }
-Void test_mixin_domains() {
+Void TestFunctionInterface::test_mixin_domains() {
     const auto line=make_domain<IntervalDomainType>(1u);
-    ARIADNE_TEST_EQUALS(line,IntervalDomainType(-inf,+inf));
-    ARIADNE_TEST_FAIL(make_domain<IntervalDomainType>(0u));
-    ARIADNE_TEST_FAIL(make_domain<IntervalDomainType>(2u));
-    ARIADNE_TEST_EQUALS(make_domain<BoxDomainType>(0u).dimension(),0u);
-    ARIADNE_TEST_EQUALS(make_domain<BoxDomainType>(2u),BoxDomainType(2u,IntervalDomainType(-inf,+inf)));
+    ARIADNE_TESTING_EXPECT_EQUAL(line, IntervalDomainType(-inf,+inf));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(make_domain<IntervalDomainType>(0u));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(make_domain<IntervalDomainType>(2u));
+    ARIADNE_TESTING_EXPECT_EQUAL(make_domain<BoxDomainType>(0u).dimension(), 0u);
+    ARIADNE_TESTING_EXPECT_EQUAL(make_domain<BoxDomainType>(2u), BoxDomainType(2u,IntervalDomainType(-inf,+inf)));
 }
 
-Int main() {
-    ARIADNE_TEST_CALL(test_model_generic_getter());
-    ARIADNE_TEST_CALL(test_mixin_domains());
-    ARIADNE_TEST_CALL(test_handle_derivative_mixin<ApproximateTag>());
-    ARIADNE_TEST_CALL(test_handle_derivative_mixin<ValidatedTag>());
-    ARIADNE_TEST_CALL(test_handle_derivative_mixin<EffectiveTag>());
-    ARIADNE_TEST_CALL(test_optional_getter());
-    ARIADNE_TEST_CALL(test_numeric_jets_and_taylor_arguments<ApproximateTag>());
-    ARIADNE_TEST_CALL(test_numeric_jets_and_taylor_arguments<ValidatedTag>());
-    ARIADNE_TEST_CALL(test_numeric_jets_and_taylor_arguments<EffectiveTag>());
-    ARIADNE_TEST_CALL(test_generic_numeric_interfaces<ApproximateTag>());
-    ARIADNE_TEST_CALL(test_generic_numeric_interfaces<ValidatedTag>());
-    ARIADNE_TEST_CALL(test_generic_numeric_interfaces<EffectiveTag>());
-    ARIADNE_TEST_CALL(check_vector_api<ApproximateTag>());
-    ARIADNE_TEST_CALL(check_vector_api<ValidatedTag>());
-    ARIADNE_TEST_CALL(check_vector_api<EffectiveTag>());
-    ARIADNE_TEST_CALL(test_function_factory());
-    return ARIADNE_TEST_FAILURES;
+int main(int argc, char** argv) {
+    ARIADNE_TESTING_SUITE("test_function_interface");
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, check_vector_api_approximate);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, check_vector_api_validated);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, check_vector_api_effective);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_generic_numeric_interfaces_approximate);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_generic_numeric_interfaces_validated);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_generic_numeric_interfaces_effective);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_numeric_jets_and_taylor_arguments_approximate);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_numeric_jets_and_taylor_arguments_validated);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_numeric_jets_and_taylor_arguments_effective);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_handle_derivative_mixin_approximate);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_handle_derivative_mixin_validated);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_handle_derivative_mixin_effective);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_model_generic_getter);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_mixin_domains);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_optional_getter);
+    ARIADNE_TESTING_ADD_TEST(TestFunctionInterface, test_function_factory);
+    return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

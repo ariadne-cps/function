@@ -38,7 +38,7 @@
 #include "numeric/numeric.hpp"
 
 
-#include "macro/testing.hpp"
+#include "ariadne-testing.hpp"
 
 using namespace std;
 using namespace Ariadne;
@@ -47,20 +47,17 @@ template<class X> inline OutputStream& operator<<(OutputStream& os, Sequence<X> 
     SequenceWriter writer(4u); return os << writer(seq);
 }
 
-class TestMeasurableFunction
+class TestMeasurableFunction : public Ariadne::Testing::ContextFixture
 {
   public:
-    Void test();
-  private:
+    using ContextFixture::ContextFixture;
+    void set_up() { Dyadic::set_default_writer(DecimalWriter()); }
+
     Void test_concept();
     Void test_scalar_univariate_function();
 };
 
-Void TestMeasurableFunction::test()
-{
-    Dyadic::set_default_writer(DecimalWriter());
-    ARIADNE_TEST_CALL(test_scalar_univariate_function());
-}
+
 
 Void TestMeasurableFunction::test_concept()
 {
@@ -69,29 +66,35 @@ Void TestMeasurableFunction::test_concept()
 Void TestMeasurableFunction::test_scalar_univariate_function()
 {
     {
-        ARIADNE_TEST_CONSTRUCT(UnionOfIntervals<Dyadic>,ivls,({{1,2},{1.5_dy,2.5_dy},{0,0.5_dy}}));
-        ARIADNE_TEST_CONSTRUCT(ValidatedOpenSet<Real>,vops,(wrap_open(ivls)));
+        [[maybe_unused]] UnionOfIntervals<Dyadic> ivls({{1,2},{1.5_dy,2.5_dy},{0,0.5_dy}});
+        [[maybe_unused]] ValidatedOpenSet<Real> vops(wrap_open(ivls));
 
         auto x=ValidatedScalarUnivariateFunction::coordinate();
         ValidatedContinuousFunction<Real(Real)> f=x*x;
-        ARIADNE_TEST_PRINT(f);
-        ARIADNE_TEST_PRINT(vops);
+        ARIADNE_TESTING_INSPECT("f", f);
+        ARIADNE_TESTING_INSPECT("vops", vops);
         ValidatedOpenSet<Real> prevops=preimage(f,vops,IntervalDomainType(-1,3),Accuracy(exp2(-4)));
-        ARIADNE_TEST_PRINT(prevops);
+        ARIADNE_TESTING_INSPECT("prevops", prevops);
 
         IntervalDomainType dom(-1,3);
         Error<FloatDP> err(0.093750_dy,dp);
         FanModel<Real(Real),DP> fmodel(dom,f,err);
 
-        ARIADNE_TEST_PRINT(fmodel);
-        ARIADNE_TEST_PRINT(fmodel.preimage(vops));
-        ARIADNE_TEST_ASSIGN_CONSTRUCT(ValidatedLowerMeasurableSet<Real>,prim,fmodel.preimage(vops));
-        ARIADNE_TEST_PRINT(prim.measure());
+        ARIADNE_TESTING_INSPECT("fmodel", fmodel);
+        ARIADNE_TESTING_INSPECT("fmodel.preimage(vops)", fmodel.preimage(vops));
+        [[maybe_unused]] ValidatedLowerMeasurableSet<Real> prim = fmodel.preimage(vops);
+        ARIADNE_TESTING_INSPECT("prim.measure()", prim.measure());
     }
 }
 
 
-Void test_preimage_paths() {
+class TestMeasurableFunctionExtra : public Ariadne::Testing::ContextFixture {
+public:
+    using ContextFixture::ContextFixture;
+    void test_preimage_paths();
+};
+
+Void TestMeasurableFunctionExtra::test_preimage_paths() {
     const auto identity=ValidatedScalarUnivariateFunction::coordinate();
     const IntervalDomainType domain(0,1);
     const Accuracy accuracy(exp2(-4));
@@ -105,36 +108,35 @@ Void test_preimage_paths() {
     const auto covered=preimage_intervals(identity,regular_cover,domain,accuracy);
     const auto disjoint=preimage_intervals(identity,regular_away,domain,accuracy);
     const auto boundary=preimage_intervals(identity,regular_middle,domain,accuracy);
-    ARIADNE_TEST_EQUALS(covered.measure(),FloatDP(1,dp));
-    ARIADNE_TEST_EQUALS(disjoint.measure(),FloatDP(0,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(covered.measure(), FloatDP(1,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(disjoint.measure(), FloatDP(0,dp));
     const auto unresolved=preimage_intervals(identity,regular_middle,
         IntervalDomainType(0.234375_x,0.265625_x),accuracy);
-    ARIADNE_TEST_EQUALS(unresolved.measure(),FloatDP(0,dp));
-    ARIADNE_TEST_ASSERT(boundary.measure()<=FloatDP(0.5_x,dp));
-    ARIADNE_TEST_ASSERT(boundary.measure()>=FloatDP(0.375_x,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(unresolved.measure(), FloatDP(0,dp));
+    ARIADNE_TESTING_PROVE(boundary.measure()<=FloatDP(0.5_x,dp));
+    ARIADNE_TESTING_PROVE(boundary.measure()>=FloatDP(0.375_x,dp));
     const auto measure_of=[&](const ValidatedOpenSet<Real>& set) {
         const auto computed_preimage=preimage(identity,set,domain,accuracy);
         const auto intervals=dynamic_pointer_cast<const OpenSetWrapper<UnionOfIntervals<FloatDP>,ValidatedTag,Real>>(computed_preimage.managed_pointer());
-        ARIADNE_TEST_ASSERT(intervals!=nullptr);
+        ARIADNE_TESTING_PROVE(intervals!=nullptr);
         return intervals->measure();
     };
-    ARIADNE_TEST_EQUALS(measure_of(open_cover),FloatDP(1,dp));
-    ARIADNE_TEST_EQUALS(measure_of(open_away),FloatDP(0,dp));
-    ARIADNE_TEST_ASSERT(measure_of(open_middle)>=FloatDP(0.375_x,dp));
-    ARIADNE_TEST_EQUALS(measure_of(wrap_open(covering)),FloatDP(1,dp));
-    ARIADNE_TEST_EQUALS(measure_of(wrap_open(away)),FloatDP(0,dp));
-    ARIADNE_TEST_ASSERT(measure_of(wrap_open(middle))>=FloatDP(0.375_x,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(measure_of(open_cover), FloatDP(1,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(measure_of(open_away), FloatDP(0,dp));
+    ARIADNE_TESTING_PROVE(measure_of(open_middle)>=FloatDP(0.375_x,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(measure_of(wrap_open(covering)), FloatDP(1,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(measure_of(wrap_open(away)), FloatDP(0,dp));
+    ARIADNE_TESTING_PROVE(measure_of(wrap_open(middle))>=FloatDP(0.375_x,dp));
     const FanModel<Real(Real),DP> model(domain,identity,FloatDPError(0.125_x,dp));
-    ARIADNE_TEST_EQUALS(model.domain(),domain);
-    ARIADNE_TEST_EQUALS(model.function()(FloatDPBounds(0.5_x,dp)),FloatDPBounds(0.5_x,dp));
-    ARIADNE_TEST_EQUALS(model.measure_error().raw(),FloatDP(0.125_x,dp));
-    ARIADNE_TEST_EQUALS(preimage(open_cover,model).measure().get(dp).raw(),FloatDP(0.875_x,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(model.domain(), domain);
+    ARIADNE_TESTING_EXPECT_EQUAL(model.function()(FloatDPBounds(0.5_x,dp)), FloatDPBounds(0.5_x,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(model.measure_error().raw(), FloatDP(0.125_x,dp));
+    ARIADNE_TESTING_EXPECT_EQUAL(preimage(open_cover,model).measure().get(dp).raw(), FloatDP(0.875_x,dp));
 }
 
-Int main() {
-    ARIADNE_TEST_CALL(test_preimage_paths());
-    TestMeasurableFunction().test();
-
-    return ARIADNE_TEST_FAILURES;
+int main(int argc, char** argv) {
+    ARIADNE_TESTING_SUITE("test_measurable_function");
+    ARIADNE_TESTING_ADD_TEST(TestMeasurableFunction, test_scalar_univariate_function);
+    ARIADNE_TESTING_ADD_TEST(TestMeasurableFunctionExtra, test_preimage_paths);
+    return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }
-

@@ -7,12 +7,15 @@
 #include "function/function.hpp"
 #include "function/symbolic_function.hpp"
 #include "function/taylor_model.hpp"
-#include "macro/testing.hpp"
+#include "ariadne-testing.hpp"
 using namespace Ariadne;
 
+class TestFunctionNames : public Ariadne::Testing::ContextFixture {
+public:
+    using ContextFixture::ContextFixture;
 // Diagnostics identify a function's paradigm, signature and implementation family.
 template<class T> Void check_name(const String& expected) {
-    ARIADNE_TEST_EQUALS(class_name<T>(),expected);
+    ARIADNE_TESTING_EXPECT_EQUAL(class_name<T>(), expected);
 }
 template<class P> Void check_paradigm_names(const String& prefix) {
     using N=Number<P>;
@@ -45,17 +48,23 @@ template<class P> Void check_paradigm_names(const String& prefix) {
     check_name<ComposedFunction<P,RealVector,RealScalar,RealVector>>(prefix+"VectorMultivariateComposedFunction");
     check_name<ComposedFunction<P,RealVector,RealVector,RealVector>>(prefix+"VectorMultivariateComposedFunction");
 }
-Int main() {
-    check_name<UnknownError<FloatDP>>("UnknownError<FloatDP>");
+    void test_all_names() {
+check_name<UnknownError<FloatDP>>("UnknownError<FloatDP>");
     check_name<UnknownError<FloatMP>>("UnknownError<FloatMP>");
-    ARIADNE_TEST_CALL(check_paradigm_names<ApproximateTag>("Approximate"));
-    ARIADNE_TEST_CALL(check_paradigm_names<ValidatedTag>("Validated"));
-    ARIADNE_TEST_CALL(check_paradigm_names<EffectiveTag>("Effective"));
+    check_paradigm_names<ApproximateTag>("Approximate");
+    check_paradigm_names<ValidatedTag>("Validated");
+    check_paradigm_names<EffectiveTag>("Effective");
     check_name<JoinedFunction<ValidatedTag,EuclideanDomain,EuclideanDomain,EuclideanDomain>>("ValidatedJoinedFunction");
     check_name<JoinedFunction<EffectiveTag,EuclideanDomain,EuclideanDomain,EuclideanDomain>>("EffectiveJoinedFunction");
     check_name<EmbeddedFunction<EffectiveTag,EuclideanDomain,EuclideanDomain,EuclideanDomain,RealDomain>>("EffectiveEmbeddedFunction");
     check_name<EmbeddedFunction<EffectiveTag,EuclideanDomain,EuclideanDomain,EuclideanDomain,EuclideanDomain>>("EffectiveEmbeddedFunction");
     check_name<LieDerivativeFunction<ValidatedTag>>("ValidatedLieDerivativeFunction");
     check_name<LieDerivativeFunction<EffectiveTag>>("EffectiveLieDerivativeFunction");
-    return ARIADNE_TEST_FAILURES;
+    }
+};
+
+int main(int argc, char** argv) {
+    ARIADNE_TESTING_SUITE("test_function_names");
+    ARIADNE_TESTING_ADD_TEST(TestFunctionNames, test_all_names);
+    return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

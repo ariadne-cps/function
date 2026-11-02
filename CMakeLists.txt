@@ -21,6 +21,15 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
         CHAINS
             "configuration"
             "geometry|configuration"
+            "testing|configuration"
+            "geometry|testing|configuration"
+            "geometry|algebra|testing|configuration"
+    )
+    require_same_dependency_commit(Testing
+        CHAINS
+            "testing"
+            "geometry|testing"
+            "geometry|algebra|testing"
     )
 endif()
 
