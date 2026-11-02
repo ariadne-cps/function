@@ -249,7 +249,7 @@ Void TestProcedure::test_propagate()
 
 Void TestProcedure::test_backward_contractor_soundness()
 {
-    auto check_periodic_witness = [](auto op, ExactIntervalType domain) {
+    auto check_periodic_witness = [this](auto op, ExactIntervalType domain) {
         std::cout << "[contractor-soundness] periodic op=" << op
                   << " domain=" << domain
                   << " codomain={0:0}" << std::endl;

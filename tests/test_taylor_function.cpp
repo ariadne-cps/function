@@ -440,8 +440,8 @@ Void TestVectorTaylorFunction::test_constructors()
     Real a(1.5_x); Real b(0.25_x);
     EffectiveVectorMultivariateFunction henon_function={a-x[0]*x[0]+b*x[1], x[0]*1};
     [[maybe_unused]] ValidatedVectorMultivariateTaylorFunctionModelDP henon_model(domain,henon_function,swp);
-    ARIADNE_TESTING_EXPECT_SAME(henon_model.models()[0].expansion(), cast_exact(expansion[0]))
-    ARIADNE_TESTING_EXPECT_SAME(henon_model.models()[1].expansion(), cast_exact(expansion[1]))
+    ARIADNE_TESTING_EXPECT_SAME(henon_model.models()[0].expansion(), cast_exact(expansion[0]));
+    ARIADNE_TESTING_EXPECT_SAME(henon_model.models()[1].expansion(), cast_exact(expansion[1]));
 
     Vector<FloatDPBounds> e0(e(2,0),pr); Vector<FloatDPBounds> e1(e(2,1),pr);
 
