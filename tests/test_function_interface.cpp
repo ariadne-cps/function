@@ -21,7 +21,9 @@ public:
     template<class P> void check_vector_api();
     void test_optional_getter();
     void test_function_factory();
+    template<class Y,class P> void check_generic_polynomial(const ScalarMultivariateFunction<P>& function);
     template<class P> void test_generic_numeric_interfaces();
+    template<class MT,class P> void check_taylor_argument(const ScalarMultivariateFunction<P>& function, typename MT::PrecisionType pr);
     template<class P> void test_numeric_jets_and_taylor_arguments();
     template<class P> void test_handle_derivative_mixin();
     void test_model_generic_getter();
@@ -176,7 +178,7 @@ Void TestFunctionInterface::test_function_factory() {
 // Each numeric paradigm promises evaluation with its own numbers and weaker
 // paradigms. Formula and type-erased algebra arguments must retain that same
 // polynomial, rather than dropping the constant or changing its variables.
-template<class Y,class P> Void check_generic_polynomial(const ScalarMultivariateFunction<P>& function) {
+template<class Y,class P> Void TestFunctionInterface::check_generic_polynomial(const ScalarMultivariateFunction<P>& function) {
     using X=FloatDPApproximation;using F=Formula<Y>;using A=ElementaryAlgebra<Y>;
     Vector<Y> numbers{Y(2),Y(3)};
     ARIADNE_TESTING_EXPECT_EQUAL(X(function(numbers),dp), X(8,dp));
@@ -207,7 +209,7 @@ static_assert(Same<typename TaylorModel<ValidatedTag,FloatDP>::Paradigm,Validate
 // These are separate advertised virtual overloads. Jets must retain derivatives,
 // and Taylor arguments must retain the same polynomial and its enclosure when
 // the coefficient representation changes.
-template<class MT,class P> Void check_taylor_argument(const ScalarMultivariateFunction<P>& function,typename MT::PrecisionType pr) {
+template<class MT,class P> Void TestFunctionInterface::check_taylor_argument(const ScalarMultivariateFunction<P>& function,typename MT::PrecisionType pr) {
     using F=typename MT::RawFloatType;
     Sweeper<F> sweeper=ThresholdSweeper<F>(pr,1e-12);
     auto variables=MT::coordinates(2u,sweeper);
