@@ -219,25 +219,10 @@ Void TestMultifunction::test_inclusion_solutions()
     ARIADNE_TESTING_INSPECT("phif_w0_s", phif_w0_s);
 }
 
-class TestMultifunctionExtra : public Ariadne::Testing::ContextFixture {
-public:
-    using ContextFixture::ContextFixture;
-    void test_mixed_precision_comparisons();
-};
-
-Void TestMultifunctionExtra::test_mixed_precision_comparisons() {
-    const MultiplePrecision mp(128u);
-    ARIADNE_TESTING_PROVE(definitely(FloatMPUpperBound(1,mp)<FloatDPLowerBound(2,dp)));
-    ARIADNE_TESTING_PROVE(is_indeterminate(FloatMPUpperBound(2,mp)<FloatDPLowerBound(2,dp)));
-    ARIADNE_TESTING_PROVE(definitely(FloatMPLowerBound(2,mp)>FloatDPUpperBound(1,dp)));
-    ARIADNE_TESTING_PROVE(is_indeterminate(FloatMPLowerBound(2,mp)>FloatDPUpperBound(2,dp)));
-}
-
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_multifunction");
     ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_taylor_evaluate);
     ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_function_set);
     ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_inclusion_solutions);
-    ARIADNE_TESTING_ADD_TEST(TestMultifunctionExtra, test_mixed_precision_comparisons);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }

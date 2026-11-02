@@ -30,7 +30,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "macro/general.hpp"
+#include "utility/macros.hpp"
 #include "utility/exceptions.hpp"
 #include "numeric/numeric.hpp"
 #include "algebra/vector.hpp"

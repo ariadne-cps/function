@@ -33,7 +33,7 @@
 #include <iosfwd>
 #include <iostream>
 
-#include "macro/general.hpp"
+#include "utility/macros.hpp"
 #include "utility/pointer.hpp"
 #include "function/declarations.hpp"
 
