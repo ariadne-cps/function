@@ -825,7 +825,7 @@ Void TestProcedure::test_derivative()
     const auto function_gradient=f.gradient(q);
     ARIADNE_TESTING_EXPECT_RANGES_BY(procedure_gradient.array(), function_gradient.array(),
         [](auto const& actual, auto const& expected) {
-            return abs(actual-expected).raw() <= FloatDP(8e-16);
+            return abs(actual-expected).raw() <= FloatDP(ExactDouble(8e-16),dp);
         });
     ARIADNE_TESTING_EXPECT_EQUAL(hessian(p,q,s), f(ds).hessian().get(0,0));
 }
