@@ -820,7 +820,13 @@ Void TestProcedure::test_derivative()
     Vector<X> q({2,1},dp);
     Vector<X> s({-1,3},dp);
     Vector<Differential<X>> ds=Differential<X>::variable(1,2,zero,0)*s+q;
-    ARIADNE_TESTING_EXPECT_LESS_EQUAL(norm(gradient(p,q)-f.gradient(q)).raw(), FloatDP(8e-16,dp));
+    // Compare each gradient component against the original absolute tolerance.
+    const auto procedure_gradient=gradient(p,q);
+    const auto function_gradient=f.gradient(q);
+    ARIADNE_TESTING_EXPECT_RANGES_BY(procedure_gradient.array(), function_gradient.array(),
+        [](auto const& actual, auto const& expected) {
+            return abs(actual-expected).raw() <= FloatDP(8e-16);
+        });
     ARIADNE_TESTING_EXPECT_EQUAL(hessian(p,q,s), f(ds).hessian().get(0,0));
 }
 

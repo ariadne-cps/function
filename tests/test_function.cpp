@@ -200,8 +200,10 @@ Void TestFunction::test_vector_function()
     EffectiveScalarMultivariateFunction x1=EffectiveScalarMultivariateFunction::coordinate(3,1);
 //    EffectiveVector e0={1,0};
     Vector<EffectiveNumber> e0={1,0};
-    ARIADNE_TESTING_EXPECT_SAME((x1*e0)(v)[0], v[1]);
-    ARIADNE_TESTING_EXPECT_SAME((x1*e0)(v)[1], 0);
+    // Keep the computed vector alive across both deferred checks.
+    const Vector<FloatDPApproximation> scaled_coordinates=(x1*e0)(v);
+    ARIADNE_TESTING_EXPECT_SAME(scaled_coordinates[0], v[1]);
+    ARIADNE_TESTING_EXPECT_SAME(scaled_coordinates[1], FloatDPApproximation(0,dp));
 
     // Regression test for validated scalar-vector join preserving every
     // component of the vector tail.
