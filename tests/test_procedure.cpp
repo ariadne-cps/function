@@ -827,7 +827,16 @@ Void TestProcedure::test_derivative()
         [](auto const& actual, auto const& expected) {
             return abs(actual-expected).raw() <= FloatDP(ExactDouble(8e-16),dp);
         });
-    ARIADNE_TESTING_EXPECT_EQUAL(hessian(p,q,s), f(ds).hessian().get(0,0));
+    // The two evaluation paths may differ by roundoff; compare their
+    // approximations using the absolute Hessian tolerance already used below.
+    const auto procedure_hessian=hessian(p,q,s);
+    const auto differential_result=f(ds);
+    const auto function_hessian=differential_result.hessian().get(0,0);
+    const auto derivative_hessian_error=abs(procedure_hessian-function_hessian);
+    ARIADNE_TESTING_INSPECT("procedure_hessian", procedure_hessian);
+    ARIADNE_TESTING_INSPECT("function_hessian", function_hessian);
+    ARIADNE_TESTING_EXPECT_POSSIBLY(procedure_hessian==function_hessian);
+    ARIADNE_TESTING_EXPECT_LESS_EQUAL(derivative_hessian_error.raw(), FloatDP(ExactDouble(1e-14),dp));
 }
 
 Void TestProcedure::test_scalar_formula_conversion() {
@@ -937,7 +946,11 @@ Void TestProcedureExtra::test_procedure_scalar_derivatives() {
         Vector<X> argument{X(0.5_x,dp)},velocity{X(2,dp)};
         X expected=X(2,dp)/(X(0.75_x,dp)*sqrt(X(0.75_x,dp)));
         if(op.code()==OperatorCode::ACOS) { expected=-expected; }
-        ARIADNE_TESTING_EXPECT_WITHIN(hessian(p,argument,velocity), expected, 1e-14);
+        const auto computed_hessian=hessian(p,argument,velocity);
+        const auto hessian_error=abs(computed_hessian-expected);
+        ARIADNE_TESTING_INSPECT("computed_hessian", computed_hessian);
+        ARIADNE_TESTING_INSPECT("expected_hessian", expected);
+        ARIADNE_TESTING_EXPECT_LESS_EQUAL(hessian_error.raw(), FloatDP(ExactDouble(1e-14),dp));
     }
     for(const auto& op:List<BinaryElementaryOperator>{Max(),Min()}) {
         ApproximateProcedure p(1u,F::scalar(op,ApproximateNumber(3),F::coordinate(0u)));

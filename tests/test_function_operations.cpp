@@ -140,8 +140,10 @@ template<class P> Void test_composition() {
     ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (derivative(gg,0u)(point)); return snapshot.array(); }()), ([&] { auto snapshot = (Vector<X>({2,0},dp)); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_SAME(h.slope(scalar), X(6,dp));
     ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (q.tangent(scalar)); return snapshot.array(); }()), ([&] { auto snapshot = (Vector<X>({1,1},dp)); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
-    ARIADNE_TESTING_EXPECT_SAME(f.gradient(point)[1], X(-1,dp));
-    ARIADNE_TESTING_EXPECT_SAME(g.jacobian(point)[1][1], X(-1,dp));
+    const auto f_gradient=f.gradient(point);
+    const auto g_jacobian=g.jacobian(point);
+    ARIADNE_TESTING_EXPECT_SAME(f_gradient[1], X(-1,dp));
+    ARIADNE_TESTING_EXPECT_SAME(g_jacobian[1][1], X(-1,dp));
     ARIADNE_TESTING_EXPECT_SAME(qh.get(1u)(scalar), X(12,dp));
     ARIADNE_TESTING_EXPECT_SAME(gg.get(1u)(point), X(4,dp));
     check_display(hh);check_display(fq);check_display(qh);check_display(gq);
