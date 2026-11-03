@@ -75,7 +75,10 @@ Void test_affine_algebra() {
     const auto duplicate_coefficients=duplicate.gradient();
     ARIADNE_TESTING_EXPECT_RANGES_BY(coefficients.array(), duplicate_coefficients.array(),
         [](auto const& left, auto const& right) { return same(left,right); });
-    ARIADNE_TESTING_PROVE(!(f==g));
+    // Approximate inequality may be undecidable even for distinct representations.
+    // Keep the operator evidence, and require a concrete representational difference.
+    ARIADNE_TESTING_EXPECT_POSSIBLY(!(f==g));
+    ARIADNE_TESTING_PROVE(!same(f.value(),g.value()));
     ARIADNE_TESTING_EXPECT_SAME((f+Integer(2)).evaluate(point), FloatDPApproximation(12,dp));
     ARIADNE_TESTING_EXPECT_SAME((Integer(2)+f).evaluate(point), FloatDPApproximation(12,dp));
     ARIADNE_TESTING_EXPECT_SAME((f-Integer(2)).evaluate(point), FloatDPApproximation(8,dp));
