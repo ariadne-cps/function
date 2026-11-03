@@ -9,7 +9,7 @@
 using namespace Ariadne;
 using M=ValidatedTaylorModelDP;
 using S=ScaledFunctionPatch<M>;
-using V=VectorScaledFunctionPatch<M>;
+using VectorPatch=VectorScaledFunctionPatch<M>;
 
 class TestScaledFunctionPatch : public Ariadne::Testing::ContextFixture {
 public:
@@ -18,7 +18,7 @@ Void test_scaled_patch_values_and_domains() {
     const Sweeper<FloatDP> swp=ThresholdSweeper<FloatDP>(dp,1e-12);
     const BoxDomainType domain{{-1,1},{-1,1}},other{{0,2},{0,2}};
     const auto x=S::coordinate(domain,0u,swp),y=S::coordinate(domain,1u,swp);
-    const V vector(domain,Vector<M>{x.model(),y.model()});
+    const VectorPatch vector(domain,Vector<M>{x.model(),y.model()});
     const Vector<FloatDPBounds> point({0.5_x,-0.25_x},dp),outside({2,2},dp);
     const Vector<FloatDPApproximation> approximate({0.5_x,-0.25_x},dp),approximate_outside({2,2},dp);
     ARIADNE_TESTING_EXPECT_SAME(x(approximate), FloatDPApproximation(0.5_x,dp));
@@ -49,15 +49,15 @@ Void test_scaled_patch_values_and_domains() {
     ARIADNE_TESTING_EXPECT_EXCEPTION(restriction(vector,other));
     ARIADNE_TESTING_PROVE(same(restriction(vector,domain),vector));
     const auto shifted=S::coordinate(other,0u,swp);
-    const V shifted_vector(other,Vector<M>{shifted.model(),shifted.model()});
+    const VectorPatch shifted_vector(other,Vector<M>{shifted.model(),shifted.model()});
     ARIADNE_TESTING_EXPECT_EXCEPTION(join(vector,shifted_vector));
     ARIADNE_TESTING_EXPECT_EXCEPTION(refinement(x,shifted));
     using O=AlgebraOperations<S>;
     ARIADNE_TESTING_EXPECT_EXCEPTION(O::apply(BinaryElementaryOperator(Add()),x,shifted));
     ARIADNE_TESTING_PROVE(!same(vector,shifted_vector));
-    const V changed(domain,Vector<M>{x.model()+1,y.model()});
+    const VectorPatch changed(domain,Vector<M>{x.model()+1,y.model()});
     ARIADNE_TESTING_PROVE(!same(vector,changed));
-    const V single(domain,Vector<M>{x.model()});
+    const VectorPatch single(domain,Vector<M>{x.model()});
     ARIADNE_TESTING_PROVE(!same(vector,single));
     ARIADNE_TESTING_PROVE(!same(single,vector));
     auto difference=vector;difference-=vector;
@@ -84,29 +84,29 @@ Void test_scaled_patch_construction_contracts() {
     const BoxDomainType domain{{-1,1},{-1,1}},other{{0,2},{0,2}};
     const auto x=S::coordinate(domain,0u,swp);
     ARIADNE_TESTING_EXPECT_EXCEPTION(S::coordinate(domain,2u,swp));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(V(List<S>{}));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(VectorPatch(List<S>{}));
     const auto scalar=ValidatedScalarMultivariateFunction::coordinate(1u,0u);
     ARIADNE_TESTING_EXPECT_EXCEPTION(S(domain,scalar,swp));
     const auto model=M::coordinate(1u,0u,swp);
-    ARIADNE_TESTING_EXPECT_EXCEPTION(V(domain,Vector<M>{model}));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(VectorPatch(domain,Vector<M>{model}));
     // Avoid UniformArray's iterator-range constructor (-Wshadow with GCC 13).
     Vector<Expansion<MultiIndex,FloatDP>> expansions(1u,x.expansion());
     Vector<M::ErrorType> errors{FloatDPError(0u,dp)};
-    ARIADNE_TESTING_EXPECT_EXCEPTION(V(domain,expansions,Vector<M::ErrorType>{},swp));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(V(BoxDomainType{{-1,1}},expansions,errors,swp));
-    const V raw_vector(domain,expansions,Vector<FloatDP>{FloatDP(0,dp)},swp);
+    ARIADNE_TESTING_EXPECT_EXCEPTION(VectorPatch(domain,expansions,Vector<M::ErrorType>{},swp));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(VectorPatch(BoxDomainType{{-1,1}},expansions,errors,swp));
+    const VectorPatch raw_vector(domain,expansions,Vector<FloatDP>{FloatDP(0,dp)},swp);
     // Keep the evaluated vector alive while Testing compares its element.
     const auto evaluated_raw_vector=raw_vector(Vector<FloatDPBounds>({0.5_x,0},dp));
     ARIADNE_TESTING_EXPECT_SAME(evaluated_raw_vector[0u], FloatDPBounds(0.5_x,dp));
     Vector<FloatDP> raw_errors(0u,FloatDP(0,dp));
     // The API must reject unequal numbers of expansions and error bounds.
-    ARIADNE_TESTING_EXPECT_EXCEPTION(V(domain,expansions,raw_errors,swp));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(VectorPatch(domain,expansions,raw_errors,swp));
     const auto vector=ValidatedVectorMultivariateFunction::identity(1u);
-    ARIADNE_TESTING_EXPECT_EXCEPTION(V(domain,vector,swp));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(VectorPatch(domain,vector,swp));
     const auto shifted=S::coordinate(other,0u,swp);
-    ARIADNE_TESTING_EXPECT_EXCEPTION(V(List<S>{x,shifted}));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(V(Vector<S>{x,shifted}));
-    V mutable_vector(domain,Vector<M>{x.model()});
+    ARIADNE_TESTING_EXPECT_EXCEPTION(VectorPatch(List<S>{x,shifted}));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(VectorPatch(Vector<S>{x,shifted}));
+    VectorPatch mutable_vector(domain,Vector<M>{x.model()});
     ARIADNE_TESTING_EXPECT_EXCEPTION(mutable_vector.set(1u,x));
     ARIADNE_TESTING_EXPECT_EXCEPTION(mutable_vector.set(0u,shifted));
     ARIADNE_TESTING_EXPECT_EXCEPTION(mutable_vector.adjoin(shifted));
