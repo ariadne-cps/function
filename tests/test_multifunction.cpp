@@ -61,6 +61,7 @@ class TestMultifunction : public Ariadne::Testing::ContextFixture
     using ScalarIntervalFunctionModel = ValidatedIntervalTaylorFunctionModel<FloatMP>;
     using VectorIntervalFunctionModel = ValidatedVectorIntervalTaylorFunctionModel<FloatMP>;
     using UpperInterval = Interval<FloatMPUpperBound>;
+    UpperInterval create_zero(UpperInterval const& ivl);
   public:
     using ContextFixture::ContextFixture;
     void set_up() { Dyadic::set_default_writer(DecimalWriter()); }
@@ -97,8 +98,10 @@ Void TestMultifunction::test_taylor_concept()
     sqrt(f); exp(f); log(f); sin(f); cos(f); tan(f); atan(f);
 }
 
-inline Interval<FloatMPUpperBound> create_zero(Interval<FloatMPUpperBound> const& ivl) {
-    return Interval<FloatMPUpperBound>(nul(ivl.lower_bound()),nul(ivl.upper_bound()));
+auto TestMultifunction::create_zero(UpperInterval const& ivl) -> UpperInterval {
+    ARIADNE_TESTING_NOTE("create_zero(ivl)");
+    ARIADNE_TESTING_NOTE("ivl="<<ivl<<", nul(ivl.lower_bound())="<<nul(ivl.lower_bound()));
+    return UpperInterval(nul(ivl.lower_bound()),nul(ivl.upper_bound()));
 }
 
 Void TestMultifunction::test_taylor_evaluate()
