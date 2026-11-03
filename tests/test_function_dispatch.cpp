@@ -39,7 +39,8 @@ template<class P> Void test_formula_constructors_and_dispatch() {
         ARIADNE_TESTING_EXPECT_SAME(SA::apply(BinaryElementaryOperator(Sub()),Y(5),a)(point), X(2,dp));
         ARIADNE_TESTING_EXPECT_SAME(SA::apply(BinaryElementaryOperator(Sub()),a,Y(5))(point), X(-2,dp));
         V single{a};
-        ARIADNE_TESTING_EXPECT_SAME(single(point)[0], X(3,dp));
+        const auto single_value=single(point);
+        ARIADNE_TESTING_EXPECT_SAME(single_value[0], X(3,dp));
         for(const auto& b:second) {
             ARIADNE_TESTING_EXPECT_SAME((a+b)(point), X(4,dp));
             ARIADNE_TESTING_EXPECT_SAME((a-b)(point), X(2,dp));

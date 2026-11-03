@@ -243,9 +243,11 @@ template<class P> Void TestFunctionInterface::test_numeric_jets_and_taylor_argum
     ARIADNE_TESTING_EXPECT_SAME(polynomial(point), FloatMPApproximation(1.5625_x,mp));
     auto jet=polynomial(Differential<FloatMPApproximation>::variables(2u,point));
     ARIADNE_TESTING_EXPECT_SAME(jet.value(), FloatMPApproximation(1.5625_x,mp));
-    ARIADNE_TESTING_EXPECT_SAME(jet.gradient()[0u], FloatMPApproximation(0.5_x,mp));
-    ARIADNE_TESTING_EXPECT_SAME(jet.gradient()[1u], FloatMPApproximation(1,mp));
-    ARIADNE_TESTING_EXPECT_SAME(jet.hessian().get(0u,0u), FloatMPApproximation(2,mp));
+    const auto jet_gradient=jet.gradient();
+    const auto jet_hessian=jet.hessian();
+    ARIADNE_TESTING_EXPECT_SAME(jet_gradient[0u], FloatMPApproximation(0.5_x,mp));
+    ARIADNE_TESTING_EXPECT_SAME(jet_gradient[1u], FloatMPApproximation(1,mp));
+    ARIADNE_TESTING_EXPECT_SAME(jet_hessian.get(0u,0u), FloatMPApproximation(2,mp));
     check_taylor_argument<TaylorModel<ApproximateTag,FloatDP>>(polynomial,dp);
     check_taylor_argument<TaylorModel<ApproximateTag,FloatMP>>(polynomial,mp);
     if constexpr (!Same<P,ApproximateTag>) {

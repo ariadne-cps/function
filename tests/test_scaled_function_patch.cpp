@@ -124,7 +124,7 @@ Void test_scaled_patch_numeric_helpers() {
     ARIADNE_TESTING_PROVE(contains(IntervalDomainType(-1,1),FloatMPBounds(0,mp)));
     // Approximate membership carries possible, not definite, evidence. The validated enclosure is checked above.
     ARIADNE_TESTING_EXPECT_POSSIBLY(contains(IntervalDomainType(-1,1),FloatMPApproximation(0,mp)));
-    ARIADNE_TESTING_PROVE(contains(BoxDomainType{{-1,1}},Vector<FloatMPApproximation>{FloatMPApproximation(0,mp)}));
+    ARIADNE_TESTING_EXPECT_POSSIBLY(contains(BoxDomainType{{-1,1}},Vector<FloatMPApproximation>{FloatMPApproximation(0,mp)}));
     std::ostringstream text;text<<representation(FloatMP(2,mp));
     ARIADNE_TESTING_PROVE(!text.str().empty());
     ARIADNE_TESTING_PROVE(FloatDPApproximation(2,dp)==Int(2));

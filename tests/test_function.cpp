@@ -118,9 +118,10 @@ Void TestFunction::test_vector_univariate_function()
 
     FloatDPApproximation p=2.0_approx;
 
-    ARIADNE_TESTING_EXPECT_SAME(f(p)[0], FloatDPApproximation(c[0],dp));
+    const auto f_at_p=f(p);
+    ARIADNE_TESTING_EXPECT_SAME(f_at_p[0], FloatDPApproximation(c[0],dp));
     ARIADNE_TESTING_EXPECT_SAME(f[0](p), FloatDPApproximation(c[0],dp));
-    ARIADNE_TESTING_EXPECT_SAME(f(p)[1], FloatDPApproximation(c[1],dp));
+    ARIADNE_TESTING_EXPECT_SAME(f_at_p[1], FloatDPApproximation(c[1],dp));
     ARIADNE_TESTING_EXPECT_SAME(f[1](p), FloatDPApproximation(c[1],dp));
 
     EffectiveVectorUnivariateFunction df;
@@ -194,7 +195,8 @@ Void TestFunction::test_vector_function()
     ARIADNE_TESTING_EXPECT_NO_THROW(f[0]=x0sqr);
     ARIADNE_TESTING_EXPECT_NO_THROW(f[0]=f[1]);
     ARIADNE_TESTING_EXPECT_SAME(f[0](v), v[1]);
-    ARIADNE_TESTING_EXPECT_SAME(f(v)[0], v[1]);
+    const auto updated_f_value=f(v);
+    ARIADNE_TESTING_EXPECT_SAME(updated_f_value[0], v[1]);
 
     // Regression test for function - vector product
     EffectiveScalarMultivariateFunction x1=EffectiveScalarMultivariateFunction::coordinate(3,1);

@@ -40,8 +40,9 @@ template<class F> Void test_approximate_model(typename F::PrecisionType pr) {
     A a(X(2,pr),{X(3,pr),X(-1,pr),X(0,pr)});
     Vector<X> point({0.25_x,0.5_x,0.0_x},pr);
     ARIADNE_TESTING_EXPECT_SAME(a.evaluate(point), X(2.25_x,pr));
-    ARIADNE_TESTING_EXPECT_SAME(a.range().lower_bound(), X(-2,pr));
-    ARIADNE_TESTING_EXPECT_SAME(a.range().upper_bound(), X(6,pr));
+    const auto initial_range=a.range();
+    ARIADNE_TESTING_EXPECT_SAME(initial_range.lower_bound(), X(-2,pr));
+    ARIADNE_TESTING_EXPECT_SAME(initial_range.upper_bound(), X(6,pr));
     ARIADNE_TESTING_EXPECT_SAME(a.b(), a.value());
     ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (a.a()); return snapshot.array(); }()), ([&] { auto snapshot = (a.gradient()); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_EQUAL(a.precision(), pr);
@@ -66,7 +67,8 @@ template<class F> Void test_approximate_model(typename F::PrecisionType pr) {
     A constant(0u,coefficient);constant=X(5,pr);
     Vector<X> empty(0u,pr);
     ARIADNE_TESTING_EXPECT_SAME(constant.evaluate(empty), X(5,pr));
-    ARIADNE_TESTING_EXPECT_SAME(constant.range().lower_bound(), X(5,pr));
+    const auto constant_range=constant.range();
+    ARIADNE_TESTING_EXPECT_SAME(constant_range.lower_bound(), X(5,pr));
     ARIADNE_TESTING_EXPECT_EXCEPTION(a+A(2u,pr));
     ARIADNE_TESTING_EXPECT_EXCEPTION(a*A(2u,pr));
     std::ostringstream text;text<<from_covector<<constant;
@@ -116,8 +118,9 @@ template<class F> Void test_validated_model(typename F::PrecisionType pr) {
     A constant=A::constant(0u,F(2,pr));constant=F(5,pr);
     Vector<X> empty(0u,pr);
     ARIADNE_TESTING_PROVE(definitely(constant.evaluate(empty)==X(5,pr)));
-    ARIADNE_TESTING_EXPECT_SAME((constant*constant).value(), F(25,pr));
-    ARIADNE_TESTING_EXPECT_SAME((constant*constant).error().raw(), F(0,pr));
+    const auto constant_square=constant*constant;
+    ARIADNE_TESTING_EXPECT_SAME(constant_square.value(), F(25,pr));
+    ARIADNE_TESTING_EXPECT_SAME(constant_square.error().raw(), F(0,pr));
     ARIADNE_TESTING_EXPECT_EXCEPTION(a+A(2u,pr));ARIADNE_TESTING_EXPECT_EXCEPTION(a*A(2u,pr));
     std::ostringstream text;text<<from_covector<<constant;
     ARIADNE_TESTING_INSPECT("text.str()", text.str());
