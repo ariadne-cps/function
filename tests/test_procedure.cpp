@@ -153,7 +153,7 @@ Void TestProcedure::test_construct_from_expansion()
         Vector<FloatDPApproximation> x({2.0_x,3.0_x},pr);
         ARIADNE_TESTING_INSPECT("simple_evaluate(e,x)", simple_evaluate(e,x));
         ARIADNE_TESTING_INSPECT("evaluate(p,x)", evaluate(p,x));
-        ARIADNE_TESTING_EXPECT_EQUAL(evaluate(p,x), simple_evaluate(e,x));
+        ARIADNE_TESTING_EXPECT_SAME(evaluate(p,x), simple_evaluate(e,x));
     }
 
     {
@@ -162,7 +162,7 @@ Void TestProcedure::test_construct_from_expansion()
         Procedure<ApproximateNumber> p(e);
         ARIADNE_TESTING_INSPECT("p", p);
         Vector<FloatDPApproximation> x({2.0_x,3.0_x},pr);
-        ARIADNE_TESTING_EXPECT_EQUAL(evaluate(p,x), simple_evaluate(e,x));
+        ARIADNE_TESTING_EXPECT_SAME(evaluate(p,x), simple_evaluate(e,x));
     }
 }
 
@@ -820,7 +820,7 @@ Void TestProcedure::test_derivative()
     Vector<X> q({2,1},dp);
     Vector<X> s({-1,3},dp);
     Vector<Differential<X>> ds=Differential<X>::variable(1,2,zero,0)*s+q;
-    ARIADNE_TESTING_EXPECT_WITHIN(gradient(p,q), f.gradient(q), 8e-16);
+    ARIADNE_TESTING_EXPECT_LESS_EQUAL(norm(gradient(p,q)-f.gradient(q)).raw(), FloatDP(8e-16,dp));
     ARIADNE_TESTING_EXPECT_EQUAL(hessian(p,q,s), f(ds).hessian().get(0,0));
 }
 
@@ -830,10 +830,10 @@ Void TestProcedure::test_scalar_formula_conversion() {
     auto formula=F::scalar(Mul(),ApproximateNumber(3),x+y);
     ApproximateProcedure procedure(2u,formula);
     Vector<FloatDPApproximation> point({2,4},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(procedure,point), FloatDPApproximation(18,dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(procedure,point), FloatDPApproximation(18,dp));
     Vector<ApproximateProcedure> vector(procedure);
     ARIADNE_TESTING_EXPECT_EQUAL(vector.argument_size(), 2u);
-    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(vector,point)[0u], FloatDPApproximation(18,dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(vector,point)[0u], FloatDPApproximation(18,dp));
 }
 
 
@@ -865,7 +865,7 @@ Void TestProcedureExtra::test_procedure_instruction_accessors() {
 Void TestProcedureExtra::test_procedure_builders_and_contracts() {
     using X=FloatDPApproximation;using F=ApproximateFormula;
     ApproximateProcedure constant(0u);constant.new_constant(ApproximateNumber(7));constant.new_instruction(Cnst(),0u);
-    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(constant,Vector<X>(0u,dp)), X(7,dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(constant,Vector<X>(0u,dp)), X(7,dp));
     auto x=F::coordinate(0u),y=F::coordinate(1u);
     ApproximateProcedure sum(2u,x+y);
     Vector<ApproximateProcedure> vector(sum);
@@ -876,10 +876,10 @@ Void TestProcedureExtra::test_procedure_builders_and_contracts() {
     vector.new_instruction(Add(),previous,vector.temporaries_size()-1u);
     vector.set_return(0u,vector.temporaries_size()-1u);
     Vector<X> point({2,4},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(vector,point)[0u], X(42,dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(vector,point)[0u], X(42,dp));
     List<X> temporaries(vector.temporaries_size(),X(0,dp));
     execute(temporaries,vector,point);
-    ARIADNE_TESTING_EXPECT_EQUAL(temporaries.back(), X(42,dp));
+    ARIADNE_TESTING_EXPECT_SAME(temporaries.back(), X(42,dp));
     ARIADNE_TESTING_EXPECT_EXCEPTION(evaluate(sum,Vector<X>(1u,dp)));
     ARIADNE_TESTING_EXPECT_EXCEPTION(evaluate(vector,Vector<X>(1u,dp)));
     ARIADNE_TESTING_EXPECT_EXCEPTION(execute(temporaries,vector,Vector<X>(1u,dp)));
@@ -912,15 +912,15 @@ Void TestProcedureExtra::test_procedure_scalar_derivatives() {
     for(const auto& example:cases) {
         auto expression=F::scalar(example.op,ApproximateNumber(3),F::coordinate(0u));
         ApproximateProcedure p(1u,expression);
-        if(example.op.code()==OperatorCode::DIV) { ARIADNE_TESTING_EXPECT_EQUAL(evaluate(p,point), X(1.5_x,dp)); }
-        else { ARIADNE_TESTING_EXPECT_EQUAL(evaluate(p,point), X(example.value,dp)); }
-        ARIADNE_TESTING_EXPECT_EQUAL(gradient(p,point)[0u], X(example.first,dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(hessian(p,point,direction), X(example.second,dp));
+        if(example.op.code()==OperatorCode::DIV) { ARIADNE_TESTING_EXPECT_SAME(evaluate(p,point), X(1.5_x,dp)); }
+        else { ARIADNE_TESTING_EXPECT_SAME(evaluate(p,point), X(example.value,dp)); }
+        ARIADNE_TESTING_EXPECT_SAME(gradient(p,point)[0u], X(example.first,dp));
+        ARIADNE_TESTING_EXPECT_SAME(hessian(p,point,direction), X(example.second,dp));
     }
     ApproximateProcedure cube(1u,F::graded(Pow(),F::coordinate(0u),3));
-    ARIADNE_TESTING_EXPECT_EQUAL(gradient(cube,point)[0u], X(12,dp));
+    ARIADNE_TESTING_EXPECT_SAME(gradient(cube,point)[0u], X(12,dp));
     ApproximateProcedure polynomial(1u,pow(F::coordinate(0u),3)+ApproximateNumber(7));
-    ARIADNE_TESTING_EXPECT_EQUAL(gradient(polynomial,point)[0u], X(12,dp));
+    ARIADNE_TESTING_EXPECT_SAME(gradient(polynomial,point)[0u], X(12,dp));
     for(const auto& op:List<UnaryElementaryOperator>{Asin(),Acos()}) {
         ApproximateProcedure p(1u,F::unary(op,F::coordinate(0u)));
         Vector<X> argument{X(0.5_x,dp)},velocity{X(2,dp)};
@@ -956,7 +956,7 @@ Void TestProcedureExtra::test_procedure_interval_contracts_and_empty_targets() {
     ARIADNE_TESTING_EXPECT_EXCEPTION(simple_hull_reduce(domain,vector,ExactBoxType(0u)));
     ApproximateProcedure p(1u,ApproximateFormula::coordinate(0u)),no_instructions(1u);
     Vector<D> differentials(1u,D(FloatDPApproximation(2,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(p,differentials).value(), FloatDPApproximation(2,dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(p,differentials).value(), FloatDPApproximation(2,dp));
     ARIADNE_TESTING_EXPECT_EXCEPTION(evaluate(p,Vector<D>(0u,D(FloatDPApproximation(0,dp)))));
     ARIADNE_TESTING_EXPECT_EXCEPTION(evaluate(no_instructions,differentials));
     ARIADNE_TESTING_PROVE(definitely(gradient(identity,point)[0u]==B(1,dp)));

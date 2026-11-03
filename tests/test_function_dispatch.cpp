@@ -24,27 +24,27 @@ template<class P> Void test_formula_constructors_and_dispatch() {
     S sum(EuclideanDomain(2u),t+y);
     V identity(EuclideanDomain(2u),Vector<Formula<Y>>{t,y});
     X parameter(3,dp);Vector<X> point({3,1},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(scalar(parameter), X(10,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(curve(parameter), Vector<X>({3,5},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(sum(point), X(4,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(identity(point), point);
+    ARIADNE_TESTING_EXPECT_SAME(scalar(parameter), X(10,dp));
+    ARIADNE_TESTING_EXPECT_RANGES_BY(curve(parameter), Vector<X>({3,5},dp), [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_SAME(sum(point), X(4,dp));
+    ARIADNE_TESTING_EXPECT_RANGES_BY(identity(point), point, [](auto const& left, auto const& right) { return same(left,right); });
     auto coordinate=C::coordinate();
     using UA=AlgebraOperations<U,Y>;using SA=AlgebraOperations<S,Y>;
-    ARIADNE_TESTING_EXPECT_EQUAL(UA::apply(BinaryElementaryOperator(Sub()),Y(5),coordinate)(parameter), X(2,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(UA::apply(GradedElementaryOperator(Pow()),coordinate,3)(parameter), X(27,dp));
+    ARIADNE_TESTING_EXPECT_SAME(UA::apply(BinaryElementaryOperator(Sub()),Y(5),coordinate)(parameter), X(2,dp));
+    ARIADNE_TESTING_EXPECT_SAME(UA::apply(GradedElementaryOperator(Pow()),coordinate,3)(parameter), X(27,dp));
     std::array<S,2> first{C::coordinate(2u,0u),C::coordinate(EuclideanDomain(2u),0u)};
     std::array<S,2> second{C::coordinate(2u,1u),C::coordinate(EuclideanDomain(2u),1u)};
     for(const auto& a:first) {
-        ARIADNE_TESTING_EXPECT_EQUAL((-a)(point), X(-3,dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(SA::apply(BinaryElementaryOperator(Sub()),Y(5),a)(point), X(2,dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(SA::apply(BinaryElementaryOperator(Sub()),a,Y(5))(point), X(-2,dp));
+        ARIADNE_TESTING_EXPECT_SAME((-a)(point), X(-3,dp));
+        ARIADNE_TESTING_EXPECT_SAME(SA::apply(BinaryElementaryOperator(Sub()),Y(5),a)(point), X(2,dp));
+        ARIADNE_TESTING_EXPECT_SAME(SA::apply(BinaryElementaryOperator(Sub()),a,Y(5))(point), X(-2,dp));
         V single{a};
-        ARIADNE_TESTING_EXPECT_EQUAL(single(point)[0], X(3,dp));
+        ARIADNE_TESTING_EXPECT_SAME(single(point)[0], X(3,dp));
         for(const auto& b:second) {
-            ARIADNE_TESTING_EXPECT_EQUAL((a+b)(point), X(4,dp));
-            ARIADNE_TESTING_EXPECT_EQUAL((a-b)(point), X(2,dp));
-            ARIADNE_TESTING_EXPECT_EQUAL((a*b)(point), X(3,dp));
-            ARIADNE_TESTING_EXPECT_EQUAL((a/b)(point), X(3,dp));
+            ARIADNE_TESTING_EXPECT_SAME((a+b)(point), X(4,dp));
+            ARIADNE_TESTING_EXPECT_SAME((a-b)(point), X(2,dp));
+            ARIADNE_TESTING_EXPECT_SAME((a*b)(point), X(3,dp));
+            ARIADNE_TESTING_EXPECT_SAME((a/b)(point), X(3,dp));
         }
     }
     ARIADNE_TESTING_EXPECT_EXCEPTION(SA::apply(BinaryElementaryOperator(Add()),C::coordinate(1u,0u),first[0]));

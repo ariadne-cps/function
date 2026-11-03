@@ -301,7 +301,7 @@ Void TestScalarTaylorFunction::test_antiderivative()
     [[maybe_unused]] ValidatedScalarMultivariateTaylorFunctionModelDP g(antiderivative(f,0,2.0_x));
     ARIADNE_TESTING_INSPECT("derivative(g,0)", derivative(g,0));
     [[maybe_unused]] ValidatedScalarMultivariateTaylorFunctionModelDP dg(derivative(g,0));
-    ARIADNE_TESTING_EXPECT_LESS(norm(dg-f), 1e-8);
+    ARIADNE_TESTING_EXPECT_LESS(norm(dg-f).raw(), FloatDP(1e-8,dp));
 
     // We should have f(c,s)=0 for all x1
     ValidatedScalarMultivariateTaylorFunctionModelDP s = ValidatedScalarMultivariateTaylorFunctionModelDP::coordinate({dom[1]},0u,swp);

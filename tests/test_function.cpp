@@ -88,11 +88,11 @@ Void TestFunction::test_scalar_univariate_function()
     [[maybe_unused]] EffectiveScalarUnivariateFunction o(EffectiveScalarUnivariateFunction::constant(1));
     [[maybe_unused]] EffectiveScalarUnivariateFunction x(EffectiveScalarUnivariateFunction::coordinate());
 
-    ARIADNE_TESTING_EXPECT_EQUAL(o(p), 1.0_approx);
-    ARIADNE_TESTING_EXPECT_EQUAL(x(p), 3.0_approx);
+    ARIADNE_TESTING_EXPECT_SAME(o(p), 1.0_approx);
+    ARIADNE_TESTING_EXPECT_SAME(x(p), 3.0_approx);
 
     [[maybe_unused]] EffectiveScalarUnivariateFunction f(o+x*x);
-    ARIADNE_TESTING_EXPECT_EQUAL(f(p), 10.0_approx);
+    ARIADNE_TESTING_EXPECT_SAME(f(p), 10.0_approx);
 
     ARIADNE_TESTING_INSPECT("cos(f)", cos(f));
 
@@ -106,7 +106,7 @@ Void TestFunction::test_scalar_univariate_function()
     dfp=f.slope(p);
     dfp=slope(f,p);
     ARIADNE_TESTING_INSPECT("df", df);
-    ARIADNE_TESTING_EXPECT_EQUAL(df(p), 6.0_approx);
+    ARIADNE_TESTING_EXPECT_SAME(df(p), 6.0_approx);
 
 }
 
@@ -118,10 +118,10 @@ Void TestFunction::test_vector_univariate_function()
 
     FloatDPApproximation p=2.0_approx;
 
-    ARIADNE_TESTING_EXPECT_EQUAL(f(p)[0], c[0]);
-    ARIADNE_TESTING_EXPECT_EQUAL(f[0](p), c[0]);
-    ARIADNE_TESTING_EXPECT_EQUAL(f(p)[1], c[1]);
-    ARIADNE_TESTING_EXPECT_EQUAL(f[1](p), c[1]);
+    ARIADNE_TESTING_EXPECT_SAME(f(p)[0], FloatDPApproximation(c[0],dp));
+    ARIADNE_TESTING_EXPECT_SAME(f[0](p), FloatDPApproximation(c[0],dp));
+    ARIADNE_TESTING_EXPECT_SAME(f(p)[1], FloatDPApproximation(c[1],dp));
+    ARIADNE_TESTING_EXPECT_SAME(f[1](p), FloatDPApproximation(c[1],dp));
 
     EffectiveVectorUnivariateFunction df;
     Vector<FloatDPApproximation> dfp;
@@ -144,20 +144,20 @@ Void TestFunction::test_scalar_function()
 
     [[maybe_unused]] EffectiveScalarMultivariateFunction f(o+x*y);
     [[maybe_unused]] Vector<FloatDPApproximation> p({2.0_approx,3.0_approx,5.0_approx});
-    ARIADNE_TESTING_EXPECT_EQUAL(f(p), 7.0_approx);
+    ARIADNE_TESTING_EXPECT_SAME(f(p), 7.0_approx);
 
     EffectiveFormula formula_x=EffectiveFormula::coordinate(0);
     EffectiveFormula scalar_formula=EffectiveFormula::scalar(
         BinaryElementaryOperator(Mul::code()),EffectiveNumber(2),formula_x);
     EffectiveScalarMultivariateFunction scalar_formula_function(EuclideanDomain(1),scalar_formula);
     Vector<FloatDPApproximation> scalar_formula_argument={3.0_approx};
-    ARIADNE_TESTING_EXPECT_EQUAL(scalar_formula_function(scalar_formula_argument), 6.0_approx);
+    ARIADNE_TESTING_EXPECT_SAME(scalar_formula_function(scalar_formula_argument), 6.0_approx);
 
     ARIADNE_TESTING_INSPECT("cos(f)", cos(f));
 
     EffectiveScalarMultivariateFunction df=f.derivative(1);
     ARIADNE_TESTING_INSPECT("df", df);
-    ARIADNE_TESTING_EXPECT_EQUAL(df(p), 2.0_approx);
+    ARIADNE_TESTING_EXPECT_SAME(df(p), 2.0_approx);
 
     Covector<FloatDPApproximation> dfp;
     SizeType k=0;
@@ -185,23 +185,23 @@ Void TestFunction::test_vector_function()
     Vector<FloatDPApproximation> v={2.0_approx,3.0_approx,5.0_approx};
 
     [[maybe_unused]] EffectiveVectorMultivariateFunction f(id);
-    ARIADNE_TESTING_EXPECT_EQUAL(f(v), v);
-    ARIADNE_TESTING_EXPECT_EQUAL(f[0](v), v[0]);
+    ARIADNE_TESTING_EXPECT_RANGES_BY(f(v), v, [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_SAME(f[0](v), v[0]);
     auto f0=f[0];
     ARIADNE_TESTING_INSPECT("f0", f0);
     ARIADNE_TESTING_INSPECT("f[0]", f[0]);
     ARIADNE_TESTING_EXPECT_NO_THROW(f[0]);
     ARIADNE_TESTING_EXPECT_NO_THROW(f[0]=x0sqr);
     ARIADNE_TESTING_EXPECT_NO_THROW(f[0]=f[1]);
-    ARIADNE_TESTING_EXPECT_EQUAL(f[0](v), v[1]);
-    ARIADNE_TESTING_EXPECT_EQUAL(f(v)[0], v[1]);
+    ARIADNE_TESTING_EXPECT_SAME(f[0](v), v[1]);
+    ARIADNE_TESTING_EXPECT_SAME(f(v)[0], v[1]);
 
     // Regression test for function - vector product
     EffectiveScalarMultivariateFunction x1=EffectiveScalarMultivariateFunction::coordinate(3,1);
 //    EffectiveVector e0={1,0};
     Vector<EffectiveNumber> e0={1,0};
-    ARIADNE_TESTING_EXPECT_EQUAL((x1*e0)(v)[0], v[1]);
-    ARIADNE_TESTING_EXPECT_EQUAL((x1*e0)(v)[1], 0);
+    ARIADNE_TESTING_EXPECT_SAME((x1*e0)(v)[0], v[1]);
+    ARIADNE_TESTING_EXPECT_SAME((x1*e0)(v)[1], 0);
 
     // Regression test for validated scalar-vector join preserving every
     // component of the vector tail.
@@ -216,9 +216,9 @@ Void TestFunction::test_vector_function()
     });
     Vector<FloatDPBounds> joined_value=joined(point);
     ARIADNE_TESTING_EXPECT_EQUAL(joined.result_size(), 3u);
-    ARIADNE_TESTING_EXPECT_EQUAL(joined_value[0], FloatDPBounds(2,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(joined_value[1], FloatDPBounds(5,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(joined_value[2], FloatDPBounds(-1,dp));
+    ARIADNE_TESTING_EXPECT_SAME(joined_value[0], FloatDPBounds(2,dp));
+    ARIADNE_TESTING_EXPECT_SAME(joined_value[1], FloatDPBounds(5,dp));
+    ARIADNE_TESTING_EXPECT_SAME(joined_value[2], FloatDPBounds(-1,dp));
 }
 
 
@@ -260,8 +260,8 @@ Void TestFunction::test_differentiation()
     ARIADNE_TESTING_EXPECT_EQUAL(f.derivative(1).evaluate(v), df1.evaluate(v));
     ARIADNE_TESTING_EXPECT_EQUAL(derivative(f,1).evaluate(v), df1.evaluate(v));
 
-    ARIADNE_TESTING_EXPECT_EQUAL(x.derivative(0).evaluate(v), 1.0_exact);
-    ARIADNE_TESTING_EXPECT_EQUAL(x.derivative(1).evaluate(v), 0.0_exact);
+    ARIADNE_TESTING_EXPECT_SAME(x.derivative(0).evaluate(v), 1.0_exact);
+    ARIADNE_TESTING_EXPECT_SAME(x.derivative(1).evaluate(v), 0.0_exact);
 
 }
 

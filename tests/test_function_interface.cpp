@@ -56,7 +56,7 @@ template<class P> Void TestFunctionInterface::check_vector_api() {
     auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);
     V vector{x,y};const V& cv=vector;
     Vector<FloatDPApproximation> point({3,4},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(cv[Range(0u,2u)](point), point);
+    ARIADNE_TESTING_EXPECT_RANGES_BY(cv[Range(0u,2u)](point), point, [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_EQUAL(cv[Range(1u,1u)](point).size(), 0u);
     ARIADNE_TESTING_EXPECT_EXCEPTION(vector.get(2u));
     ARIADNE_TESTING_EXPECT_EXCEPTION(cv[Range(0u,3u)]);
@@ -64,8 +64,8 @@ template<class P> Void TestFunctionInterface::check_vector_api() {
     ARIADNE_TESTING_EXPECT_EXCEPTION(vector.set(2u,x));
     ARIADNE_TESTING_EXPECT_EXCEPTION(vector.set(0u,S::coordinate(1u,0u)));
     vector[0u]=vector[1u];
-    ARIADNE_TESTING_EXPECT_EQUAL(vector[0u](point), point[1]);
-    ARIADNE_TESTING_EXPECT_EQUAL(vector[0u].evaluate(point), point[1]);
+    ARIADNE_TESTING_EXPECT_SAME(vector[0u](point), point[1]);
+    ARIADNE_TESTING_EXPECT_SAME(vector[0u].evaluate(point), point[1]);
     ARIADNE_TESTING_EXPECT_EQUAL(vector[0u].domain().dimension(), 2u);
     std::ostringstream text;text<<vector[0u];
     ARIADNE_TESTING_PROVE(!text.str().empty());
@@ -113,13 +113,13 @@ Void TestFunctionInterface::test_optional_getter() {
     auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);
     V function(new EvaluatedVectorFunction(std::make_shared<const V>(V{x+y,x-y})));
     Vector<FloatDPApproximation> point({3,1},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(function.get(0u)(point), FloatDPApproximation(4,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(function.get(1u)(point), FloatDPApproximation(2,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(function.get(1u).derivative(1u)(point), FloatDPApproximation(-1,dp));
+    ARIADNE_TESTING_EXPECT_SAME(function.get(0u)(point), FloatDPApproximation(4,dp));
+    ARIADNE_TESTING_EXPECT_SAME(function.get(1u)(point), FloatDPApproximation(2,dp));
+    ARIADNE_TESTING_EXPECT_SAME(function.get(1u).derivative(1u)(point), FloatDPApproximation(-1,dp));
     ARIADNE_TESTING_EXPECT_EQUAL(function.get(0u).result_size(), 1u);
     auto check_field=[&](const auto& field) {
-        ARIADNE_TESTING_EXPECT_EQUAL(field.get(0u)(point), FloatDPApproximation(4,dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(field.get(1u)(point), FloatDPApproximation(2,dp));
+        ARIADNE_TESTING_EXPECT_SAME(field.get(0u)(point), FloatDPApproximation(4,dp));
+        ARIADNE_TESTING_EXPECT_SAME(field.get(1u)(point), FloatDPApproximation(2,dp));
     };
     check_field(ValidatedVectorMultivariateFunction(function));
     check_field(ApproximateVectorMultivariateFunction(function));
@@ -128,9 +128,9 @@ Void TestFunctionInterface::test_optional_getter() {
         std::make_shared<const EffectiveVectorUnivariateFunction>(EffectiveVectorUnivariateFunction{t,t+2})));
     FloatDPApproximation parameter(3,dp);
     auto check_curve=[&](const auto& input_curve) {
-        ARIADNE_TESTING_EXPECT_EQUAL(input_curve.get(0u)(parameter), FloatDPApproximation(3,dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(input_curve.get(1u)(parameter), FloatDPApproximation(5,dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(input_curve.get(1u).derivative(IndexZero())(parameter), FloatDPApproximation(1,dp));
+        ARIADNE_TESTING_EXPECT_SAME(input_curve.get(0u)(parameter), FloatDPApproximation(3,dp));
+        ARIADNE_TESTING_EXPECT_SAME(input_curve.get(1u)(parameter), FloatDPApproximation(5,dp));
+        ARIADNE_TESTING_EXPECT_SAME(input_curve.get(1u).derivative(IndexZero())(parameter), FloatDPApproximation(1,dp));
     };
     check_curve(curve);
     check_curve(ValidatedVectorUnivariateFunction(curve));
@@ -181,15 +181,15 @@ Void TestFunctionInterface::test_function_factory() {
 template<class Y,class P> Void TestFunctionInterface::check_generic_polynomial(const ScalarMultivariateFunction<P>& function) {
     using X=FloatDPApproximation;using F=Formula<Y>;using A=ElementaryAlgebra<Y>;
     Vector<Y> numbers{Y(2),Y(3)};
-    ARIADNE_TESTING_EXPECT_EQUAL(X(function(numbers),dp), X(8,dp));
+    ARIADNE_TESTING_EXPECT_SAME(X(function(numbers),dp), X(8,dp));
     Vector<X> point({2,3},dp);
     auto formula=function(F::identity(2u));
-    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(formula,point), X(8,dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(formula,point), X(8,dp));
     Vector<A> algebra_arguments{A(F::coordinate(0u)),A(F::coordinate(1u))};
     auto algebra_result=function(algebra_arguments);
     auto extracted=algebra_result.template extract<F>();
-    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(extracted,point), X(8,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(evaluate(derivative(extracted,0u),point), X(4,dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(extracted,point), X(8,dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(extracted,0u),point), X(4,dp));
 }
 template<class P> Void TestFunctionInterface::test_generic_numeric_interfaces() {
     using S=ScalarMultivariateFunction<P>;
@@ -218,8 +218,8 @@ template<class MT,class P> Void TestFunctionInterface::check_taylor_argument(con
     ARIADNE_TESTING_EXPECT_EQUAL(polynomial.precision(), pr);
     if constexpr (Same<typename MT::Paradigm,ApproximateTag>) {
         Vector<Approximation<F>> point({0.25_x,0.5_x},pr);
-        ARIADNE_TESTING_EXPECT_EQUAL(evaluate(polynomial,point), Approximation<F>(1.5625_x,pr));
-        ARIADNE_TESTING_EXPECT_EQUAL(evaluate(derivative(polynomial,0u),point), Approximation<F>(0.5_x,pr));
+        ARIADNE_TESTING_EXPECT_SAME(evaluate(polynomial,point), Approximation<F>(1.5625_x,pr));
+        ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(polynomial,0u),point), Approximation<F>(0.5_x,pr));
     } else {
         Vector<Bounds<F>> point({0.25_x,0.5_x},pr);
         auto as_interval=[](const auto& value) {
@@ -240,12 +240,12 @@ template<class P> Void TestFunctionInterface::test_numeric_jets_and_taylor_argum
     auto polynomial=sqr(x)+y+Number<P>(1);
     MultiplePrecision mp(128u);
     Vector<FloatMPApproximation> point({0.25_x,0.5_x},mp);
-    ARIADNE_TESTING_EXPECT_EQUAL(polynomial(point), FloatMPApproximation(1.5625_x,mp));
+    ARIADNE_TESTING_EXPECT_SAME(polynomial(point), FloatMPApproximation(1.5625_x,mp));
     auto jet=polynomial(Differential<FloatMPApproximation>::variables(2u,point));
-    ARIADNE_TESTING_EXPECT_EQUAL(jet.value(), FloatMPApproximation(1.5625_x,mp));
-    ARIADNE_TESTING_EXPECT_EQUAL(jet.gradient()[0u], FloatMPApproximation(0.5_x,mp));
-    ARIADNE_TESTING_EXPECT_EQUAL(jet.gradient()[1u], FloatMPApproximation(1,mp));
-    ARIADNE_TESTING_EXPECT_EQUAL(jet.hessian().get(0u,0u), FloatMPApproximation(2,mp));
+    ARIADNE_TESTING_EXPECT_SAME(jet.value(), FloatMPApproximation(1.5625_x,mp));
+    ARIADNE_TESTING_EXPECT_SAME(jet.gradient()[0u], FloatMPApproximation(0.5_x,mp));
+    ARIADNE_TESTING_EXPECT_SAME(jet.gradient()[1u], FloatMPApproximation(1,mp));
+    ARIADNE_TESTING_EXPECT_SAME(jet.hessian().get(0u,0u), FloatMPApproximation(2,mp));
     check_taylor_argument<TaylorModel<ApproximateTag,FloatDP>>(polynomial,dp);
     check_taylor_argument<TaylorModel<ApproximateTag,FloatMP>>(polynomial,mp);
     if constexpr (!Same<P,ApproximateTag>) {
@@ -283,10 +283,10 @@ template<class P> Void TestFunctionInterface::test_handle_derivative_mixin() {
     auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);
     const S function(new HandleDifferentiableFunction<P>(std::make_shared<const S>(sqr(x)+y)));
     const Vector<FloatDPApproximation> point({3,1},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(function.derivative(0u)(point), FloatDPApproximation(6,dp));
+    ARIADNE_TESTING_EXPECT_SAME(function.derivative(0u)(point), FloatDPApproximation(6,dp));
     const FunctionInterface<ApproximateTag,Real(RealVector)>& approximate=function.reference();
     std::unique_ptr<FunctionInterface<ApproximateTag,Real(RealVector)>> copy(approximate._copy());
-    ARIADNE_TESTING_EXPECT_EQUAL(copy->_call(point), FloatDPApproximation(10,dp));
+    ARIADNE_TESTING_EXPECT_SAME(copy->_call(point), FloatDPApproximation(10,dp));
     if constexpr (!Same<P,ApproximateTag>) {
         const FunctionInterface<ValidatedTag,Real(RealVector)>& validated=function.reference();
         const MultiplePrecision mp(128u);
@@ -294,7 +294,7 @@ template<class P> Void TestFunctionInterface::test_handle_derivative_mixin() {
         const auto a=ValidatedScalarMultivariateFunction::coordinate(2u,0u);
         const auto b=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
         const auto composed=validated._call(Vector<ValidatedScalarMultivariateFunction>{a+b,b});
-        ARIADNE_TESTING_EXPECT_EQUAL(composed(point), FloatDPApproximation(17,dp));
+        ARIADNE_TESTING_EXPECT_SAME(composed(point), FloatDPApproximation(17,dp));
     }
 }
 Void TestFunctionInterface::test_model_generic_getter() {

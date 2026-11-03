@@ -68,8 +68,8 @@ Void test_scaling() {
     IntervalDomainType interval(2,6);
     ARIADNE_TESTING_EXPECT_EQUAL(med(interval), Dyadic(4));
     ARIADNE_TESTING_EXPECT_EQUAL(rad(interval), Dyadic(2));
-    ARIADNE_TESTING_EXPECT_EQUAL(med_apprx(interval), FloatDPApproximation(4,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(rad_apprx(interval), FloatDPApproximation(2,dp));
+    ARIADNE_TESTING_EXPECT_SAME(med_apprx(interval), FloatDPApproximation(4,dp));
+    ARIADNE_TESTING_EXPECT_SAME(rad_apprx(interval), FloatDPApproximation(2,dp));
     ARIADNE_TESTING_PROVE(definitely(med_val(interval)==FloatDPBounds(4,dp)));
     ARIADNE_TESTING_PROVE(definitely(rad_val(interval)==FloatDPBounds(2,dp)));
     ARIADNE_TESTING_EXPECT_EQUAL(convert_interval(interval,dp), interval);
@@ -84,10 +84,10 @@ Void test_scaling() {
     ARIADNE_TESTING_PROVE(unscaling.codomain()==UnitInterval());
     for(Int k=-1;k<=1;++k) {
         FloatDPApproximation x(k,dp);
-        ARIADNE_TESTING_EXPECT_EQUAL(scaling(x), FloatDPApproximation(4+2*k,dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(unscaling(scaling(x)), x);
+        ARIADNE_TESTING_EXPECT_SAME(scaling(x), FloatDPApproximation(4+2*k,dp));
+        ARIADNE_TESTING_EXPECT_SAME(unscaling(scaling(x)), x);
     }
-    ARIADNE_TESTING_EXPECT_EQUAL(unscale(FloatDPApproximation(3,dp),IntervalDomainType(3,3)), FloatDPApproximation(0,dp));
+    ARIADNE_TESTING_EXPECT_SAME(unscale(FloatDPApproximation(3,dp),IntervalDomainType(3,3)), FloatDPApproximation(0,dp));
     BoxDomainType box{{2,6},{-3,-1}};
     VectorScaling vector_scaling(box);VectorUnscaling vector_unscaling(box);
     ARIADNE_TESTING_EXPECT_EQUAL(vector_scaling.size(), 2u);
@@ -97,8 +97,8 @@ Void test_scaling() {
     ARIADNE_TESTING_EXPECT_EQUAL(vector_scaling[0u].codomain(), box[0u]);
     ARIADNE_TESTING_EXPECT_EQUAL(vector_unscaling[1u].domain(), box[1u]);
     Vector<FloatDPApproximation> point({-1,1},dp),expected({2,-1},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(vector_scaling(point), expected);
-    ARIADNE_TESTING_EXPECT_EQUAL(vector_unscaling(expected), point);
+    ARIADNE_TESTING_EXPECT_RANGES_BY(vector_scaling(point), expected, [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(vector_unscaling(expected), point, [](auto const& left, auto const& right) { return same(left,right); });
     Vector<FloatDPApproximation> wrong_dimension({0},dp);
     ARIADNE_TESTING_EXPECT_EXCEPTION(vector_scaling(wrong_dimension));
     ARIADNE_TESTING_EXPECT_EXCEPTION(vector_unscaling(wrong_dimension));

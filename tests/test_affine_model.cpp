@@ -21,11 +21,11 @@ template<class F> Void test_product(typename F::PrecisionType pr) {
     using A=AffineModel<ApproximateTag,F>;using X=Approximation<F>;
     A a(X(2,pr),{X(3,pr),X(-1,pr)}),b(X(5,pr),{X(7,pr),X(2,pr)});
     auto product=a*b;
-    ARIADNE_TESTING_EXPECT_EQUAL(product.value(), X(10,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(product.gradient(0u), X(29,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(product.gradient(1u), X(-1,pr));
+    ARIADNE_TESTING_EXPECT_SAME(product.value(), X(10,pr));
+    ARIADNE_TESTING_EXPECT_SAME(product.gradient(0u), X(29,pr));
+    ARIADNE_TESTING_EXPECT_SAME(product.gradient(1u), X(-1,pr));
     auto constant=A::constant(0u,X(2,pr))*A::constant(0u,X(5,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(constant.value(), X(10,pr));
+    ARIADNE_TESTING_EXPECT_SAME(constant.value(), X(10,pr));
     using V=AffineModel<ValidatedTag,F>;using E=typename V::ErrorType;
     V factor(1u,F(2,pr)),uncertain(1u,F(0,pr));uncertain.set_error(E(3u,pr));
     auto enclosure=factor*uncertain;
@@ -39,34 +39,34 @@ template<class F> Void test_approximate_model(typename F::PrecisionType pr) {
     using A=AffineModel<ApproximateTag,F>;using X=Approximation<F>;
     A a(X(2,pr),{X(3,pr),X(-1,pr),X(0,pr)});
     Vector<X> point({0.25_x,0.5_x,0.0_x},pr);
-    ARIADNE_TESTING_EXPECT_EQUAL(a.evaluate(point), X(2.25_x,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(a.range().lower_bound(), X(-2,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(a.range().upper_bound(), X(6,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(a.b(), a.value());
-    ARIADNE_TESTING_EXPECT_EQUAL(a.a(), a.gradient());
+    ARIADNE_TESTING_EXPECT_SAME(a.evaluate(point), X(2.25_x,pr));
+    ARIADNE_TESTING_EXPECT_SAME(a.range().lower_bound(), X(-2,pr));
+    ARIADNE_TESTING_EXPECT_SAME(a.range().upper_bound(), X(6,pr));
+    ARIADNE_TESTING_EXPECT_SAME(a.b(), a.value());
+    ARIADNE_TESTING_EXPECT_RANGES_BY(a.a(), a.gradient(), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_EQUAL(a.precision(), pr);
     ARIADNE_TESTING_EXPECT_EQUAL(std::get<0>(a.characteristics()), 3u);
-    ARIADNE_TESTING_EXPECT_EQUAL(a.create_zero().evaluate(point), X(0,pr));
+    ARIADNE_TESTING_EXPECT_SAME(a.create_zero().evaluate(point), X(0,pr));
     const A& ca=a;
-    ARIADNE_TESTING_EXPECT_EQUAL(ca[0u], X(3,pr));
+    ARIADNE_TESTING_EXPECT_SAME(ca[0u], X(3,pr));
     a[0u]=X(4,pr);a.set_value(X(3,pr));
     a.set_gradient(0u,X(3,pr));a.set_gradient(1u,ApproximateNumber(-1));
-    ARIADNE_TESTING_EXPECT_EQUAL(a.evaluate(point), X(3.25_x,pr));
+    ARIADNE_TESTING_EXPECT_SAME(a.evaluate(point), X(3.25_x,pr));
     auto b=A::coordinate(3u,1u,pr);X coefficient(2,pr);
-    ARIADNE_TESTING_EXPECT_EQUAL((-a).evaluate(point), X(-3.25_x,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL((a+b).evaluate(point), X(3.75_x,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL((coefficient+a).evaluate(point), X(5.25_x,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL((a+coefficient).evaluate(point), X(5.25_x,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL((coefficient*a).evaluate(point), X(6.5_x,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL((a*coefficient).evaluate(point), X(6.5_x,pr));
+    ARIADNE_TESTING_EXPECT_SAME((-a).evaluate(point), X(-3.25_x,pr));
+    ARIADNE_TESTING_EXPECT_SAME((a+b).evaluate(point), X(3.75_x,pr));
+    ARIADNE_TESTING_EXPECT_SAME((coefficient+a).evaluate(point), X(5.25_x,pr));
+    ARIADNE_TESTING_EXPECT_SAME((a+coefficient).evaluate(point), X(5.25_x,pr));
+    ARIADNE_TESTING_EXPECT_SAME((coefficient*a).evaluate(point), X(6.5_x,pr));
+    ARIADNE_TESTING_EXPECT_SAME((a*coefficient).evaluate(point), X(6.5_x,pr));
     A from_covector(X(3,pr),Covector<X>({X(3,pr),X(-1,pr),X(0,pr)}));
-    ARIADNE_TESTING_EXPECT_EQUAL(from_covector.evaluate(point), a.evaluate(point));
+    ARIADNE_TESTING_EXPECT_SAME(from_covector.evaluate(point), a.evaluate(point));
     a=coefficient;
-    ARIADNE_TESTING_EXPECT_EQUAL(a.evaluate(point), coefficient);
+    ARIADNE_TESTING_EXPECT_SAME(a.evaluate(point), coefficient);
     A constant(0u,coefficient);constant=X(5,pr);
     Vector<X> empty(0u,pr);
-    ARIADNE_TESTING_EXPECT_EQUAL(constant.evaluate(empty), X(5,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(constant.range().lower_bound(), X(5,pr));
+    ARIADNE_TESTING_EXPECT_SAME(constant.evaluate(empty), X(5,pr));
+    ARIADNE_TESTING_EXPECT_SAME(constant.range().lower_bound(), X(5,pr));
     ARIADNE_TESTING_EXPECT_EXCEPTION(a+A(2u,pr));
     ARIADNE_TESTING_EXPECT_EXCEPTION(a*A(2u,pr));
     std::ostringstream text;text<<from_covector<<constant;
@@ -76,8 +76,8 @@ template<class F> Void test_approximate_model(typename F::PrecisionType pr) {
     ARIADNE_TESTING_PROVE(text.str().find("*x2")==String::npos);
     BoxDomainType domain{{2,6},{-4,2}};
     auto scalings=A::scalings(domain,pr);
-    ARIADNE_TESTING_EXPECT_EQUAL(scalings[0u].evaluate(Vector<X>({-1,1},pr)), X(2,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(scalings[1u].evaluate(Vector<X>({-1,1},pr)), X(2,pr));
+    ARIADNE_TESTING_EXPECT_SAME(scalings[0u].evaluate(Vector<X>({-1,1},pr)), X(2,pr));
+    ARIADNE_TESTING_EXPECT_SAME(scalings[1u].evaluate(Vector<X>({-1,1},pr)), X(2,pr));
     ARIADNE_TESTING_EXPECT_EQUAL(A::scalings(BoxDomainType(0u),pr).size(), 0u);
 }
 template<class F> Void test_validated_model(typename F::PrecisionType pr) {
@@ -86,7 +86,7 @@ template<class F> Void test_validated_model(typename F::PrecisionType pr) {
     const A& ca=a;
     // The natural-number overload must replace the error, not accumulate it.
     a.set_error(2u);
-    ARIADNE_TESTING_EXPECT_EQUAL(a.error().raw(), F(2,pr));
+    ARIADNE_TESTING_EXPECT_SAME(a.error().raw(), F(2,pr));
     ARIADNE_TESTING_PROVE(decide(a.range().lower_bound().raw()==F(-4,pr)));
     ARIADNE_TESTING_PROVE(decide(a.range().upper_bound().raw()==F(8,pr)));
     a.set_error(E(F(0.5_x,pr)));
@@ -95,9 +95,9 @@ template<class F> Void test_validated_model(typename F::PrecisionType pr) {
     ARIADNE_TESTING_EXPECT_SAME(value, X(1.75_x,2.75_x,pr));
     ARIADNE_TESTING_PROVE(decide(a.range().lower_bound().raw()==F(-2.5_x,pr)));
     ARIADNE_TESTING_PROVE(decide(a.range().upper_bound().raw()==F(6.5_x,pr)));
-    ARIADNE_TESTING_EXPECT_EQUAL(ca.b(), ca.value());ARIADNE_TESTING_EXPECT_EQUAL(ca.a(), ca.gradient());
-    ARIADNE_TESTING_EXPECT_EQUAL(ca.e().raw(), ca.error().raw());
-    ARIADNE_TESTING_EXPECT_EQUAL(ca[0u], F(3,pr));ARIADNE_TESTING_EXPECT_EQUAL(ca.gradient(1u), F(-1,pr));
+    ARIADNE_TESTING_EXPECT_SAME(ca.b(), ca.value());ARIADNE_TESTING_EXPECT_RANGES_BY(ca.a(), ca.gradient(), [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_SAME(ca.e().raw(), ca.error().raw());
+    ARIADNE_TESTING_EXPECT_SAME(ca[0u], F(3,pr));ARIADNE_TESTING_EXPECT_SAME(ca.gradient(1u), F(-1,pr));
     ARIADNE_TESTING_EXPECT_EQUAL(std::get<0>(ca.characteristics()), 3u);
     ARIADNE_TESTING_EXPECT_EQUAL(ca.precision(), pr);
     ARIADNE_TESTING_PROVE(definitely(a.create_zero().evaluate(point)==X(0,pr)));
@@ -111,13 +111,13 @@ template<class F> Void test_validated_model(typename F::PrecisionType pr) {
     ARIADNE_TESTING_EXPECT_SAME((a+coefficient).evaluate(point), X(4.75_x,5.75_x,pr));
     ARIADNE_TESTING_EXPECT_SAME((coefficient*a).evaluate(point), X(5.5_x,7.5_x,pr));
     ARIADNE_TESTING_EXPECT_SAME((a*coefficient).evaluate(point), X(5.5_x,7.5_x,pr));
-    a=F(2,pr);ARIADNE_TESTING_EXPECT_EQUAL(a.error().raw(), F(0,pr));
+    a=F(2,pr);ARIADNE_TESTING_EXPECT_SAME(a.error().raw(), F(0,pr));
     ARIADNE_TESTING_PROVE(definitely(a.evaluate(point)==X(2,pr)));
     A constant=A::constant(0u,F(2,pr));constant=F(5,pr);
     Vector<X> empty(0u,pr);
     ARIADNE_TESTING_PROVE(definitely(constant.evaluate(empty)==X(5,pr)));
-    ARIADNE_TESTING_EXPECT_EQUAL((constant*constant).value(), F(25,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL((constant*constant).error().raw(), F(0,pr));
+    ARIADNE_TESTING_EXPECT_SAME((constant*constant).value(), F(25,pr));
+    ARIADNE_TESTING_EXPECT_SAME((constant*constant).error().raw(), F(0,pr));
     ARIADNE_TESTING_EXPECT_EXCEPTION(a+A(2u,pr));ARIADNE_TESTING_EXPECT_EXCEPTION(a*A(2u,pr));
     std::ostringstream text;text<<from_covector<<constant;
     ARIADNE_TESTING_INSPECT("text.str()", text.str());
@@ -133,19 +133,19 @@ template<class F> Void test_validated_model(typename F::PrecisionType pr) {
     auto old_rounding=F::get_rounding_mode();
     auto converted=affine_model(uncertain);
     ARIADNE_TESTING_PROVE(F::get_rounding_mode()==old_rounding);
-    ARIADNE_TESTING_EXPECT_EQUAL(converted.value(), F(2,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(converted.gradient(0u), F(3,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(converted.error().raw(), F(3,pr));
+    ARIADNE_TESTING_EXPECT_SAME(converted.value(), F(2,pr));
+    ARIADNE_TESTING_EXPECT_SAME(converted.gradient(0u), F(3,pr));
+    ARIADNE_TESTING_EXPECT_SAME(converted.error().raw(), F(3,pr));
     Sweeper<F> sweeper=ThresholdSweeper<F>(pr,1e-12);
     Expansion<MultiIndex,F> expansion({{{0,0},2.0_x},{{1,0},3.0_x},{{0,1},-1.0_x},{{2,0},0.5_x}},pr);
     TaylorModel<ValidatedTag,F> taylor(expansion,F(0.25_x,pr),sweeper);
     auto linear=affine_model(taylor);
     ARIADNE_TESTING_PROVE(F::get_rounding_mode()==old_rounding);
-    ARIADNE_TESTING_EXPECT_EQUAL(linear.value(), F(2,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(linear.gradient(1u), F(-1,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(linear.error().raw(), F(0.75_x,pr));
+    ARIADNE_TESTING_EXPECT_SAME(linear.value(), F(2,pr));
+    ARIADNE_TESTING_EXPECT_SAME(linear.gradient(1u), F(-1,pr));
+    ARIADNE_TESTING_EXPECT_SAME(linear.error().raw(), F(0.75_x,pr));
     auto models=affine_models(Vector<TaylorModel<ValidatedTag,F>>{taylor});
-    ARIADNE_TESTING_EXPECT_EQUAL(models[0u].value(), F(2,pr));
+    ARIADNE_TESTING_EXPECT_SAME(models[0u].value(), F(2,pr));
 }
 template<class P,class F> Void test_composition(typename F::PrecisionType pr) {
     using A=AffineModel<P,F>;using C=typename A::CoefficientType;using X=typename A::NumericType;
@@ -157,8 +157,8 @@ template<class P,class F> Void test_composition(typename F::PrecisionType pr) {
     ARIADNE_TESTING_PROVE(decide(scalar.evaluate(point)==X(5.75_x,pr)));
     ARIADNE_TESTING_PROVE(decide(vector[1u].evaluate(point)==X(-1.25_x,pr)));
     auto nonlinear=compose(sqr(x)+y,input);
-    ARIADNE_TESTING_EXPECT_EQUAL(nonlinear.value(), C(7,pr));
-    ARIADNE_TESTING_EXPECT_EQUAL(nonlinear.gradient(1u), C(1,pr));
+    ARIADNE_TESTING_EXPECT_SAME(nonlinear.value(), C(7,pr));
+    ARIADNE_TESTING_EXPECT_SAME(nonlinear.gradient(1u), C(1,pr));
 }
 Void test_function_conversion() {
     MultiplePrecision mp(128u);

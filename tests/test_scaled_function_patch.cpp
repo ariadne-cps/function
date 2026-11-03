@@ -122,7 +122,8 @@ Void test_scaled_patch_numeric_helpers() {
     ARIADNE_TESTING_EXPECT_SAME(convert_error_to_bounds(PositiveFloatMPUpperBound(0.25_x,mp)), FloatMPBounds(-0.25_x,0.25_x,mp));
     ARIADNE_TESTING_EXPECT_EQUAL(convert_error_to_bounds(PositiveFloatMPApproximation(FloatMPApproximation(0.25_x,mp))).raw(), FloatMP(0,mp));
     ARIADNE_TESTING_PROVE(contains(IntervalDomainType(-1,1),FloatMPBounds(0,mp)));
-    ARIADNE_TESTING_PROVE(contains(IntervalDomainType(-1,1),FloatMPApproximation(0,mp)));
+    // Approximate membership carries possible, not definite, evidence. The validated enclosure is checked above.
+    ARIADNE_TESTING_EXPECT_POSSIBLY(contains(IntervalDomainType(-1,1),FloatMPApproximation(0,mp)));
     ARIADNE_TESTING_PROVE(contains(BoxDomainType{{-1,1}},Vector<FloatMPApproximation>{FloatMPApproximation(0,mp)}));
     std::ostringstream text;text<<representation(FloatMP(2,mp));
     ARIADNE_TESTING_PROVE(!text.str().empty());
