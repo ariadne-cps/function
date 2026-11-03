@@ -9,7 +9,7 @@
 #include <sstream>
 using namespace Ariadne;
 using S=EffectiveScalarMultivariateFunction;
-using VectorFunction=EffectiveVectorMultivariateFunction;
+using SymbolicVectorFunctionType=EffectiveVectorMultivariateFunction;
 using Y=EffectiveNumber;
 using F=EffectiveFormula;
 using X=FloatDPApproximation;
@@ -46,7 +46,7 @@ Void test_formula_function_interfaces() {
 
 Void test_input_components() {
     const auto x=F::coordinate(0u),y=F::coordinate(1u),u=F::coordinate(2u);
-    const VectorFunction function=EffectiveVectorMultivariateFormulaFunction(3u,Vector<F>{sqr(x)+2*u,y-u});
+    const SymbolicVectorFunctionType function=EffectiveVectorMultivariateFormulaFunction(3u,Vector<F>{sqr(x)+2*u,y-u});
     const Vector<X> point({3,4,5},dp);
     ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (noise_independent_component(function,1u)(point)); return snapshot.array(); }()), ([&] { auto snapshot = (Vector<X>({9,4},dp)); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     const auto sensitivities=input_derivatives(function,1u);
@@ -54,12 +54,12 @@ Void test_input_components() {
     ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (sensitivities[0u](point)); return snapshot.array(); }()), ([&] { auto snapshot = (Vector<X>({2,-1},dp)); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_EQUAL(input_derivatives(function,0u).size(), 0u);
     ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (noise_independent_component(function,0u)(point)); return snapshot.array(); }()), ([&] { auto snapshot = (function(point)); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
-    const VectorFunction empty=EffectiveVectorMultivariateFormulaFunction(1u,Vector<F>{});
+    const SymbolicVectorFunctionType empty=EffectiveVectorMultivariateFormulaFunction(1u,Vector<F>{});
     ARIADNE_TESTING_EXPECT_EQUAL(substitute(Vector<F>{},CoordinateFormulaPairs{}).size(), 0u);
     ARIADNE_TESTING_EXPECT_EQUAL(simplify(Vector<F>{}).size(), 0u);
     ARIADNE_TESTING_EXPECT_EQUAL(noise_independent_component(empty,1u)(Vector<X>({0},dp)).size(), 0u);
     ARIADNE_TESTING_EXPECT_EQUAL(input_derivatives(empty,1u)[0u](Vector<X>({0},dp)).size(), 0u);
-    const VectorFunction non_formula{S::coordinate(3u,0u),S::coordinate(3u,1u)};
+    const SymbolicVectorFunctionType non_formula{S::coordinate(3u,0u),S::coordinate(3u,1u)};
     ARIADNE_TESTING_EXPECT_EXCEPTION(noise_independent_component(non_formula,1u));
     ARIADNE_TESTING_EXPECT_EXCEPTION(input_derivatives(non_formula,1u));
 }
@@ -88,7 +88,7 @@ Void test_symbolic_operations_and_contracts() {
     ARIADNE_TESTING_EXPECT_EXCEPTION(derivative(absolute,0u));
     ARIADNE_TESTING_EXPECT_EXCEPTION(derivative(maximum,0u));
     ARIADNE_TESTING_EXPECT_EXCEPTION(derivative(minimum,0u));
-    const VectorFunction vector{x,y};
+    const SymbolicVectorFunctionType vector{x,y};
     const FunctionElement<EffectiveTag,RealVector> element(vector,1u);
     ARIADNE_TESTING_EXPECT_EQUAL(element.argument_size(), 2u);
     ARIADNE_TESTING_EXPECT_SAME(element(point), X(1,dp));
@@ -100,11 +100,11 @@ Void test_symbolic_operations_and_contracts() {
     using Composed=ComposedFunction<EffectiveTag,Real,RealVector,RealVector>;
     ARIADNE_TESTING_EXPECT_EXCEPTION(Composed(S::coordinate(3u,0u),vector));
     using Joined=JoinedFunction<EffectiveTag,EuclideanDomain,EuclideanDomain,EuclideanDomain>;
-    const Joined joined(vector,VectorFunction{x+y});
+    const Joined joined(vector,SymbolicVectorFunctionType{x+y});
     ARIADNE_TESTING_EXPECT_EQUAL(joined.argument_size(), 2u);
     ARIADNE_TESTING_EXPECT_SAME(joined[0u](point), X(3,dp));
     ARIADNE_TESTING_EXPECT_SAME(joined[2u](point), X(4,dp));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(Joined(vector,VectorFunction::identity(3u)));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(Joined(vector,SymbolicVectorFunctionType::identity(3u)));
     VectorOfScalarFunction<EffectiveTag,RealVector> mutable_vector(Vector<S>{x,y});
     ARIADNE_TESTING_EXPECT_EXCEPTION(mutable_vector[0u]=S::coordinate(3u,0u));
 }
