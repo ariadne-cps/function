@@ -43,7 +43,7 @@ template<class F> Void test_approximate_model(typename F::PrecisionType pr) {
     ARIADNE_TESTING_EXPECT_SAME(a.range().lower_bound(), X(-2,pr));
     ARIADNE_TESTING_EXPECT_SAME(a.range().upper_bound(), X(6,pr));
     ARIADNE_TESTING_EXPECT_SAME(a.b(), a.value());
-    ARIADNE_TESTING_EXPECT_RANGES_BY(a.a(), a.gradient(), [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (a.a()); return snapshot.array(); }()), ([&] { auto snapshot = (a.gradient()); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_EQUAL(a.precision(), pr);
     ARIADNE_TESTING_EXPECT_EQUAL(std::get<0>(a.characteristics()), 3u);
     ARIADNE_TESTING_EXPECT_SAME(a.create_zero().evaluate(point), X(0,pr));
@@ -95,7 +95,7 @@ template<class F> Void test_validated_model(typename F::PrecisionType pr) {
     ARIADNE_TESTING_EXPECT_SAME(value, X(1.75_x,2.75_x,pr));
     ARIADNE_TESTING_PROVE(decide(a.range().lower_bound().raw()==F(-2.5_x,pr)));
     ARIADNE_TESTING_PROVE(decide(a.range().upper_bound().raw()==F(6.5_x,pr)));
-    ARIADNE_TESTING_EXPECT_SAME(ca.b(), ca.value());ARIADNE_TESTING_EXPECT_RANGES_BY(ca.a(), ca.gradient(), [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_SAME(ca.b(), ca.value());ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (ca.a()); return snapshot.array(); }()), ([&] { auto snapshot = (ca.gradient()); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_SAME(ca.e().raw(), ca.error().raw());
     ARIADNE_TESTING_EXPECT_SAME(ca[0u], F(3,pr));ARIADNE_TESTING_EXPECT_SAME(ca.gradient(1u), F(-1,pr));
     ARIADNE_TESTING_EXPECT_EQUAL(std::get<0>(ca.characteristics()), 3u);

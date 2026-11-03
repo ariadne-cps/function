@@ -97,8 +97,8 @@ Void test_scaling() {
     ARIADNE_TESTING_EXPECT_EQUAL(vector_scaling[0u].codomain(), box[0u]);
     ARIADNE_TESTING_EXPECT_EQUAL(vector_unscaling[1u].domain(), box[1u]);
     Vector<FloatDPApproximation> point({-1,1},dp),expected({2,-1},dp);
-    ARIADNE_TESTING_EXPECT_RANGES_BY(vector_scaling(point), expected, [](auto const& left, auto const& right) { return same(left,right); });
-    ARIADNE_TESTING_EXPECT_RANGES_BY(vector_unscaling(expected), point, [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (vector_scaling(point)); return snapshot.array(); }()), ([&] { auto snapshot = (expected); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (vector_unscaling(expected)); return snapshot.array(); }()), ([&] { auto snapshot = (point); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     Vector<FloatDPApproximation> wrong_dimension({0},dp);
     ARIADNE_TESTING_EXPECT_EXCEPTION(vector_scaling(wrong_dimension));
     ARIADNE_TESTING_EXPECT_EXCEPTION(vector_unscaling(wrong_dimension));

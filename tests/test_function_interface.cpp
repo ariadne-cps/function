@@ -56,7 +56,7 @@ template<class P> Void TestFunctionInterface::check_vector_api() {
     auto x=S::coordinate(2u,0u),y=S::coordinate(2u,1u);
     V vector{x,y};const V& cv=vector;
     Vector<FloatDPApproximation> point({3,4},dp);
-    ARIADNE_TESTING_EXPECT_RANGES_BY(cv[Range(0u,2u)](point), point, [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (cv[Range(0u,2u)](point)); return snapshot.array(); }()), ([&] { auto snapshot = (point); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_EQUAL(cv[Range(1u,1u)](point).size(), 0u);
     ARIADNE_TESTING_EXPECT_EXCEPTION(vector.get(2u));
     ARIADNE_TESTING_EXPECT_EXCEPTION(cv[Range(0u,3u)]);

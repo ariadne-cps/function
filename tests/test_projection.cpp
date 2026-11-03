@@ -20,7 +20,7 @@ Void test_projection() {
     ARIADNE_TESTING_EXPECT_EQUAL(projection[1u], 0u);
     ARIADNE_TESTING_EXPECT_EQUAL(projection.index(2u), 2u);
     const Vector<FloatDPApproximation> point({1,2,3},dp);
-    ARIADNE_TESTING_EXPECT_RANGES_BY(projection(point), Vector<FloatDPApproximation>({3,1,3},dp), [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (projection(point)); return snapshot.array(); }()), ([&] { auto snapshot = (Vector<FloatDPApproximation>({3,1,3},dp)); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     const Projection empty(0u,Array<SizeType>{});
     ARIADNE_TESTING_EXPECT_EQUAL(empty.argument_size(), 0u);
     ARIADNE_TESTING_EXPECT_EQUAL(empty.result_size(), 0u);

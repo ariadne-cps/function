@@ -26,7 +26,7 @@ Void test_affine_evaluation() {
     ARIADNE_TESTING_EXPECT_SAME(f.value(), c);
     ARIADNE_TESTING_EXPECT_SAME(f.b(), c);
     ARIADNE_TESTING_EXPECT_SAME(f.gradient(0u), FloatDPApproximation(2,dp));
-    ARIADNE_TESTING_EXPECT_RANGES_BY(f.a(), f.gradient(), [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (f.a()); return snapshot.array(); }()), ([&] { auto snapshot = (f.gradient()); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_SAME(f.derivative(1u), FloatDPApproximation(-3,dp));
     ARIADNE_TESTING_EXPECT_SAME(derivative(f,0u), FloatDPApproximation(2,dp));
     ARIADNE_TESTING_EXPECT_SAME(f[1u], FloatDPApproximation(-3,dp));

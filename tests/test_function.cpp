@@ -185,7 +185,7 @@ Void TestFunction::test_vector_function()
     Vector<FloatDPApproximation> v={2.0_approx,3.0_approx,5.0_approx};
 
     [[maybe_unused]] EffectiveVectorMultivariateFunction f(id);
-    ARIADNE_TESTING_EXPECT_RANGES_BY(f(v), v, [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (f(v)); return snapshot.array(); }()), ([&] { auto snapshot = (v); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_SAME(f[0](v), v[0]);
     auto f0=f[0];
     ARIADNE_TESTING_INSPECT("f0", f0);

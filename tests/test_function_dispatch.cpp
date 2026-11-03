@@ -25,9 +25,9 @@ template<class P> Void test_formula_constructors_and_dispatch() {
     V identity(EuclideanDomain(2u),Vector<Formula<Y>>{t,y});
     X parameter(3,dp);Vector<X> point({3,1},dp);
     ARIADNE_TESTING_EXPECT_SAME(scalar(parameter), X(10,dp));
-    ARIADNE_TESTING_EXPECT_RANGES_BY(curve(parameter), Vector<X>({3,5},dp), [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (curve(parameter)); return snapshot.array(); }()), ([&] { auto snapshot = (Vector<X>({3,5},dp)); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     ARIADNE_TESTING_EXPECT_SAME(sum(point), X(4,dp));
-    ARIADNE_TESTING_EXPECT_RANGES_BY(identity(point), point, [](auto const& left, auto const& right) { return same(left,right); });
+    ARIADNE_TESTING_EXPECT_RANGES_BY(([&] { auto snapshot = (identity(point)); return snapshot.array(); }()), ([&] { auto snapshot = (point); return snapshot.array(); }()), [](auto const& left, auto const& right) { return same(left,right); });
     auto coordinate=C::coordinate();
     using UA=AlgebraOperations<U,Y>;using SA=AlgebraOperations<S,Y>;
     ARIADNE_TESTING_EXPECT_SAME(UA::apply(BinaryElementaryOperator(Sub()),Y(5),coordinate)(parameter), X(2,dp));
