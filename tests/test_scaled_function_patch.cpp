@@ -95,7 +95,9 @@ Void test_scaled_patch_construction_contracts() {
     ARIADNE_TESTING_EXPECT_EXCEPTION(V(domain,expansions,Vector<M::ErrorType>{},swp));
     ARIADNE_TESTING_EXPECT_EXCEPTION(V(BoxDomainType{{-1,1}},expansions,errors,swp));
     const V raw_vector(domain,expansions,Vector<FloatDP>{FloatDP(0,dp)},swp);
-    ARIADNE_TESTING_EXPECT_SAME(raw_vector(Vector<FloatDPBounds>({0.5_x,0},dp))[0u], FloatDPBounds(0.5_x,dp));
+    // Keep the evaluated vector alive while Testing compares its element.
+    const auto evaluated_raw_vector=raw_vector(Vector<FloatDPBounds>({0.5_x,0},dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluated_raw_vector[0u], FloatDPBounds(0.5_x,dp));
     Vector<FloatDP> raw_errors(0u,FloatDP(0,dp));
     // The API must reject unequal numbers of expansions and error bounds.
     ARIADNE_TESTING_EXPECT_EXCEPTION(V(domain,expansions,raw_errors,swp));
