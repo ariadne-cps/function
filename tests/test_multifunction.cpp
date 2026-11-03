@@ -98,8 +98,8 @@ Void TestMultifunction::test_taylor_concept()
 }
 
 inline Interval<FloatMPUpperBound> create_zero(Interval<FloatMPUpperBound> const& ivl) {
-    std::cerr<<"create_zero(ivl)\n";
-    std::cerr<<"ivl="<<ivl<<", nul(ivl.lower_bound())="<<nul(ivl.lower_bound())<<"\n";
+    ARIADNE_TESTING_NOTE("create_zero(ivl)");
+    ARIADNE_TESTING_NOTE("ivl="<<ivl<<", nul(ivl.lower_bound())="<<nul(ivl.lower_bound()));
     return Interval<FloatMPUpperBound>(nul(ivl.lower_bound()),nul(ivl.upper_bound()));
 }
 
