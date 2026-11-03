@@ -612,9 +612,14 @@ Void TestVectorTaylorFunction::test_conversion()
     ARIADNE_TESTING_INSPECT("h", h);
     ARIADNE_TESTING_INSPECT("th", th);
 
-    // Conversion to TaylorFunction should be exact in second component
-    ARIADNE_TESTING_EXPECT_SAME(th(apt)[1], h(apt)[1]);
-    ARIADNE_TESTING_EXPECT_SAME(th(ipt)[1], h(ipt)[1]);
+    // Keep evaluated vectors alive while Testing compares their components.
+    // Conversion to TaylorFunction should be exact in second component.
+    const auto approximate_taylor_value=th(apt);
+    const auto approximate_function_value=h(apt);
+    ARIADNE_TESTING_EXPECT_SAME(approximate_taylor_value[1], approximate_function_value[1]);
+    const auto validated_taylor_value=th(ipt);
+    const auto validated_function_value=h(ipt);
+    ARIADNE_TESTING_EXPECT_SAME(validated_taylor_value[1], validated_function_value[1]);
     ARIADNE_TESTING_EXPECT_BINARY_PREDICATE(refines, h[0](ipt), th[0](ipt));
 
 
