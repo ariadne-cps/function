@@ -15,7 +15,7 @@ if(Python3_FOUND)
     add_subdirectory(bindings)
 
     if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-        ariadne_finalize_python_module(NAME function)
+        ariadne_finalize_python_module(NAME function MODULE_IMPORT_NAME pyariadne_function)
 
         # Install into a prefix-relative destination, like Ariadne Symbolic.
         if(WIN32)

@@ -37,5 +37,6 @@ target_link_libraries(pyariadne-function INTERFACE
 
 ariadne_add_python_module(
     NAME function
+    MODULE_IMPORT_NAME pyariadne_function
     MODULE_SOURCE function_module.cpp
 )

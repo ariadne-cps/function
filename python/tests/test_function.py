@@ -1,4 +1,4 @@
-from pyariadne import *
+from pyariadne_function import *
 
 
 def test_function():

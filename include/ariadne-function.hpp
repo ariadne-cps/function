@@ -1,6 +1,8 @@
 #ifndef ARIADNE_FUNCTION_MODULE_HPP
 #define ARIADNE_FUNCTION_MODULE_HPP
 
+#include "ariadne-geometry.hpp"
+
 #include "function/declarations.hpp"
 #include "function/function.hpp"
 #include "function/affine.hpp"

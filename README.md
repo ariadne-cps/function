@@ -59,7 +59,3 @@ The extension installs under the chosen prefix (`lib/pythonX.Y/site-packages` on
 If you would like to contribute to Ariadne Function, please contact the developer:
 
 - Luca Geretti <luca.geretti@univr.it>
-
-## License
-
-GNU General Public License v3.0 (or later where individual source files specify it).
