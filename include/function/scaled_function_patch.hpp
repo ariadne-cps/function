@@ -763,8 +763,8 @@ template<class M> class VectorScaledFunctionPatch
     BoxDomainType _domain;
     Vector< ModelType > _models;
   private:
-    static ScaledFunctionPatch<M> _unchecked_compose(const ScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f);
-    static VectorScaledFunctionPatch<M> _unchecked_compose(const VectorScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f);
+    static ScaledFunctionPatch<M> _unchecked_compose_scaled_patches(const ScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f);
+    static VectorScaledFunctionPatch<M> _unchecked_compose_scaled_patches(const VectorScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f);
   public:
     //! \brief Compute the function \f$(f \oplus g)(x)=(f(x),g(x))\f$.
     friend VectorScaledFunctionPatch<M> join(const VectorScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2) {
@@ -958,7 +958,7 @@ template<class M> class VectorScaledFunctionPatch
         return unchecked_compose(g,f);
     }
     friend ScaledFunctionPatch<M> unchecked_compose(const ScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f) {
-        return _unchecked_compose(g,f);
+        return _unchecked_compose_scaled_patches(g,f);
     }
 
     friend VectorScaledFunctionPatch<M> compose(const VectorMultivariateFunction<P>& g, const VectorScaledFunctionPatch<M>& f) {
@@ -974,7 +974,7 @@ template<class M> class VectorScaledFunctionPatch
         return unchecked_compose(g,f);
     }
     friend VectorScaledFunctionPatch<M> unchecked_compose(const VectorScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f) {
-        return _unchecked_compose(g,f);
+        return _unchecked_compose_scaled_patches(g,f);
     }
 
 
