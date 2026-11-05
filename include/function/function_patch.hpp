@@ -37,7 +37,7 @@
 
 #include "algebra/vector.hpp"
 #include "algebra/matrix.hpp"
-#include "algebra/range.hpp"
+#include "utility/range.hpp"
 #include "algebra/operations.hpp"
 #include "algebra/algebra_interface.hpp"
 #include "algebra/algebra_mixin.hpp"

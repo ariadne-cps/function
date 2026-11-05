@@ -36,7 +36,7 @@
 #include "function/function_interface.hpp"
 #include "function/function_patch_interface.hpp"
 
-#include "algebra/range.hpp"
+#include "utility/range.hpp"
 #include "numeric/operators.hpp"
 
 namespace Ariadne {
