@@ -8,6 +8,7 @@
 [![codecov](https://codecov.io/gh/ariadne-cps/function/branch/main/graph/badge.svg)](https://codecov.io/gh/ariadne-cps/function)
 
 Ariadne Function is the standalone C++20 function layer of Ariadne. It provides symbolic, affine, validated and approximate functions, interfaces and function models, Taylor models, procedures, domains, and multifunctions.
+Although independently maintained and usable, this repository is also part of the [Ariadne repository structure](https://github.com/ariadne-cps/ariadne/blob/main/doc/structure.md).
 
 ## Layout
 
@@ -20,7 +21,7 @@ The umbrella header is `include/ariadne-function.hpp`.
 Function depends directly on:
 
 - [ariadne-cps/geometry](https://github.com/ariadne-cps/geometry), included as a Git submodule.
-- [ariadne-cps/configuration](https://github.com/ariadne-cps/configuration), used for shared build configuration.
+- [ariadne-cps/build](https://github.com/ariadne-cps/build), used for shared build configuration.
 
 Geometry supplies Algebra, Interval, Numeric and other lower-level Ariadne libraries transitively. Function does **not** depend on Solving, Set, Paving or BDD.
 
@@ -52,7 +53,6 @@ The extension installs under the chosen prefix (`lib/pythonX.Y/site-packages` on
 
 - C++: `tutorials/tutorial_function/tutorial_function.cpp`, built separately against an installed `ariadne-function`.
 - Python: `python/tutorials/tutorial_function.py`.
-
 
 ## Contribution guidelines
 
