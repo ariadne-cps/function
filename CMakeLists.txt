@@ -21,8 +21,9 @@ endif()
 
 if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
     # Check direct occurrences only; child commits guarantee internal consistency.
+    # Testing is a development-only dependency, excluded from consistency checks.
     require_same_dependency_commit(Build CHAINS
-        "build" "geometry|build" "testing|build")
+        "build" "geometry|build")
 endif()
 
 setup_project()
