@@ -51,8 +51,8 @@ The extension installs under the chosen prefix (`lib/pythonX.Y/site-packages` on
 
 ## Tutorials
 
-- C++: `tutorials/tutorial_function/tutorial_function.cpp`, built separately against an installed `ariadne-function`.
-- Python: `python/tutorials/tutorial_function.py`.
+- C++: `tutorial/tutorial_function.cpp`, built separately against an installed `ariadne-function`.
+- Python: `python/tutorial.py`.
 
 ## Contribution guidelines
 
