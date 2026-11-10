@@ -1,5 +1,5 @@
 /***************************************************************************
- *            taylor_model.tpl.hpp
+ *            function/taylor_model.tpl.hpp
  *
  *  Copyright  2008-20  Pieter Collins
  *

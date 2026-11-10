@@ -1,5 +1,5 @@
 /***************************************************************************
- *            formula.tpl.hpp
+ *            function/formula.tpl.hpp
  *
  *  Copyright  2008-20  Pieter Collins
  *

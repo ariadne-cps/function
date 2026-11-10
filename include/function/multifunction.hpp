@@ -1,5 +1,5 @@
 /***************************************************************************
- *            multifunction.hpp
+ *            function/multifunction.hpp
  *
  *  Copyright 2008-21  Pieter Collins
  *

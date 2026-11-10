@@ -1,5 +1,5 @@
 /***************************************************************************
- *            taylor_multifunction.hpp
+ *            function/taylor_multifunction.hpp
  *
  *  Copyright 2012-21  Pieter Collins
  *

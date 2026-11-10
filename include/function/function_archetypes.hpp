@@ -1,5 +1,5 @@
 /***************************************************************************
- *            function_archetypes.hpp
+ *            function/function_archetypes.hpp
  *
  *  Copyright  2022  Pieter Collins
  *

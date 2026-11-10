@@ -1,5 +1,5 @@
 /***************************************************************************
- *            scaled_function_patch.tpl.hpp
+ *            function/scaled_function_patch.tpl.hpp
  *
  *  Copyright  2008-20  Pieter Collins
  *

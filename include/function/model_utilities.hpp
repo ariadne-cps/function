@@ -1,5 +1,5 @@
 /***************************************************************************
- *            model_utilities.hpp
+ *            function/model_utilities.hpp
  *
  *  Copyright  2008-20  Pieter Collins
  *

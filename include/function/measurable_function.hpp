@@ -1,5 +1,5 @@
 /***************************************************************************
- *            measurable_function.hpp
+ *            function/measurable_function.hpp
  *
  *  Copyright  2020  Pieter Collins
  *

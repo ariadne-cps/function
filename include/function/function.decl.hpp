@@ -1,5 +1,5 @@
 /***************************************************************************
- *            function.decl.hpp
+ *            function/function.decl.hpp
  *
  *  Copyright  2016-20  Pieter Collins
  *
