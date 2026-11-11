@@ -52,6 +52,7 @@ class FunctionPatchFactory;
 using ValidatedFunctionPatchFactory = FunctionPatchFactory<ValidatedTag>;
 
 // FIXME: Extend with univariate case
+/** @brief Factory constructing compatible function patch. */
 template<class P>
 class FunctionPatchFactory {
     SharedPointer<FunctionPatchFactoryInterface<P>> _ptr;
@@ -64,68 +65,90 @@ class FunctionPatchFactory {
     typedef IntervalDomainType ScalarDomainType;
     typedef BoxDomainType VectorDomainType;
 
+    /** @brief Convert to const function patch factory interface< p > &. */
     operator const FunctionPatchFactoryInterface<P>&() const { return *_ptr; }
+    /** @brief Return shared ownership of the represented object. */
     SharedPointer<FunctionPatchFactoryInterface<P>> managed_pointer() const { return this->_ptr; }
 
+    /** @brief Construct a \c FunctionPatchFactory from p. */
     explicit FunctionPatchFactory(FunctionPatchFactoryInterface<P>* p) : _ptr(p) {}
+    /** @brief Construct a \c FunctionPatchFactory from p. */
     explicit FunctionPatchFactory(SharedPointer<FunctionPatchFactoryInterface<P>> p) : _ptr(p) {}
 
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     ScalarUnivariateFunctionPatch<P> create(const ScalarDomainType& dom, const ScalarUnivariateFunction<P>& f) const {
         return ScalarUnivariateFunctionPatch<P>(this->_ptr->_create(dom, f));
     }
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     VectorUnivariateFunctionPatch<P> create(const ScalarDomainType& dom, const VectorUnivariateFunction<P>& f) const {
         return VectorUnivariateFunctionPatch<P>(this->_ptr->_create(dom, f));
     }
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     ScalarMultivariateFunctionPatch<P> create(const VectorDomainType& dom, const ScalarMultivariateFunction<P>& f) const {
         return ScalarMultivariateFunctionPatch<P>(this->_ptr->_create(dom, f));
     }
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     VectorMultivariateFunctionPatch<P> create(const VectorDomainType& dom, const VectorMultivariateFunction<P>& f) const {
         return VectorMultivariateFunctionPatch<P>(this->_ptr->_create(dom, f));
     }
 
+    /** @brief Construct a zero object with compatible characteristics. */
     ScalarFunctionPatch<P, VARG> create_zero(const VectorDomainType& dom) const {
         return ScalarFunctionPatch<P, VARG>(this->_ptr->_create_zero(dom));
     }
+    /** @brief Construct a constant object with the supplied value. */
     ScalarFunctionPatch<P, VARG> create_constant(const VectorDomainType& dom, const Number<P>& c) const {
         return ScalarFunctionPatch<P, VARG>(this->_ptr->_create_constant(dom, c));
     }
+    /** @brief Construct a constant object with the supplied value. */
     template<class X>
         requires Constructible<Number<P>, X>
     ScalarFunctionPatch<P, VARG> create_constant(const VectorDomainType& dom, const X& c) const {
         return this->create_constant(dom, Number<P>(c));
     }
+    /** @brief Construct constant components with the supplied values. */
     VectorFunctionPatch<P, VARG> create_constants(const VectorDomainType& dom, const Vector<Number<P>>& c) const {
         return VectorFunctionPatch<P, VARG>(this->_ptr->_create_constants(dom, c));
     }
+    /** @brief Construct the function returning the selected coordinate. */
     ScalarFunctionPatch<P, VARG> create_coordinate(const VectorDomainType& dom, SizeType index) const {
         return ScalarFunctionPatch<P, VARG>(this->_ptr->_create_coordinate(dom, index));
     }
+    /** @brief Construct zero components with compatible characteristics. */
     VectorFunctionPatch<P, VARG> create_zeros(SizeType rsize, const VectorDomainType& dom) const {
         return VectorFunctionPatch<P, VARG>(this->_ptr->_create_zeros(rsize, dom));
     }
+    /** @brief Construct the function selecting the supplied coordinates. */
     VectorFunctionPatch<P, VARG> create_projection(const VectorDomainType& dom, Range indices) const {
         return VectorFunctionPatch<P, VARG>(this->_ptr->_create_projection(dom, indices));
     }
+    /** @brief Construct the identity function. */
     VectorFunctionPatch<P, VARG> create_identity(const VectorDomainType& dom) const {
         return VectorFunctionPatch<P, VARG>(this->_ptr->_create_identity(dom));
     }
 
+    /** @brief Construct a zero object with compatible characteristics. */
     ScalarFunctionPatch<P, SARG> create_zero(const ScalarDomainType& dom) const {
         return ScalarFunctionPatch<P, SARG>(this->_ptr->_create_zero(dom));
     }
+    /** @brief Construct zero components with compatible characteristics. */
     VectorFunctionPatch<P, SARG> create_zeros(SizeType rsize, const ScalarDomainType& dom) const {
         return VectorFunctionPatch<P, SARG>(this->_ptr->_create_zeros(rsize, dom));
     }
+    /** @brief Construct a constant object with the supplied value. */
     ScalarFunctionPatch<P, SARG> create_constant(const ScalarDomainType& dom, const Number<P>& c) const {
         return ScalarFunctionPatch<P, SARG>(this->_ptr->_create_constant(dom, c));
     }
+    /** @brief Construct constant components with the supplied values. */
     VectorFunctionPatch<P, SARG> create_constants(const ScalarDomainType& dom, const Vector<Number<P>>& c) const {
         return VectorFunctionPatch<P, SARG>(this->_ptr->_create_constants(dom, c));
     }
+    /** @brief Construct the identity function. */
     ScalarFunctionPatch<P, SARG> create_identity(const ScalarDomainType& dom) const {
         return ScalarFunctionPatch<P, SARG>(this->_ptr->_create_identity(dom));
     }
 
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const FunctionPatchFactory<P>& factory) { return factory._ptr->_write(os); }
 };
 
@@ -134,6 +157,7 @@ auto inline FunctionPatchFactoryInterface<P>::create_identity(const IntervalDoma
     return ScalarFunctionPatch<P, VARG>(this->create_coordinate(BoxDomainType(1u, dom), 0u));
 }
 
+/** @brief Construction helper for function patch. */
 template<class FCTRY, class ARG>
 class FunctionPatchCreator {
     typedef typename FCTRY::Paradigm P;
@@ -143,13 +167,20 @@ class FunctionPatchCreator {
     typedef typename DomainTraits<ARG>::BoundedDomainType DomainType;
     typedef P Paradigm;
 
+    /** @brief Construct a \c FunctionPatchCreator from domain, factory. */
     explicit FunctionPatchCreator(DomainType domain, FactoryType factory) : _factory(factory), _domain(domain) {}
 
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     decltype(auto) create(const ScalarFunction<P, ARG>& f) { return this->_factory.create(this->_domain, f); }
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     decltype(auto) create(const VectorFunction<P, ARG>& f) { return this->_factory.create(this->_domain, f); }
+    /** @brief Construct a zero object with compatible characteristics. */
     decltype(auto) create_zero() { return this->_factory.create_zero(this->_domain); }
+    /** @brief Construct zero components with compatible characteristics. */
     decltype(auto) create_zeros(SizeType n) { return this->_factory.create_zeros(n, this->_domain); }
+    /** @brief Construct a constant object with the supplied value. */
     decltype(auto) create_constant(const Number<P>& c) const { return this->_factory.create_constant(this->_domain, c); }
+    /** @brief Construct the identity function. */
     decltype(auto) create_identity() { return this->_factory.create_identity(this->_domain); }
 
   protected:
@@ -198,6 +229,7 @@ class FunctionPatch<P, RealScalar(ARGS...)>
     using Result = typename SignatureTraits<SIG>::template Result<X>;
 
   private:
+    /** @brief Return a dynamically allocated copy of the function patch. */
     static Interface* clone_patch(const GenericType& function) {
         const auto* patch = dynamic_cast<const Interface*>(function.raw_pointer());
         ARIADNE_PRECONDITION(patch != nullptr);
@@ -208,216 +240,291 @@ class FunctionPatch<P, RealScalar(ARGS...)>
     clone_on_copy_ptr<FunctionPatchInterface<P, SIG>> _ptr;
 
   public:
+    /** @brief Construct a \c FunctionPatch with the specified characteristics. */
     FunctionPatch() : _ptr() {}
+    /** @brief Construct a \c FunctionPatch from p. */
     explicit FunctionPatch(FunctionPatchInterface<P, SIG>* p) : _ptr(p) {}
+    /** @brief Copy-construct the object from the supplied instance. */
     FunctionPatch(const SharedPointer<const FunctionPatchInterface<P, SIG>> p) : _ptr(p->_concrete_clone()) {}
+    /** @brief Copy-construct the object from the supplied instance. */
     FunctionPatch(const FunctionPatch<P, SIG>& f) : _ptr(f._ptr.operator->() ? f._ptr->_concrete_clone() : nullptr) {}
+    /** @brief Assign the supplied value and return this object. */
     FunctionPatch& operator=(const FunctionPatch<P, SIG>& f) {
         this->_ptr = f._ptr.operator->() ? f._ptr->_concrete_clone() : nullptr;
         return *this;
     }
+    /** @brief Copy-construct the object from the supplied instance. */
     FunctionPatch(const FunctionPatchInterface<P, SIG>& f) : _ptr(f._concrete_clone()) {}
+    /** @brief Construct a \c FunctionPatch from f. */
     FunctionPatch(const Function<P, SIG>& f) : _ptr(clone_patch(f)) {}
+    /** @brief Construct a \c FunctionPatch from fm. */
     template<class PR, class PRE>
     FunctionPatch(FunctionModel<P, SIG, PR, PRE> fm);
+    /** @brief Convert to function< p, sig >. */
     operator Function<P, SIG>() const { return Function<P, SIG>(this->_ptr->_clone()); } // DEPRECATED
+    /** @brief Convert to the unchecked representation. */
     friend Function<P, SIG> cast_unchecked(const FunctionPatch<P, SIG>& fp) {
         return Function<P, SIG>(fp._ptr->_clone());
     }
+    /** @brief Convert to function patch interface< p, sig > &. */
     operator FunctionPatchInterface<P, SIG>&() { return *_ptr; }
+    /** @brief Convert to const function patch interface< p, sig > &. */
     operator const FunctionPatchInterface<P, SIG>&() const { return *_ptr; }
+    /** @brief Return a non-owning pointer to the represented object. */
     const FunctionPatchInterface<P, SIG>* raw_pointer() const { return _ptr.operator->(); }
+    /** @brief Return shared ownership of the represented object. */
     SharedPointer<FunctionPatchInterface<P, SIG>> managed_pointer() const {
         return SharedPointer<FunctionPatchInterface<P, SIG>>(this->_ptr->_concrete_clone());
     }
+    /** @brief Return a reference to the represented object. */
     FunctionPatchInterface<P, SIG>& reference() { return *_ptr; }
+    /** @brief Return a reference to the represented object. */
     const FunctionPatchInterface<P, SIG>& reference() const { return *_ptr; }
 
+    /** @brief Assign the supplied value and return this object. */
     ScalarFunctionPatch<P, ARGS...>& operator=(const Number<P>& c);
+    /** @brief Assign the supplied value and return this object. */
     ScalarFunctionPatch<P, ARGS...>& operator=(const ScalarFunction<P, ARGS...>& f);
+    /** @brief Assign the supplied value and return this object. */
     ScalarFunctionPatch<P, ARGS...>& operator=(const ScalarFunctionPatchInterface<P, ARGS...>& f);
 
+    /** @brief Return the number of result components. */
     inline ResultSizeType result_size() const { return this->_ptr->result_size(); }
+    /** @brief Return the number of scalar arguments. */
     inline ArgumentSizeType argument_size() const { return this->_ptr->argument_size(); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     X operator()(const Argument<X>& x) const {
         return this->_ptr->_call(x);
     }
+    /** @brief Evaluate at the supplied argument. */
     template<class X>
     X evaluate(const Argument<X>& x) const {
         return this->_ptr->_call(x);
     }
+    /** @brief Return the domain. */
     inline const DomainType domain() const { return this->_ptr->domain(); }
+    /** @brief Return the codomain. */
     inline const CodomainType codomain() const { return this->_ptr->codomain(); }
+    /** @brief Return the range enclosure. */
     inline const RangeType range() const { return this->_ptr->_range(); }
 
     //    inline CoefficientType value() const { return this->_ptr->value(); }
+    /** @brief Return the error bound. */
     inline ErrorType error() const { return this->_ptr->_error(); }
+    /** @brief Discard the error bound of the model. */
     inline Void clobber() { return this->_ptr->_clobber(); }
 
+    /** @brief Return a factory for compatible objects. */
     friend FunctionPatchCreator<FunctionPatchFactory<P>, ARGS...> factory(const ScalarFunctionPatch<P, ARGS...>& f) {
         FunctionPatchFactory<P> factory(f._ptr->_factory());
         return FunctionPatchCreator<FunctionPatchFactory<P>, ARGS...>(f.domain(), factory);
     }
 
   public:
+    /** @brief Return the sum or unary positive value. */
     friend ScalarFunctionPatch<P, ARGS...> operator+(const ScalarFunctionPatch<P, ARGS...>& fp1, const ScalarFunction<P, ARGS...>& f2) {
         return fp1 + factory(fp1).create(f2);
     }
+    /** @brief Return the sum or unary positive value. */
     friend ScalarFunctionPatch<P, ARGS...> operator+(const ScalarFunction<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& fp2) {
         return factory(fp2).create(f1) + fp2;
     }
+    /** @brief Return the difference or additive inverse. */
     friend ScalarFunctionPatch<P, ARGS...> operator-(const ScalarFunctionPatch<P, ARGS...>& fp1, const ScalarFunction<P, ARGS...>& f2) {
         return fp1 - factory(fp1).create(f2);
     }
+    /** @brief Return the difference or additive inverse. */
     friend ScalarFunctionPatch<P, ARGS...> operator-(const ScalarFunction<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& fp2) {
         return factory(fp2).create(f1) - fp2;
     }
+    /** @brief Return the product. */
     friend ScalarFunctionPatch<P, ARGS...> operator*(const ScalarFunctionPatch<P, ARGS...>& fp1, const ScalarFunction<P, ARGS...>& f2) {
         return fp1 * factory(fp1).create(f2);
     }
+    /** @brief Return the product. */
     friend ScalarFunctionPatch<P, ARGS...> operator*(const ScalarFunction<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& fp2) {
         return factory(fp2).create(f1) * fp2;
     }
+    /** @brief Return the quotient. */
     friend ScalarFunctionPatch<P, ARGS...> operator/(const ScalarFunctionPatch<P, ARGS...>& fp1, const ScalarFunction<P, ARGS...>& f2) {
         return fp1 / factory(fp1).create(f2);
     }
+    /** @brief Return the quotient. */
     friend ScalarFunctionPatch<P, ARGS...> operator/(const ScalarFunction<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& fp2) {
         return factory(fp2).create(f1) / fp2;
     }
 
+    /** @brief Return the product. */
     friend VectorFunctionPatch<P, ARGS...> operator*(const ScalarFunctionPatch<P, ARGS...>& fp1, const VectorFunction<P, ARGS...>& f2) {
         return fp1 * factory(fp1).create(f2);
     }
+    /** @brief Return the product. */
     friend VectorFunctionPatch<P, ARGS...> operator*(const VectorFunction<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& fp2) {
         return factory(fp2).create(f1) * fp2;
     }
+    /** @brief Return the quotient. */
     friend VectorFunctionPatch<P, ARGS...> operator/(const VectorFunction<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& fp2) {
         return factory(fp2).create(f1) / fp2;
     }
 
   public:
+    /** @brief Evaluate at the supplied argument. */
     friend Number<P> evaluate(const ScalarFunctionPatch<P, ARGS...>& f, const Argument<Number<P>>& x) {
         return f._ptr->_call(x);
     }
+    /** @brief Evaluate at the supplied argument. */
     friend CanonicalNumericType<P, DP> evaluate(const ScalarFunctionPatch<P, ARGS...>& f, const Argument<CanonicalNumericType<P, DP>>& x) {
         return f._ptr->_call(x);
     }
+    /** @brief Evaluate at the supplied argument. */
     friend CanonicalNumericType<P, MultiplePrecision> evaluate(const ScalarFunctionPatch<P, ARGS...>& f, const Argument<CanonicalNumericType<P, MultiplePrecision>>& x) {
         return f._ptr->_call(x);
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend Number<P> unchecked_evaluate(const ScalarFunctionPatch<P, ARGS...>& f, const Argument<Number<P>>& x) {
         return f._ptr->_unchecked_evaluate(x);
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend CanonicalNumericType<P, DP> unchecked_evaluate(const ScalarFunctionPatch<P, ARGS...>& f, const Argument<CanonicalNumericType<P, DP>>& x) {
         return f._ptr->_unchecked_evaluate(x);
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend CanonicalNumericType<P, MultiplePrecision> unchecked_evaluate(const ScalarFunctionPatch<P, ARGS...>& f, const Argument<CanonicalNumericType<P, MultiplePrecision>>& x) {
         return f._ptr->_unchecked_evaluate(x);
     }
 
+    /** @brief Fix the selected argument to the supplied value. */
     friend ScalarFunctionPatch<P, ARGS...> partial_evaluate(const ScalarFunctionPatch<P, ARGS...>& f, SizeType j, const Number<P>& c) {
         return ScalarFunctionPatch<P, ARGS...>(f._ptr->_partial_evaluate(j, c));
     }
 
+    /** @brief Return the norm. */
     friend NormType norm(const ScalarFunctionPatch<P, ARGS...>& f) {
         return f._ptr->_norm();
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend ScalarFunctionPatch<P, ARGS...> derivative(const ScalarFunctionPatch<P, ARGS...>& f, ArgumentIndexType j) {
         return ScalarFunctionPatch<P, ARGS...>(f._ptr->_concrete_derivative(j));
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend ScalarFunctionPatch<P, ARGS...> antiderivative(const ScalarFunctionPatch<P, ARGS...>& f, ArgumentIndexType j) {
         return ScalarFunctionPatch<P, ARGS...>(f._ptr->_antiderivative(j));
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend ScalarFunctionPatch<P, ARGS...> antiderivative(const ScalarFunctionPatch<P, ARGS...>& f, ArgumentIndexType j, Number<P> c) {
         return ScalarFunctionPatch<P, ARGS...>(f._ptr->_antiderivative(j, c));
     }
 
+    /** @brief Embed in the larger argument space. */
     friend ScalarFunctionPatch<P, ARGS...> embed(const DomainType& d1, const ScalarFunctionPatch<P, ARGS...>& f, const DomainType& d2)
         requires Same<DomainType, BoxDomainType>
     {
         return ScalarFunctionPatch<P, ARGS...>(f._ptr->_embed(d1, d2));
     }
+    /** @brief Embed in the larger argument space. */
     friend ScalarFunctionPatch<P, ARGS...> embed(const DomainType& d, const ScalarFunctionPatch<P, ARGS...>& f)
         requires Same<DomainType, BoxDomainType>
     {
         return embed(d, f, DomainType());
     }
+    /** @brief Embed in the larger argument space. */
     friend ScalarFunctionPatch<P, ARGS...> embed(const ScalarFunctionPatch<P, ARGS...>& f, const BoxDomainType& d)
         requires Same<DomainType, BoxDomainType>
     {
         return embed(DomainType(), f, d);
     }
+    /** @brief Embed in the larger argument space. */
     friend ScalarFunctionPatch<P, ARGS...> embed(const ScalarFunctionPatch<P, ARGS...>& f, const IntervalDomainType& d)
         requires Same<DomainType, BoxDomainType>
     {
         return embed(f, DomainType(1, d));
     }
+    /** @brief Return the object restricted to the supplied domain. */
     friend ScalarFunctionPatch<P, ARGS...> restriction(const ScalarFunctionPatch<P, ARGS...>& f, const DomainType& d) {
         return ScalarFunctionPatch<P, ARGS...>(f._ptr->_restriction(d));
     }
+    /** @brief Convert to the unrestricted representation. */
     friend inline ScalarFunction<P, ARGS...> cast_unrestricted(const ScalarFunctionPatch<P, ARGS...>& f) {
         return ScalarFunction<P, ARGS...>(std::dynamic_pointer_cast<ScalarFunctionInterface<P, ARGS...>>(f.managed_pointer()));
     }
 
+    /** @brief Join the operands in their natural order. */
     friend VectorFunctionPatch<P, ARGS...> join(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2) {
         return join(VectorFunctionPatch<P, ARGS...>(1, f1), f2);
     }
+    /** @brief Combine the operands over their respective arguments. */
     friend VectorFunctionPatch<P, ARGS...> combine(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2);
 
   public:
+    /** @brief Compose the outer object with the inner object. */
     friend inline ScalarFunctionPatch<P, ARGS...> compose(const ScalarUnivariateFunction<P>& f, const ScalarFunctionPatch<P, ARGS...>& g) {
         return ScalarFunctionPatch<P, ARGS...>(g._ptr->_compose(f));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend inline ScalarFunctionPatch<P, ARGS...> compose(const ScalarUnivariateFunctionPatch<P>& f, const ScalarFunctionPatch<P, ARGS...>& g) {
         return ScalarFunctionPatch<P, ARGS...>(g._ptr->_compose(cast_unchecked(f)));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend inline VectorFunctionPatch<P, ARGS...> compose(const VectorUnivariateFunction<P>& f, const ScalarFunctionPatch<P, ARGS...>& g) {
         return VectorFunctionPatch<P, ARGS...>(g._ptr->_compose(f));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend inline VectorFunctionPatch<P, ARGS...> compose(const VectorUnivariateFunctionPatch<P>& f, const ScalarFunctionPatch<P, ARGS...>& g) {
         return VectorFunctionPatch<P, ARGS...>(g._ptr->_compose(cast_unchecked(f)));
     }
 
+    /** @brief Compose without checking domain compatibility. */
     friend inline ScalarFunctionPatch<P, ARGS...> unchecked_compose(const ScalarUnivariateFunctionPatch<P>& f, const ScalarFunctionPatch<P, ARGS...>& g) {
         //        return ScalarFunctionPatch<P,ARGS...>(g._ptr->_unchecked_compose(f)); }
         return ScalarFunctionPatch<P, ARGS...>(g._ptr->_compose(cast_unchecked(f)));
     }
+    /** @brief Compose without checking domain compatibility. */
     friend inline VectorFunctionPatch<P, ARGS...> unchecked_compose(const VectorUnivariateFunctionPatch<P>& f, const ScalarFunctionPatch<P, ARGS...>& g) {
         return VectorFunctionPatch<P, ARGS...>(g._ptr->_compose(cast_unchecked(f)));
     }
 
   public:
+    /** @brief Test whether the enclosures cannot represent a common value. */
     friend Bool inconsistent(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2);
+    /** @brief Test whether the first enclosure is contained in the second. */
     friend Bool refines(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2) {
         return f1._ptr->_refines(f2);
     }
+    /** @brief Return the common refinement of the enclosures. */
     friend ScalarFunctionPatch<P, ARGS...> refinement(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2);
 
   public:
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const ScalarFunctionPatch<P, ARGS...>& f) {
         return os << f.operator ScalarFunction<P, ARGS...>();
     }
 };
 
+/** @brief Operations supported by algebra objects. */
 template<class P, class... ARGS>
 struct AlgebraOperations<ScalarFunctionPatch<P, ARGS...>> {
     typedef ScalarFunctionPatch<P, ARGS...> FM;
     typedef Number<P> X;
     typedef ScalarFunctionPatchInterface<P, ARGS...> FMI;
 
+    /** @brief Apply the supplied operation to the operands. */
     static FM apply(BinaryElementaryOperator op, const FM& f1, const FM& f2) {
         return FM(&dynamic_cast<FMI&>(*f1._ptr->_apply(op, *f2._ptr)));
     }
+    /** @brief Apply the supplied operation to the operands. */
     static FM apply(BinaryElementaryOperator op, const FM& f1, const X& c2) {
         return FM(&dynamic_cast<FMI&>(*f1._ptr->_apply(op, c2)));
     }
+    /** @brief Apply the supplied operation to the operands. */
     static FM apply(BinaryElementaryOperator op, const X& c1, const FM& f2) {
         return FM(&dynamic_cast<FMI&>(*f2._ptr->_rapply(op, c1)));
     }
+    /** @brief Apply the supplied operation to the operands. */
     static FM apply(UnaryElementaryOperator op, const FM& f) {
         return FM(&dynamic_cast<FMI&>(*f._ptr->_apply(op)));
     }
+    /** @brief Apply the supplied operation to the operands. */
     static FM apply(GradedElementaryOperator op, const FM& f, Int n) {
         return FM(&dynamic_cast<FMI&>(*f._ptr->_apply(op, n)));
     }
@@ -447,6 +554,7 @@ class ScaledFunctionPatch;
 template<class M>
 class VectorScaledFunctionPatch;
 
+/** @brief Scalar component view of a vector function patch. */
 template<class P, class... ARGS>
 class VectorFunctionPatchElement
     : public DispatchTranscendentalAlgebraOperations<ScalarFunctionPatch<P, ARGS...>, Number<P>>,
@@ -456,34 +564,48 @@ class VectorFunctionPatchElement
 
   public:
     typedef typename ScalarFunctionPatch<P, ARGS...>::GenericType GenericType;
+    /** @brief Convert to const scalar function patch< p, args... >. */
     operator const ScalarFunctionPatch<P, ARGS...>() const;
+    /** @brief Construct a \c VectorFunctionPatchElement from p, i. */
     VectorFunctionPatchElement(VectorFunctionPatch<P, ARGS...>* p, SizeType i) : _p(p), _i(i) {}
+    /** @brief Assign the supplied value and return this object. */
     VectorFunctionPatchElement<P, ARGS...>& operator=(const ScalarFunctionPatch<P, ARGS...>& sf) {
         _p->set(_i, sf);
         return *this;
     }
+    /** @brief Assign the supplied value and return this object. */
     VectorFunctionPatchElement<P, ARGS...>& operator=(const VectorFunctionPatchElement<P, ARGS...>& sf) {
         return this->operator=(static_cast<const ScalarFunctionPatch<P, ARGS...>>(sf));
     }
+    /** @brief Discard the error bound of the model. */
     Void clobber() {
         ScalarFunctionPatch<P, ARGS...> sf = _p->get(_i);
         sf.clobber();
         _p->set(_i, sf);
     }
+    /** @brief Return the selected function model. */
     const ScalarFunctionPatch<P, ARGS...> model() const {
         ScalarFunctionPatch<P, ARGS...> sf = _p->get(_i);
         return sf.model();
     }
+    /** @brief Return the error bound. */
     const PositiveValidatedUpperNumber error() const {
         ScalarFunctionPatch<P, ARGS...> sf = _p->get(_i);
         return sf.error();
     }
+    /** @brief Return the number of scalar arguments. */
     decltype(auto) argument_size() const { return _p->get(_i).argument_size(); }
+    /** @brief Return the domain. */
     decltype(auto) domain() const { return _p->get(_i).domain(); }
+    /** @brief Return the range enclosure. */
     IntervalRangeType range() const { return _p->get(_i).range(); }
+    /** @brief Test whether the enclosures cannot represent a common value. */
     friend Bool inconsistent(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2);
+    /** @brief Test whether the first enclosure is contained in the second. */
     friend Bool refines(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2);
+    /** @brief Return the common refinement of the enclosures. */
     friend ScalarFunctionPatch<P, ARGS...> refinement(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>&);
+    /** @brief Write the value to the output stream. */
     friend inline OutputStream& operator<<(OutputStream& os, const VectorFunctionPatchElement<P, ARGS...>& function) {
         return os << static_cast<const ScalarFunctionPatch<P, ARGS...>>(function);
     }
@@ -495,6 +617,7 @@ template<class P, class... ARGS>
 class FunctionPatch<P, RealVector(ARGS...)> {
     using RES = RealVector;
     using SIG = RES(ARGS...);
+    /** @brief Return the first scalar patch used to determine shared characteristics. */
     template<class Container>
     static const ScalarFunctionPatch<P, ARGS...>& first_patch(const Container& patches) {
         ARIADNE_PRECONDITION(patches.size() != 0u);
@@ -524,9 +647,12 @@ class FunctionPatch<P, RealVector(ARGS...)> {
     using Result = typename SignatureTraits<SIG>::template Result<X>;
 
   public:
+    /** @brief Construct a \c FunctionPatch with the specified characteristics. */
     inline FunctionPatch() : _ptr() {}
+    /** @brief Copy-construct the object from the supplied instance. */
     inline FunctionPatch(SharedPointer<const FunctionPatchInterface<P, SIG>> vfp)
         : _ptr(vfp->_concrete_clone()) {}
+    /** @brief Construct a \c FunctionPatch from n, sf. */
     inline FunctionPatch(SizeType n, const ScalarFunctionPatchInterface<P, ARGS...>& sf) {
         FunctionPatchFactory<P> factory(sf._factory());
         *this = factory.create_zeros(n, sf.domain());
@@ -534,50 +660,74 @@ class FunctionPatch<P, RealVector(ARGS...)> {
             (*this)[i] = sf;
         }
     }
+    /** @brief Construct a \c FunctionPatch from asf. */
     inline FunctionPatch(const Array<ScalarFunctionPatch<P, ARGS...>>& asf)
         : FunctionPatch(asf.size(), first_patch(asf)) {
         for (SizeType i = 0; i != asf.size(); ++i) {
             (*this)[i] = asf[i];
         }
     }
+    /** @brief Construct a \c FunctionPatch from lsf. */
     inline FunctionPatch(const List<ScalarFunctionPatch<P, ARGS...>>& lsf)
         : FunctionPatch(lsf.size(), first_patch(lsf)) {
         for (SizeType i = 0; i != lsf.size(); ++i) {
             (*this)[i] = lsf[i];
         }
     }
+    /** @brief Construct a \c FunctionPatch from p. */
     inline explicit FunctionPatch(FunctionPatchInterface<P, SIG>* p) : _ptr(p) {}
+    /** @brief Construct a \c FunctionPatch from fm. */
     template<class PR, class PRE>
     FunctionPatch(FunctionModel<P, SIG, PR, PRE> fm);
+    /** @brief Copy-construct the object from the supplied instance. */
     inline FunctionPatch(const FunctionPatchInterface<P, SIG>& f) : _ptr(f._concrete_clone()) {}
+    /** @brief Copy-construct the object from the supplied instance. */
     inline FunctionPatch(const FunctionPatch<P, SIG>& f) : _ptr(f._ptr.operator->() ? f._ptr->_concrete_clone() : nullptr) {}
+    /** @brief Assign the supplied value and return this object. */
     inline FunctionPatch& operator=(const FunctionPatch<P, SIG>& f) {
         this->_ptr = f._ptr.operator->() ? f._ptr->_concrete_clone() : nullptr;
         return *this;
     }
+    /** @brief Convert to const function patch interface< p, sig > &. */
     inline operator const FunctionPatchInterface<P, SIG>&() const { return *_ptr; }
+    /** @brief Convert to function< p, sig >. */
     inline operator Function<P, SIG>() const { return Function<P, SIG>(*_ptr); } // DEPRECATED
+    /** @brief Convert to the unchecked representation. */
     friend inline Function<P, SIG> cast_unchecked(const FunctionPatch<P, SIG>& fp) {
         return Function<P, SIG>(*fp._ptr);
     }
+    /** @brief Return a non-owning pointer to the represented object. */
     inline const FunctionPatchInterface<P, SIG>* raw_pointer() const { return _ptr.operator->(); }
+    /** @brief Return shared ownership of the represented object. */
     SharedPointer<FunctionPatchInterface<P, SIG>> managed_pointer() const {
         return SharedPointer<FunctionPatchInterface<P, SIG>>(this->_ptr->_concrete_clone());
     }
+    /** @brief Return a reference to the represented object. */
     inline const FunctionPatchInterface<P, SIG>& reference() const { return *_ptr; }
+    /** @brief Return a reference to the represented object. */
     inline FunctionPatchInterface<P, SIG>& reference() { return *_ptr; }
 
+    /** @brief Return the number of result components. */
     inline ResultSizeType result_size() const { return this->_ptr->result_size(); }
+    /** @brief Return the number of scalar arguments. */
     inline ArgumentSizeType argument_size() const { return this->_ptr->argument_size(); }
+    /** @brief Return the number of elements. */
     inline SizeType size() const { return this->_ptr->result_size(); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class XX>
     inline Vector<XX> operator()(const Argument<XX>& v) const { return this->_ptr->_call(v); }
+    /** @brief Evaluate at the supplied argument. */
     template<class XX>
     inline Vector<XX> evaluate(const Argument<XX>& v) const { return this->_ptr->_call(v); }
+    /** @brief Return the requested element or stored value. */
     inline const ScalarFunctionPatch<P, ARGS...> get(SizeType i) const { return ScalarFunctionPatch<P, ARGS...>(this->_ptr->_patch_get(i)); }
+    /** @brief Replace the selected value. */
     inline Void set(SizeType i, const ScalarFunctionPatch<P, ARGS...>& sf) { this->_ptr->_set(i, sf); }
+    /** @brief Return the selected element or component. */
     inline const ScalarFunctionPatch<P, ARGS...> operator[](SizeType i) const { return this->get(i); }
+    /** @brief Return the selected element or component. */
     inline VectorFunctionPatchElement<P, ARGS...> operator[](SizeType i) { return VectorFunctionPatchElement<P, ARGS...>(this, i); }
+    /** @brief Return the selected element or component. */
     inline VectorFunctionPatch<P, ARGS...> operator[](Range rng) {
         VectorFunctionPatch<P, ARGS...> r = factory(*this).create_zeros(rng.size());
         for (SizeType i = 0; i != rng.size(); ++i) {
@@ -585,12 +735,19 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the domain. */
     inline const DomainType domain() const { return this->_ptr->domain(); }
+    /** @brief Return the codomain. */
     inline const CodomainType codomain() const { return this->_ptr->codomain(); }
+    /** @brief Return the range enclosure. */
     inline const RangeType range() const { return this->_ptr->_range(); }
+    /** @brief Return the component error bounds. */
     inline const Vector<ErrorType> errors() const { return this->_ptr->_errors(); }
+    /** @brief Return the error bound. */
     inline const ErrorType error() const { return this->_ptr->_error(); }
+    /** @brief Discard the error bound of the model. */
     inline Void clobber() { this->_ptr->_clobber(); }
+    /** @brief Return the matrix of first partial derivatives. */
     inline const Matrix<NumericType> jacobian(const Vector<NumericType>& x) const
         requires Same<DomainType, BoxDomainType>
     {
@@ -604,36 +761,45 @@ class FunctionPatch<P, RealVector(ARGS...)> {
     }
 
   public:
+    /** @brief Return a factory for compatible objects. */
     friend FunctionPatchCreator<FunctionPatchFactory<P>, ARGS...> factory(const VectorFunctionPatch<P, ARGS...>& f) {
         FunctionPatchFactory<P> factory(f._ptr->_factory());
         return FunctionPatchCreator<FunctionPatchFactory<P>, ARGS...>(f.domain(), factory);
     }
 
   public:
+    /** @brief Compose the outer object with the inner object. */
     friend inline ScalarFunctionPatch<P, ARGS...> compose(const ScalarMultivariateFunction<P>& f, const VectorFunctionPatch<P, ARGS...>& g) {
         return ScalarFunctionPatch<P, ARGS...>(g._ptr->_compose(f));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend inline ScalarFunctionPatch<P, ARGS...> compose(const ScalarMultivariateFunctionPatch<P>& f, const VectorFunctionPatch<P, ARGS...>& g) {
         return ScalarFunctionPatch<P, ARGS...>(g._ptr->_compose(cast_unchecked(f)));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend inline VectorFunctionPatch<P, ARGS...> compose(const VectorMultivariateFunction<P>& f, const VectorFunctionPatch<P, ARGS...>& g) {
         return VectorFunctionPatch<P, ARGS...>(g._ptr->_compose(f));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend inline VectorFunctionPatch<P, ARGS...> compose(const VectorMultivariateFunctionPatch<P>& f, const VectorFunctionPatch<P, ARGS...>& g) {
         return VectorFunctionPatch<P, ARGS...>(g._ptr->_compose(cast_unchecked(f)));
     }
 
+    /** @brief Compose without checking domain compatibility. */
     friend inline ScalarFunctionPatch<P, ARGS...> unchecked_compose(const ScalarMultivariateFunctionPatch<P>& f, const VectorFunctionPatch<P, ARGS...>& g) {
         //        return ScalarFunctionPatch<P,ARGS...>(g._ptr->_unchecked_compose(f)); }
         return ScalarFunctionPatch<P, ARGS...>(g._ptr->_compose(cast_unchecked(f)));
     }
+    /** @brief Compose without checking domain compatibility. */
     friend inline VectorFunctionPatch<P, ARGS...> unchecked_compose(const VectorMultivariateFunctionPatch<P>& f, const VectorFunctionPatch<P, ARGS...>& g) {
         return VectorFunctionPatch<P, ARGS...>(g._ptr->_compose(cast_unchecked(f)));
     }
 
+    /** @brief Return the sum or unary positive value. */
     friend inline VectorFunctionPatch<P, ARGS...> operator+(const VectorFunctionPatch<P, ARGS...>& f) {
         return VectorFunctionPatch<P, ARGS...>(f._ptr->_concrete_clone());
     }
+    /** @brief Return the difference or additive inverse. */
     friend inline VectorFunctionPatch<P, ARGS...> operator-(const VectorFunctionPatch<P, ARGS...>& f) {
         VectorFunctionPatch<P, ARGS...> r = f;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -641,6 +807,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the sum or unary positive value. */
     friend inline VectorFunctionPatch<P, ARGS...> operator+(const VectorFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2) {
         VectorFunctionPatch<P, ARGS...> r = f1;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -648,6 +815,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the difference or additive inverse. */
     friend inline VectorFunctionPatch<P, ARGS...> operator-(const VectorFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2) {
         VectorFunctionPatch<P, ARGS...> r = f1;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -655,6 +823,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the sum or unary positive value. */
     friend inline VectorFunctionPatch<P, ARGS...> operator+(const VectorFunctionPatch<P, ARGS...>& f1, const Vector<Number<P>>& c2) {
         VectorFunctionPatch<P, ARGS...> r = f1;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -662,6 +831,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the difference or additive inverse. */
     friend inline VectorFunctionPatch<P, ARGS...> operator-(const VectorFunctionPatch<P, ARGS...>& f1, const Vector<Number<P>>& c2) {
         VectorFunctionPatch<P, ARGS...> r = f1;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -669,6 +839,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the product. */
     friend inline VectorFunctionPatch<P, ARGS...> operator*(const ScalarFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2) {
         VectorFunctionPatch<P, ARGS...> r = f2;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -676,6 +847,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the product. */
     friend inline VectorFunctionPatch<P, ARGS...> operator*(const VectorFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2) {
         VectorFunctionPatch<P, ARGS...> r = f1;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -683,6 +855,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the quotient. */
     friend inline VectorFunctionPatch<P, ARGS...> operator/(const VectorFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2) {
         VectorFunctionPatch<P, ARGS...> r = f1;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -690,6 +863,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the sum or unary positive value. */
     friend inline VectorFunctionPatch<P, ARGS...> operator+(const Vector<Number<P>>& c1, const VectorFunctionPatch<P, ARGS...>& f2) {
         VectorFunctionPatch<P, ARGS...> r = f2;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -697,6 +871,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the difference or additive inverse. */
     friend inline VectorFunctionPatch<P, ARGS...> operator-(const Vector<Number<P>>& c1, const VectorFunctionPatch<P, ARGS...>& f2) {
         VectorFunctionPatch<P, ARGS...> r = f2;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -704,6 +879,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the product. */
     friend inline VectorFunctionPatch<P, ARGS...> operator*(const VectorFunctionPatch<P, ARGS...>& f1, const Number<P>& c2) {
         VectorFunctionPatch<P, ARGS...> r = f1;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -711,6 +887,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
         return r;
     }
+    /** @brief Return the product. */
     friend inline VectorFunctionPatch<P, ARGS...> operator*(const Number<P>& c1, const VectorFunctionPatch<P, ARGS...>& f2) {
         VectorFunctionPatch<P, ARGS...> r = f2;
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -719,41 +896,49 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         return r;
     }
 
+    /** @brief Return the sum or unary positive value. */
     friend inline VectorFunctionPatch<P, ARGS...> operator+(const VectorFunctionPatch<P, ARGS...>& f1, const VectorMultivariateFunction<P>& f2)
         requires Same<DomainType, BoxDomainType>
     {
         return f1 + factory(f1).create(f2);
     }
+    /** @brief Return the difference or additive inverse. */
     friend inline VectorFunctionPatch<P, ARGS...> operator-(const VectorFunctionPatch<P, ARGS...>& f1, const VectorMultivariateFunction<P>& f2)
         requires Same<DomainType, BoxDomainType>
     {
         return f1 - factory(f1).create(f2);
     }
+    /** @brief Return the product. */
     friend inline VectorFunctionPatch<P, ARGS...> operator*(const VectorFunctionPatch<P, ARGS...>& f1, const ScalarMultivariateFunction<P>& f2)
         requires Same<DomainType, BoxDomainType>
     {
         return f1 * factory(f1).create(f2);
     }
+    /** @brief Return the quotient. */
     friend inline VectorFunctionPatch<P, ARGS...> operator/(const VectorFunctionPatch<P, ARGS...>& f1, const ScalarMultivariateFunction<P>& f2)
         requires Same<DomainType, BoxDomainType>
     {
         return f1 / factory(f1).create(f2);
     }
+    /** @brief Return the sum or unary positive value. */
     friend inline VectorFunctionPatch<P, ARGS...> operator+(const VectorMultivariateFunction<P>& f1, const VectorFunctionPatch<P, ARGS...>& f2)
         requires Same<DomainType, BoxDomainType>
     {
         return factory(f2).create(f1) + f2;
     }
+    /** @brief Return the difference or additive inverse. */
     friend inline VectorFunctionPatch<P, ARGS...> operator-(const VectorMultivariateFunction<P>& f1, const VectorFunctionPatch<P, ARGS...>& f2)
         requires Same<DomainType, BoxDomainType>
     {
         return factory(f2).create(f1) - f2;
     }
+    /** @brief Return the product. */
     friend inline VectorFunctionPatch<P, ARGS...> operator*(const ScalarMultivariateFunction<P>& f1, const VectorFunctionPatch<P, ARGS...>& f2)
         requires Same<DomainType, BoxDomainType>
     {
         return factory(f2).create(f1) * f2;
     }
+    /** @brief Return the quotient. */
     friend inline VectorFunctionPatch<P, ARGS...> operator/(const ScalarMultivariateFunction<P>& f1, const VectorFunctionPatch<P, ARGS...>& f2)
         requires Same<DomainType, BoxDomainType>
     {
@@ -761,64 +946,80 @@ class FunctionPatch<P, RealVector(ARGS...)> {
     }
 
   public:
+    /** @brief Return the norm. */
     friend NormType norm(const VectorFunctionPatch<P, ARGS...>& f) {
         return f._ptr->_norm();
     }
+    /** @brief Embed in the larger argument space. */
     friend VectorFunctionPatch<P, ARGS...> embed(const DomainType& d1, const VectorFunctionPatch<P, ARGS...>& f, const DomainType& d2)
         requires Same<DomainType, BoxDomainType>
     {
         return VectorFunctionPatch<P, ARGS...>(f._ptr->_embed(d1, d2));
     }
+    /** @brief Embed in the larger argument space. */
     friend VectorFunctionPatch<P, ARGS...> embed(const DomainType& d, const VectorFunctionPatch<P, ARGS...>& f)
         requires Same<DomainType, BoxDomainType>
     {
         return embed(d, f, DomainType());
     }
+    /** @brief Embed in the larger argument space. */
     friend VectorFunctionPatch<P, ARGS...> embed(const VectorFunctionPatch<P, ARGS...>& f, const BoxDomainType& d)
         requires Same<DomainType, BoxDomainType>
     {
         return embed(DomainType(), f, d);
     }
+    /** @brief Embed in the larger argument space. */
     friend VectorFunctionPatch<P, ARGS...> embed(const VectorFunctionPatch<P, ARGS...>& f, const IntervalDomainType& d)
         requires Same<DomainType, BoxDomainType>
     {
         return embed(f, DomainType(1, d));
     }
+    /** @brief Return the object restricted to the supplied domain. */
     friend VectorFunctionPatch<P, ARGS...> restriction(const VectorFunctionPatch<P, ARGS...>& f, const DomainType& d) {
         return VectorFunctionPatch<P, ARGS...>(f._ptr->_restriction(d));
     }
+    /** @brief Convert to the unrestricted representation. */
     friend inline VectorFunction<P, ARGS...> cast_unrestricted(const VectorFunctionPatch<P, ARGS...>& f) {
         return VectorFunction<P, ARGS...>(std::dynamic_pointer_cast<VectorFunctionInterface<P, ARGS...>>(f.managed_pointer()));
     }
 
+    /** @brief Evaluate at the supplied argument. */
     friend Vector<Number<P>> evaluate(const VectorFunctionPatch<P, ARGS...>& f, const Argument<Number<P>>& x) {
         return f._ptr->_call(x);
     }
+    /** @brief Evaluate at the supplied argument. */
     friend Vector<CanonicalNumericType<P, DP>> evaluate(const VectorFunctionPatch<P, ARGS...>& f, const Argument<CanonicalNumericType<P, DP>>& x) {
         return f._ptr->_call(x);
     }
+    /** @brief Evaluate at the supplied argument. */
     friend Vector<CanonicalNumericType<P, MultiplePrecision>> evaluate(const VectorFunctionPatch<P, ARGS...>& f, const Argument<CanonicalNumericType<P, MultiplePrecision>>& x) {
         return f._ptr->_call(x);
     }
 
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend Vector<Number<P>> unchecked_evaluate(const VectorFunctionPatch<P, ARGS...>& f, const Argument<Number<P>>& x) {
         return f._ptr->_unchecked_evaluate(x);
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend Vector<CanonicalNumericType<P, DP>> unchecked_evaluate(const VectorFunctionPatch<P, ARGS...>& f, const Argument<CanonicalNumericType<P, DP>>& x) {
         return f._ptr->_unchecked_evaluate(x);
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend Vector<CanonicalNumericType<P, MultiplePrecision>> unchecked_evaluate(const VectorFunctionPatch<P, ARGS...>& f, const Argument<CanonicalNumericType<P, MultiplePrecision>>& x) {
         return f._ptr->_unchecked_evaluate(x);
     }
 
+    /** @brief Fix the selected argument to the supplied value. */
     friend VectorFunctionPatch<P, ARGS...> partial_evaluate(const VectorFunctionPatch<P, ARGS...>& f, SizeType j, const Number<P>& c) {
         return VectorFunctionPatch<P, ARGS...>(f._ptr->_partial_evaluate(j, c));
     }
 
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const VectorFunctionPatch<P, ARGS...>& f) {
         return os << static_cast<VectorFunction<P, ARGS...>>(f);
     }
 
+    /** @brief Compose without checking domain compatibility. */
     friend ScalarFunctionPatch<P, ARGS...> unchecked_compose(const ScalarMultivariateFunction<P>& f, const VectorFunctionPatch<P, ARGS...>& g) {
         const ScalarMultivariateFunctionPatchInterface<P>* fptr = dynamic_cast<const ScalarMultivariateFunctionPatchInterface<P>*>(f.raw_pointer());
         if (fptr) {
@@ -827,6 +1028,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
             return compose(f, g);
         }
     }
+    /** @brief Compose without checking domain compatibility. */
     friend VectorFunctionPatch<P, ARGS...> unchecked_compose(const VectorMultivariateFunction<P>& f, const VectorFunctionPatch<P, ARGS...>& g) {
         const VectorMultivariateFunctionPatchInterface<P>* fptr = dynamic_cast<const VectorMultivariateFunctionPatchInterface<P>*>(f.raw_pointer());
         if (fptr) {
@@ -836,6 +1038,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         }
     }
 
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend VectorFunctionPatch<P, ARGS...> antiderivative(const VectorFunctionPatch<P, ARGS...>& f, ArgumentIndexType j) {
         VectorFunctionPatch<P, ARGS...> r(f);
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -844,6 +1047,7 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         return r;
     }
 
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend VectorFunctionPatch<P, ARGS...> antiderivative(const VectorFunctionPatch<P, ARGS...>& f, ArgumentIndexType j, const Number<P>& c) {
         VectorFunctionPatch<P, ARGS...> r(f);
         for (SizeType i = 0; i != r.size(); ++i) {
@@ -852,37 +1056,48 @@ class FunctionPatch<P, RealVector(ARGS...)> {
         return r;
     }
 
+    /** @brief Join the operands in their natural order. */
     friend VectorFunctionPatch<P, ARGS...> join(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2);
+    /** @brief Join the operands in their natural order. */
     friend VectorFunctionPatch<P, ARGS...> join(const ScalarFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2) {
         return join(VectorFunctionPatch<P, ARGS...>(1u, f1), f2);
     }
+    /** @brief Join the operands in their natural order. */
     friend VectorFunctionPatch<P, ARGS...> join(const VectorFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2) {
         VectorFunctionPatch<P, ARGS...> r = VectorFunctionPatch<P, ARGS...>(f1._ptr->_concrete_clone());
         r._ptr->_adjoin(f2);
         return r;
     }
+    /** @brief Join the operands in their natural order. */
     friend VectorFunctionPatch<P, ARGS...> join(const VectorFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2) {
         return VectorFunctionPatch<P, ARGS...>(f1._ptr->_join(f2));
     }
 
+    /** @brief Combine the operands over their respective arguments. */
     friend VectorFunctionPatch<P, ARGS...> combine(const ScalarFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2) {
         return VectorFunctionPatch<P, ARGS...>(VectorFunctionPatch<P, ARGS...>(1, f1)._ptr->_combine(VectorFunctionPatch<P, ARGS...>(1, f2)));
     };
+    /** @brief Combine the operands over their respective arguments. */
     friend VectorFunctionPatch<P, ARGS...> combine(const ScalarFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2) {
         return VectorFunctionPatch<P, ARGS...>(VectorFunctionPatch<P, ARGS...>(1, f1)._ptr->_combine(f2));
     };
+    /** @brief Combine the operands over their respective arguments. */
     friend VectorFunctionPatch<P, ARGS...> combine(const VectorFunctionPatch<P, ARGS...>& f1, const ScalarFunctionPatch<P, ARGS...>& f2) {
         return VectorFunctionPatch<P, ARGS...>(f1._ptr->_combine(VectorFunctionPatch<P, ARGS...>(1, f2)));
     };
+    /** @brief Combine the operands over their respective arguments. */
     friend VectorFunctionPatch<P, ARGS...> combine(const VectorFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2) {
         return VectorFunctionPatch<P, ARGS...>(f1._ptr->_combine(f2));
     }
 
   public:
+    /** @brief Test whether the enclosures cannot represent a common value. */
     friend Bool inconsistent(const VectorFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2);
+    /** @brief Test whether the first enclosure is contained in the second. */
     friend Bool refines(const VectorFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2) {
         return f1._ptr->_refines(f2);
     }
+    /** @brief Return the common refinement of the enclosures. */
     friend VectorFunctionPatch<P, ARGS...> refinement(const VectorFunctionPatch<P, ARGS...>& f1, const VectorFunctionPatch<P, ARGS...>& f2);
 };
 
@@ -891,11 +1106,13 @@ VectorFunctionPatchElement<P, ARGS...>::operator const ScalarFunctionPatch<P, AR
     return ScalarFunctionPatch<P, ARGS...>(_p->get(_i));
 }
 
+/** @brief Patch adapter used when domain membership is established by the caller. */
 template<class P, class SIG>
 class UncheckedFunctionPatch {
     FunctionPatch<P, SIG> _fp;
 
   public:
+    /** @brief Apply the callable to the supplied arguments. */
     template<class... ARGS>
     auto operator()(ARGS... x) const { return unchecked_evaluate(this->_fp, x...); }
 };

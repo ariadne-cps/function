@@ -55,6 +55,7 @@ namespace ScaledFunctionPatchDetail {
 
 // Keep exception construction in ordinary noreturn functions: callers have
 // a single, explicit failure path, including in template instantiations.
+/** @brief Report an argument outside the function-patch domain. */
 template<class F, class X>
 [[noreturn]] Void throw_domain_error(
     const char* operation, const F& function, const X& argument) {
@@ -64,6 +65,7 @@ template<class F, class X>
     throw DomainException(message.str());
 }
 
+/** @brief Report incompatible function-call characteristics. */
 template<class F, class X>
 [[noreturn]] Void throw_incompatible_call(
     const F& function, const X& argument) {
@@ -104,12 +106,18 @@ class VectorScaledFunctionPatch;
 template<class M>
 class VectorScaledFunctionPatchElementReference;
 
+/** @brief Convert the model error into a compatible interval bound. */
 inline FloatDPApproximation convert_error_to_bounds(const PositiveFloatDPApproximation&) { return FloatDPApproximation(0.0, dp); }
+/** @brief Convert the model error into a compatible interval bound. */
 inline FloatDPBounds convert_error_to_bounds(const PositiveFloatDPUpperBound& e) { return FloatDPBounds(-e.raw(), +e.raw()); }
+/** @brief Convert the model error into a compatible interval bound. */
 inline FloatDPBounds convert_error_to_bounds(const FloatDPError& e) { return FloatDPBounds(-e.raw(), +e.raw()); }
 
+/** @brief Convert the model error into a compatible interval bound. */
 inline FloatMPApproximation convert_error_to_bounds(const PositiveFloatMPApproximation& e) { return FloatMPApproximation(0.0, e.precision()); }
+/** @brief Convert the model error into a compatible interval bound. */
 inline FloatMPBounds convert_error_to_bounds(const PositiveFloatMPUpperBound& e) { return FloatMPBounds(-e.raw(), +e.raw()); }
+/** @brief Convert the model error into a compatible interval bound. */
 inline FloatMPBounds convert_error_to_bounds(const FloatMPError& e) { return FloatMPBounds(-e.raw(), +e.raw()); }
 
 /*
@@ -134,18 +142,25 @@ class ScaledFunctionPatchFactory;
 template<class M>
 class ScaledFunctionPatchCreator;
 
+/** @brief Operations supported by algebra objects. */
 template<class M>
 struct AlgebraOperations<ScaledFunctionPatch<M>> {
     typedef typename M::NumericType NumericType;
 
   public:
+    /** @brief Apply the supplied operation to the operands. */
     static ScaledFunctionPatch<M> apply(UnaryElementaryOperator op, const ScaledFunctionPatch<M>& f);
+    /** @brief Apply the supplied operation to the operands. */
     static ScaledFunctionPatch<M> apply(BinaryElementaryOperator op, const ScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2);
+    /** @brief Apply the supplied operation to the operands. */
     static ScaledFunctionPatch<M> apply(BinaryElementaryOperator op, const ScaledFunctionPatch<M>& f1, const NumericType& c2);
+    /** @brief Apply the supplied operation to the operands. */
     static ScaledFunctionPatch<M> apply(BinaryElementaryOperator op, const NumericType& c1, const ScaledFunctionPatch<M>& f2);
+    /** @brief Apply the supplied operation to the operands. */
     static ScaledFunctionPatch<M> apply(GradedElementaryOperator op, const ScaledFunctionPatch<M>& f, Int n);
 };
 
+/** @brief Reusable implementation of scaled function patch. */
 template<class M>
 class ScaledFunctionPatchMixin
     : public ScalarMultivariateFunctionModelMixin<ScaledFunctionPatch<M>, typename M::Paradigm, typename M::PrecisionType, typename M::ErrorPrecisionType> {
@@ -154,9 +169,11 @@ class ScaledFunctionPatchMixin
   public:
     // Use the interface return type so explicit instantiation needs no covariant thunk.
     // Define this only after ScaledFunctionPatch<M> is complete.
+    /** @brief Construct a compatible object from the supplied value and characteristics using the concrete implementation. */
     typename Base::Interface* _concrete_create() const override;
 };
 
+/** @brief Reusable implementation of vector scaled function patch. */
 template<class M>
 class VectorScaledFunctionPatchMixin
     : public VectorMultivariateFunctionModelMixin<VectorScaledFunctionPatch<M>, typename M::Paradigm, typename M::PrecisionType, typename M::ErrorPrecisionType> {
@@ -164,6 +181,7 @@ class VectorScaledFunctionPatchMixin
 
   public:
     // Define this only after VectorScaledFunctionPatch<M> is complete.
+    /** @brief Construct a compatible object from the supplied value and characteristics using the concrete implementation. */
     typename Base::Interface* _concrete_create() const override;
 };
 
@@ -241,6 +259,7 @@ class ScaledFunctionPatch
   public:
     //!@{
     //! \name Constructors and destructors.
+    /** @brief Destroy the object and release its owned resources. */
     virtual ~ScaledFunctionPatch() = default;
 
     //! \brief Construct a ScaledFunctionPatch<M> over the domain \a d.
@@ -249,11 +268,16 @@ class ScaledFunctionPatch
     //! \brief Construct a ScaledFunctionPatch<M> over the domain \a d, based on the scaled model \a m.
     explicit ScaledFunctionPatch(const DomainType& d, const ModelType& m);
 
+    /** @brief Construct a \c ScaledFunctionPatch from d, p, e, prp. */
     explicit ScaledFunctionPatch(const BoxDomainType& d, const Expansion<MultiIndex, CoefficientType>& p, const ErrorType& e, const Sweeper<RawFloat<PR>>& prp);
+    /** @brief Construct a \c ScaledFunctionPatch from d, p, e, prp. */
     explicit ScaledFunctionPatch(const BoxDomainType& d, const Expansion<MultiIndex, RawFloat<PR>>& p, const RawFloat<PR>& e, const Sweeper<RawFloat<PR>>& prp);
+    /** @brief Construct a \c ScaledFunctionPatch from d, p, e, prp. */
     explicit ScaledFunctionPatch(const BoxDomainType& d, const Expansion<MultiIndex, ExactDouble>& p, const ExactDouble& e, const Sweeper<RawFloat<PR>>& prp);
 
+    /** @brief Construct a \c ScaledFunctionPatch from f. */
     explicit ScaledFunctionPatch(const ScalarFunctionModelType<M>& f);
+    /** @brief Assign the supplied value and return this object. */
     ScaledFunctionPatch& operator=(const ScalarFunctionModelType<M>& f);
 
     //! \brief Construct a ScaledFunctionPatch over the domain \a d from the function \a f.
@@ -263,6 +287,7 @@ class ScaledFunctionPatch
     //!@{
     //! \name Assignment to constant values.
     //! \brief Set equal to a constant, keeping the same number of arguments.
+    /** @brief Assign the supplied value and return this object. */
     ScaledFunctionPatch<M>& operator=(const NumericType& c) {
         this->_model = c;
         return *this;
@@ -277,9 +302,11 @@ class ScaledFunctionPatch
     //!@{
     //! \name Named constructors.
     //! \brief Construct a zero function over domain \a d.
+    /** @brief Return the additive zero. */
     static ScaledFunctionPatch<M> zero(const DomainType& d, PropertiesType prp);
     //! \brief Construct a constant quantity in \a as independent variables.
     static ScaledFunctionPatch<M> constant(const DomainType& d, const NumericType& c, PropertiesType prp);
+    /** @brief Construct a constant with the supplied value. */
     static ScaledFunctionPatch<M> constant(const DomainType& d, const GenericNumericType& c, PropertiesType prp);
     //! \brief Construct the coordinate \f$x_{j}\f$ over the domain \a d.
     static ScaledFunctionPatch<M> coordinate(const DomainType& d, SizeType j, PropertiesType prp);
@@ -296,6 +323,7 @@ class ScaledFunctionPatch
 
     //!@{
     //! \name Prototype constructors.
+    /** @brief Return a factory for compatible objects. */
     friend ScaledFunctionPatchCreator<M> factory(const ScaledFunctionPatch<M>& f) {
         return ScaledFunctionPatchCreator<M>(f.domain(), f.properties());
     }
@@ -303,12 +331,14 @@ class ScaledFunctionPatch
     ScaledFunctionPatch<M> create_zero() const;
     //! \brief Construct a zero function over the same domain with the same computational properties.
     ScaledFunctionPatch<M> create_constant(const NumericType& c) const;
+    /** @brief Construct a constant object with the supplied value. */
     ScaledFunctionPatch<M> create_constant(const GenericNumericType& c) const;
     //!@}
 
     //!@{
     //! \name Data access
     //! \brief The domain of the quantity.
+    /** @brief Return the domain. */
     const DomainType domain() const { return this->_domain; }
     //! \brief The scaled expansion over a unit box with error bound.
     const ModelType& model() const { return this->_model; }
@@ -365,11 +395,15 @@ class ScaledFunctionPatch
     //!@{
     //! \name Function operations.
     //! \brief An over-approximation to the range of the function.
+    /** @brief Return the range enclosure. */
     const RangeType range() const { return this->_model.range(); }
     //! \brief Evaluate the function at the point \a x.
     ArithmeticType<CoefficientType, FloatBounds<PR>> operator()(const Vector<FloatBounds<PR>>& x) const;
+    /** @brief Apply the callable to the supplied arguments. */
     ArithmeticType<CoefficientType, FloatBounds<PR>> operator()(const Vector<Float<PR>>& x) const;
+    /** @brief Apply the callable to the supplied arguments. */
     ArithmeticType<CoefficientType, FloatApproximation<PR>> operator()(const Vector<FloatApproximation<PR>>& x) const;
+    /** @brief Apply the callable to the supplied arguments. */
     ValidatedNumber operator()(const Vector<ValidatedNumber>& x) const;
 
     //! \brief Compute an approximation to gradient derivative of the function at the point \a x.
@@ -380,6 +414,7 @@ class ScaledFunctionPatch
     //! \name Simplification operations.
     //! \brief Remove all terms whose coefficient has magnitude
     //! lower than the cutoff threshold of the quantity.
+    /** @brief Simplify the formula or model representation. */
     ScaledFunctionPatch<M>& simplify() {
         this->_model.simplify();
         return *this;
@@ -395,18 +430,21 @@ class ScaledFunctionPatch
     //!@{
     //! \name Accuracy parameters.
     //! \copydoc TaylorModel::set_properties()
+    /** @brief Set the properties. */
     Void set_properties(const PropertiesType& prp) { this->_model.set_properties(prp); }
     //!@}
 
     //!@{
     //! \name Non-arithmetic operations.
     //! \brief Restrict to a subdomain.
+    /** @brief Restrict to the supplied subset or domain. */
     Void restrict(const DomainType& d);
     //!@}
 
     //!@{
     //! \name Stream input/output operators.
     //! \brief Write a full representation to an output stream.
+    /** @brief Write the representation of the object. */
     OutputStream& repr(OutputStream& os) const;
     //! \brief Write to an output stream.
     friend OutputStream& operator<<(OutputStream& os, const ScaledFunctionPatch<M>& x) {
@@ -415,6 +453,7 @@ class ScaledFunctionPatch
     //!@}
 
   public:
+    /** @brief Discard the error bound of the model. */
     Void clobber() { this->_model.clobber(); }
 
   private:
@@ -423,17 +462,22 @@ class ScaledFunctionPatch
     friend class FunctionModelMixin<ScaledFunctionPatch<M>, P, SIG, PR>;
 
   public:
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     X operator()(const Vector<X>& a) const;
 
   private:
+    /** @brief Return a factory for compatible objects. */
     virtual ScaledFunctionPatchFactory<M>* _factory() const;
+    /** @brief Write the value to the output stream. */
     OutputStream& _write(OutputStream& os) const;
 
   public:
     //    using ScalarMultivariateFunctionModelMixin<ScaledFunctionPatch<M>, typename M::Paradigm, BoxDomainType, typename M::PrecisionType, typename M::ErrorPrecisionType>::_apply;
 
+    /** @brief Join the operands in their natural order. */
     friend VectorScaledFunctionPatch<M> join(const ScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2);
+    /** @brief Combine the operands over their respective arguments. */
     friend VectorScaledFunctionPatch<M> combine(const ScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2);
 
     //! \brief Restrict to a subdomain.
@@ -467,18 +511,23 @@ class ScaledFunctionPatch
         return make_pair(ScaledFunctionPatch<M>(subdomains.first, models.first), ScaledFunctionPatch<M>(subdomains.second, models.second));
     }
 
+    /** @brief Compose the outer object with the inner object. */
     friend ScaledFunctionPatch<M> compose(const ScalarUnivariateFunction<P>& g, const ScaledFunctionPatch<M>& f) {
         return ScaledFunctionPatch<M>(f.domain(), g.evaluate(f.model()));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend VectorScaledFunctionPatch<M> compose(const VectorUnivariateFunction<P>& g, const ScaledFunctionPatch<M>& f) {
         return VectorScaledFunctionPatch<M>(f.domain(), g.evaluate(f.model()));
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend ScaledFunctionPatch<M> derivative(const ScaledFunctionPatch<M>& f, SizeType k) {
         return ScaledFunctionPatch<M>(f.domain(), derivative(f.model(), k) / rad(f.domain()[k]));
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend ScaledFunctionPatch<M> antiderivative(const ScaledFunctionPatch<M>& f, SizeType k) {
         return ScaledFunctionPatch<M>(f.domain(), antiderivative(f.model(), k) * rad(f.domain()[k]));
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend ScaledFunctionPatch<M> antiderivative(const ScaledFunctionPatch<M>& f, SizeType k, const NumericType& c) {
         ARIADNE_PRECONDITION(k < f.argument_size());
         ARIADNE_PRECONDITION(decide(contains(f.domain()[k], c)));
@@ -487,18 +536,22 @@ class ScaledFunctionPatch
         h[k] = ScaledFunctionPatch<M>::constant(f.domain(), c, f.properties());
         return g - compose(g, h);
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend ScaledFunctionPatch<M> antiderivative(const ScaledFunctionPatch<M>& f, SizeType k, const GenericNumericType& c) {
         return antiderivative(f, k, NumericType(c, f.precision()));
     }
 
+    /** @brief Fix the selected argument to the supplied value. */
     friend ScaledFunctionPatch<M> partial_evaluate(const ScaledFunctionPatch<M>& f, SizeType k, const NumericType& c) {
         ARIADNE_PRECONDITION(decide(contains(f.domain()[k], c)));
         return ScaledFunctionPatch<M>(remove(f.domain(), k), partial_evaluate(f.model(), k, unscale(c, f.domain()[k])));
     }
+    /** @brief Fix the selected argument to the supplied value. */
     friend ScaledFunctionPatch<M> partial_evaluate(const ScaledFunctionPatch<M>& f, SizeType k, const GenericNumericType& c) {
         ARIADNE_PRECONDITION(decide(contains(f.domain()[k], c)));
         return partial_evaluate(f, k, NumericType(c, f.precision()));
     }
+    /** @brief Evaluate at the supplied argument. */
     friend ArithmeticType<CoefficientType, NumericType> evaluate(const ScaledFunctionPatch<M>& f, const Vector<NumericType>& x) {
         // TODO: Simplify
         if constexpr (AnInterval<CoefficientType>) {
@@ -514,40 +567,51 @@ class ScaledFunctionPatch
         }
         return unchecked_evaluate(f, x);
     }
+    /** @brief Evaluate at the supplied argument. */
     friend ArithmeticType<CoefficientType, NumericType> evaluate(const ScaledFunctionPatch<M>& f, const Vector<GenericNumericType>& x) {
         return evaluate(f, Vector<NumericType>(x, f.precision()));
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend ArithmeticType<CoefficientType, NumericType> unchecked_evaluate(const ScaledFunctionPatch<M>& f, const Vector<NumericType>& x) {
         return evaluate(f.model(), unscale(x, f.domain()));
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend ArithmeticType<CoefficientType, NumericType> unchecked_evaluate(const ScaledFunctionPatch<M>& f, const Vector<GenericNumericType>& x) {
         return unchecked_evaluate(f, Vector<NumericType>(x, f.precision()));
     }
 
+    /** @brief Return the norm. */
     friend NormType norm(const ScaledFunctionPatch<M>& f) {
         return norm(f.model());
     }
+    /** @brief Return the distance between the operands. */
     friend NormType distance(const ScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2) {
         return norm(f1 - f2);
     }
+    /** @brief Return the distance between the operands. */
     friend NormType distance(const ScaledFunctionPatch<M>& f1, const ScalarMultivariateFunction<P>& f2)
         requires requires { factory(f1).create(f2); }
     {
         return distance(f1, factory(f1).create(f2));
     }
 
+    /** @brief Return the polynomial part. */
     friend MultivariatePolynomial<NumericType> polynomial(const ScaledFunctionPatch<M>& tfn) { return tfn.polynomial(); }
 
     // TODO: These should be automatically created by function Algebra
+    /** @brief Return the maximum of the operands. */
     friend ScaledFunctionPatch<M> max(const ScaledFunctionPatch<M>& f1, const ValidatedNumber& c2) {
         return max(f1, f1.create_constant(c2));
     }
+    /** @brief Return the minimum of the operands. */
     friend ScaledFunctionPatch<M> min(const ScaledFunctionPatch<M>& f1, const ValidatedNumber& c2) {
         return min(f1, f1.create_constant(c2));
     }
+    /** @brief Return the maximum of the operands. */
     friend ScaledFunctionPatch<M> max(const ValidatedNumber& c1, const ScaledFunctionPatch<M>& f2) {
         return max(f2.create_constant(c1), f2);
     }
+    /** @brief Return the minimum of the operands. */
     friend ScaledFunctionPatch<M> min(const ValidatedNumber& c1, const ScaledFunctionPatch<M>& f2) {
         return min(f2.create_constant(c1), f2);
     }
@@ -563,6 +627,7 @@ X ScaledFunctionPatch<M>::operator()(const Vector<X>& a) const {
     }
 }
 
+/** @brief Check that the argument lies within the function-patch domain. */
 template<class FP1, class FP2>
 Void check_function_patch_domain(const String& op_str, const FP1& f1, const FP2& f2) {
     ARIADNE_PRECONDITION_MSG(!is_empty(intersection(f1.domain(), f2.domain())),
@@ -731,7 +796,9 @@ class VectorScaledFunctionPatch
     template<class E>
     explicit VectorScaledFunctionPatch(const VectorExpression<E>& ve);
 
+    /** @brief Construct a \c VectorScaledFunctionPatch from f. */
     explicit VectorScaledFunctionPatch(const VectorFunctionModelType<M>& f);
+    /** @brief Assign the supplied value and return this object. */
     VectorScaledFunctionPatch<M>& operator=(const VectorFunctionModelType<M>& f);
 
     // Data access
@@ -751,6 +818,7 @@ class VectorScaledFunctionPatch
     const RangeType range() const;
     //! \brief The data used to define the Taylor models.
     const Vector<ModelType>& models() const;
+    /** @brief Test whether the enclosure contains the supplied value. */
     Vector<ModelType>& models();
     //! \brief The data used to define the centre of the Taylor models.
     const Vector<Expansion<MultiIndex, CoefficientType>> expansions() const;
@@ -781,8 +849,11 @@ class VectorScaledFunctionPatch
 
     //! \brief Evaluate the Taylor model at the point \a x.
     Vector<ArithmeticType<CoefficientType, ValidatedNumericType>> operator()(const Vector<ValidatedNumericType>& x) const;
+    /** @brief Apply the callable to the supplied arguments. */
     Vector<ArithmeticType<CoefficientType, ApproximateNumericType>> operator()(const Vector<ApproximateNumericType>& x) const;
+    /** @brief Apply the callable to the supplied arguments. */
     Vector<ArithmeticType<CoefficientType, ValidatedNumericType>> operator()(const Vector<ExactNumericType>& x) const;
+    /** @brief Apply the callable to the supplied arguments. */
     Vector<ArithmeticType<CoefficientType, ValidatedNumber>> operator()(const Vector<ValidatedNumber>& x) const;
     //! \brief Compute an approximation to Jacobian derivative of the Taylor model sat the point \a x.
     Matrix<NumericType> jacobian(const Vector<NumericType>& x) const;
@@ -794,6 +865,7 @@ class VectorScaledFunctionPatch
     //! \brief Set the error to zero.
     Void clobber();
 
+    /** @brief Return a factory for compatible objects. */
     friend ScaledFunctionPatchCreator<M> factory(const VectorScaledFunctionPatch<M>& f) {
         return ScaledFunctionPatchCreator<M>(f.domain(), f.properties());
     }
@@ -832,10 +904,15 @@ class VectorScaledFunctionPatch
     OutputStream& repr(OutputStream& os) const;
 
   private:
+    /** @brief Compute the jacobian. */
     Void _compute_jacobian() const;
+    /** @brief Set the argument size. */
     Void _set_argument_size(SizeType n);
+    /** @brief Compute the maximum component size. */
     SizeType _compute_maximum_component_size() const;
+    /** @brief Return a factory for compatible objects. */
     virtual ScaledFunctionPatchFactory<M>* _factory() const;
+    /** @brief Write the value to the output stream. */
     OutputStream& _write(OutputStream& os) const;
 
   private:
@@ -843,6 +920,7 @@ class VectorScaledFunctionPatch
     friend class TaylorFunctionFactory;
 
   public:
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     Vector<X> operator()(const Vector<X>& a) const;
 
@@ -852,7 +930,9 @@ class VectorScaledFunctionPatch
     Vector<ModelType> _models;
 
   private:
+    /** @brief Compose scaled function patches without checking domain compatibility. */
     static ScaledFunctionPatch<M> _unchecked_compose_scaled_patches(const ScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f);
+    /** @brief Compose scaled function patches without checking domain compatibility. */
     static VectorScaledFunctionPatch<M> _unchecked_compose_scaled_patches(const VectorScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f);
 
   public:
@@ -861,14 +941,17 @@ class VectorScaledFunctionPatch
         ARIADNE_PRECONDITION_MSG(f1.domain() == f2.domain(), "f1=" << f1 << ", f2=" << f2);
         return VectorScaledFunctionPatch<M>(f1.domain(), join(f1.models(), f2.model()));
     }
+    /** @brief Join the operands in their natural order. */
     friend VectorScaledFunctionPatch<M> join(const VectorScaledFunctionPatch<M>& f, const VectorScaledFunctionPatch<M>& g) {
         ARIADNE_PRECONDITION(f.domain() == g.domain());
         return VectorScaledFunctionPatch<M>(f.domain(), join(f.models(), g.models()));
     }
+    /** @brief Join the operands in their natural order. */
     friend VectorScaledFunctionPatch<M> join(const ScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2) {
         ARIADNE_PRECONDITION(f1.domain() == f2.domain());
         return VectorScaledFunctionPatch<M>(f1.domain(), {f1.model(), f2.model()});
     }
+    /** @brief Join the operands in their natural order. */
     friend VectorScaledFunctionPatch<M> join(const ScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
         ARIADNE_PRECONDITION(f1.domain() == f2.domain());
         return VectorScaledFunctionPatch<M>(f1.domain(), join(f1.model(), f2.models()));
@@ -878,29 +961,37 @@ class VectorScaledFunctionPatch
     friend VectorScaledFunctionPatch<M> combine(const ScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2) {
         return VectorScaledFunctionPatch<M>(product(f1.domain(), f2.domain()), combine(Vector<M>(1u, f1.model()), {f2.model()}));
     }
+    /** @brief Combine the operands over their respective arguments. */
     friend VectorScaledFunctionPatch<M> combine(const ScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
         return VectorScaledFunctionPatch<M>(product(f1.domain(), f2.domain()), combine({f1.model()}, f2.models()));
     }
+    /** @brief Combine the operands over their respective arguments. */
     friend VectorScaledFunctionPatch<M> combine(const VectorScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2) {
         return VectorScaledFunctionPatch<M>(product(f1.domain(), f2.domain()), combine(f1.models(), {f2.model()}));
     }
+    /** @brief Combine the operands over their respective arguments. */
     friend VectorScaledFunctionPatch<M> combine(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
         return VectorScaledFunctionPatch<M>(product(f1.domain(), f2.domain()), combine(f1.models(), f2.models()));
     }
 
+    /** @brief Embed in the larger argument space. */
     friend VectorScaledFunctionPatch<M> embed(const VectorScaledFunctionPatch<M>& f, const IntervalDomainType& d) {
         return embed(BoxDomainType(), f, BoxDomainType(1u, d));
     }
+    /** @brief Embed in the larger argument space. */
     friend VectorScaledFunctionPatch<M> embed(const VectorScaledFunctionPatch<M>& f, const BoxDomainType& d) {
         return embed(BoxDomainType(), f, d);
     }
+    /** @brief Embed in the larger argument space. */
     friend VectorScaledFunctionPatch<M> embed(const BoxDomainType& d, const VectorScaledFunctionPatch<M>& f) {
         return embed(d, f, BoxDomainType());
     }
+    /** @brief Embed in the larger argument space. */
     friend VectorScaledFunctionPatch<M> embed(const BoxDomainType& d1, const VectorScaledFunctionPatch<M>& f, const BoxDomainType& d2) {
         return VectorScaledFunctionPatch<M>(product(d1, f.domain(), d2), embed(d1.size(), f.models(), d2.size()));
     }
 
+    /** @brief Return the object restricted to the supplied domain. */
     friend VectorScaledFunctionPatch<M> restriction(const VectorScaledFunctionPatch<M>& f, const BoxDomainType& d) {
         ARIADNE_PRECONDITION_MSG(subset(d, f.domain()), "Cannot restriction " << f << " to non-sub-domain " << d);
         if (d == f.domain()) {
@@ -912,6 +1003,7 @@ class VectorScaledFunctionPatch
         }
         return r;
     }
+    /** @brief Restrict only the selected domain coordinate. */
     friend VectorScaledFunctionPatch<M> partial_restriction(const VectorScaledFunctionPatch<M>& tf, SizeType k, const IntervalDomainType& d) {
         VectorScaledFunctionPatch<M> r(tf.result_size(), tf.domain(), tf.properties());
         for (SizeType i = 0; i != tf.result_size(); ++i) {
@@ -919,9 +1011,11 @@ class VectorScaledFunctionPatch
         }
         return r;
     }
+    /** @brief Return the object restricted to the supplied domain. */
     friend VectorScaledFunctionPatch<M> restriction(const VectorScaledFunctionPatch<M>& tf, SizeType k, const IntervalDomainType& d) {
         return partial_restriction(tf, k, d);
     }
+    /** @brief Split the domain or model along the selected coordinate. */
     friend Pair<VectorScaledFunctionPatch<M>, VectorScaledFunctionPatch<M>> split(const VectorScaledFunctionPatch<M>& tf, SizeType j) {
         Vector<M> lower_models = split(tf.models(), j, SplitPart::LOWER);
         Vector<M> upper_models = split(tf.models(), j, SplitPart::UPPER);
@@ -930,169 +1024,215 @@ class VectorScaledFunctionPatch
                          VectorScaledFunctionPatch<M>(subdomains.second, upper_models));
     }
 
+    /** @brief Add the operand in place. */
     friend VectorScaledFunctionPatch<M>& operator+=(VectorScaledFunctionPatch<M>& f, const VectorScaledFunctionPatch<M>& g) {
         ARIADNE_PRECONDITION(f.result_size() == g.result_size());
         ARIADNE_PRECONDITION(f.domain() == g.domain());
         f.models() += g.models();
         return f;
     }
+    /** @brief Subtract the operand in place. */
     friend VectorScaledFunctionPatch<M>& operator-=(VectorScaledFunctionPatch<M>& f, const VectorScaledFunctionPatch<M>& g) {
         ARIADNE_PRECONDITION(f.result_size() == g.result_size());
         ARIADNE_PRECONDITION(f.domain() == g.domain());
         f.models() -= g.models();
         return f;
     }
+    /** @brief Add the operand in place. */
     friend VectorScaledFunctionPatch<M>& operator+=(VectorScaledFunctionPatch<M>& f, const Vector<NumericType>& c) {
         ARIADNE_PRECONDITION(f.result_size() == c.size());
         f.models() += c;
         return f;
     }
+    /** @brief Subtract the operand in place. */
     friend VectorScaledFunctionPatch<M>& operator-=(VectorScaledFunctionPatch<M>& f, const Vector<NumericType>& c) {
         ARIADNE_PRECONDITION(f.result_size() == c.size());
         f.models() -= c;
         return f;
     }
+    /** @brief Multiply by the operand in place. */
     friend VectorScaledFunctionPatch<M>& operator*=(VectorScaledFunctionPatch<M>& f, const NumericType& c) {
         f.models() *= c;
         return f;
     }
+    /** @brief Divide by the operand in place. */
     friend VectorScaledFunctionPatch<M>& operator/=(VectorScaledFunctionPatch<M>& f, const NumericType& c) {
         f.models() /= c;
         return f;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     template<class OP>
     static VectorScaledFunctionPatch<M> _apply(OP op, const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2);
+    /** @brief Apply the supplied operation to the operands. */
     template<class OP>
     static VectorScaledFunctionPatch<M> _apply(OP op, const ScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2);
+    /** @brief Apply the supplied operation to the operands. */
     template<class OP>
     static VectorScaledFunctionPatch<M> _apply(OP op, const VectorScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2);
+    /** @brief Return the sum or unary positive value. */
     friend VectorScaledFunctionPatch<M> operator+(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
         return _apply(Plus(), f1, f2);
     }
+    /** @brief Return the difference or additive inverse. */
     friend VectorScaledFunctionPatch<M> operator-(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
         return _apply(Minus(), f1, f2);
     }
+    /** @brief Return the product. */
     friend VectorScaledFunctionPatch<M> operator*(const ScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
         return _apply(Times(), f1, f2);
     }
+    /** @brief Return the product. */
     friend VectorScaledFunctionPatch<M> operator*(const VectorScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2) {
         return _apply(Times(), f1, f2);
     }
+    /** @brief Return the quotient. */
     friend VectorScaledFunctionPatch<M> operator/(const VectorScaledFunctionPatch<M>& f1, const ScaledFunctionPatch<M>& f2) {
         return _apply(Divides(), f1, f2);
     }
 
+    /** @brief Return the sum or unary positive value. */
     friend VectorScaledFunctionPatch<M> operator+(const VectorScaledFunctionPatch<M>& f) {
         return VectorScaledFunctionPatch<M>(f.domain(), Vector<M>(+f.models()));
     }
+    /** @brief Return the difference or additive inverse. */
     friend VectorScaledFunctionPatch<M> operator-(const VectorScaledFunctionPatch<M>& f) {
         return VectorScaledFunctionPatch<M>(f.domain(), Vector<M>(-f.models()));
     }
+    /** @brief Return the product. */
     friend VectorScaledFunctionPatch<M> operator*(const NumericType& c, const VectorScaledFunctionPatch<M>& f) {
         return VectorScaledFunctionPatch<M>(f.domain(), Vector<M>(f.models() * c));
     }
+    /** @brief Return the product. */
     friend VectorScaledFunctionPatch<M> operator*(const VectorScaledFunctionPatch<M>& f, const NumericType& c) {
         return VectorScaledFunctionPatch<M>(f.domain(), Vector<M>(f.models() * c));
     }
+    /** @brief Return the quotient. */
     friend VectorScaledFunctionPatch<M> operator/(const VectorScaledFunctionPatch<M>& f, const NumericType& c) {
         return VectorScaledFunctionPatch<M>(f.domain(), Vector<M>(f.models() / c));
     }
+    /** @brief Return the sum or unary positive value. */
     friend VectorScaledFunctionPatch<M> operator+(const VectorScaledFunctionPatch<M>& f, const Vector<NumericType>& c) {
         return VectorScaledFunctionPatch<M>(f.domain(), Vector<M>(f.models() + c));
     }
+    /** @brief Return the difference or additive inverse. */
     friend VectorScaledFunctionPatch<M> operator-(const VectorScaledFunctionPatch<M>& f, const Vector<NumericType>& c) {
         return VectorScaledFunctionPatch<M>(f.domain(), Vector<M>(f.models() - c));
     }
 
+    /** @brief Return the product. */
     friend VectorScaledFunctionPatch<M> operator*(const Matrix<NumericType>& A, const VectorScaledFunctionPatch<M>& f) {
         ARIADNE_PRECONDITION(A.column_size() == f.size());
         return VectorScaledFunctionPatch<M>(f.domain(), A * f.models());
     }
+    /** @brief Return the sum or unary positive value. */
     friend VectorScaledFunctionPatch<M> operator+(const VectorMultivariateFunction<P>& f1, const VectorScaledFunctionPatch<M>& tf2) {
         return VectorScaledFunctionPatch<M>(tf2.domain(), f1, tf2.properties()) + tf2;
     }
+    /** @brief Return the difference or additive inverse. */
     friend VectorScaledFunctionPatch<M> operator-(const VectorMultivariateFunction<P>& f1, const VectorScaledFunctionPatch<M>& tf2) {
         return VectorScaledFunctionPatch<M>(tf2.domain(), f1, tf2.properties()) - tf2;
     }
+    /** @brief Return the product. */
     friend VectorScaledFunctionPatch<M> operator*(const ScalarMultivariateFunction<P>& f1, const VectorScaledFunctionPatch<M>& tf2) {
         return ScaledFunctionPatch<M>(tf2.domain(), f1, tf2.properties()) * tf2;
     }
+    /** @brief Return the product. */
     friend VectorScaledFunctionPatch<M> operator*(const VectorMultivariateFunction<P>& f1, const ScaledFunctionPatch<M>& tf2) {
         return VectorScaledFunctionPatch<M>(tf2.domain(), f1, tf2.properties()) * tf2;
     }
+    /** @brief Return the quotient. */
     friend VectorScaledFunctionPatch<M> operator/(const VectorMultivariateFunction<P>& f1, const ScaledFunctionPatch<M>& tf2) {
         return VectorScaledFunctionPatch<M>(tf2.domain(), f1, tf2.properties()) / tf2;
     }
+    /** @brief Return the sum or unary positive value. */
     friend VectorScaledFunctionPatch<M> operator+(const VectorScaledFunctionPatch<M>& tf1, const VectorMultivariateFunction<P>& f2) {
         return tf1 + VectorScaledFunctionPatch<M>(tf1.domain(), f2, tf1.properties());
     }
+    /** @brief Return the difference or additive inverse. */
     friend VectorScaledFunctionPatch<M> operator-(const VectorScaledFunctionPatch<M>& tf1, const VectorMultivariateFunction<P>& f2) {
         return tf1 - VectorScaledFunctionPatch<M>(tf1.domain(), f2, tf1.properties());
     }
+    /** @brief Return the product. */
     friend VectorScaledFunctionPatch<M> operator*(const ScaledFunctionPatch<M>& tf1, const VectorMultivariateFunction<P>& f2) {
         return tf1 * VectorScaledFunctionPatch<M>(tf1.domain(), f2, tf1.properties());
     }
+    /** @brief Return the product. */
     friend VectorScaledFunctionPatch<M> operator*(const VectorScaledFunctionPatch<M>& tf1, const ScalarMultivariateFunction<P>& f2) {
         return tf1 * ScaledFunctionPatch<M>(tf1.domain(), f2, tf1.properties());
     }
+    /** @brief Return the quotient. */
     friend VectorScaledFunctionPatch<M> operator/(const VectorScaledFunctionPatch<M>& tf1, const ScalarMultivariateFunction<P>& f2) {
         return tf1 / ScaledFunctionPatch<M>(tf1.domain(), f2, tf1.properties());
     }
 
+    /** @brief Fix the selected argument to the supplied value. */
     friend VectorScaledFunctionPatch<M> partial_evaluate(const VectorScaledFunctionPatch<M>& tf, SizeType k, const NumericType& c) {
         ARIADNE_PRECONDITION(decide(contains(tf.domain()[k], c)));
         return VectorScaledFunctionPatch<M>(remove(tf.domain(), k), partial_evaluate(tf.models(), k, unscale(c, tf.domain()[k])));
     }
+    /** @brief Fix the selected argument to the supplied value. */
     friend VectorScaledFunctionPatch<M> partial_evaluate(const VectorScaledFunctionPatch<M>& tf, SizeType k, const GenericNumericType& c) {
         return partial_evaluate(tf, k, NumericType(c, tf.precision()));
     }
 
+    /** @brief Evaluate at the supplied argument. */
     friend Vector<ArithmeticType<CoefficientType, NumericType>> evaluate(const VectorScaledFunctionPatch<M>& f, const Vector<NumericType>& x) {
         if (!definitely(contains(f.domain(), x))) {
             ScaledFunctionPatchDetail::throw_domain_error("evaluate", f, x);
         }
         return unchecked_evaluate(f, x);
     }
+    /** @brief Evaluate at the supplied argument. */
     friend Vector<ArithmeticType<CoefficientType, NumericType>> evaluate(const VectorScaledFunctionPatch<M>& f, const Vector<GenericNumericType>& x) {
         return evaluate(f, Vector<NumericType>(x, f.precision()));
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend Vector<ArithmeticType<CoefficientType, NumericType>> unchecked_evaluate(const VectorScaledFunctionPatch<M>& f, const Vector<NumericType>& x) {
         return evaluate(f.models(), unscale(x, f.domain()));
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     friend Vector<ArithmeticType<CoefficientType, NumericType>> unchecked_evaluate(const VectorScaledFunctionPatch<M>& f, const Vector<GenericNumericType>& x) {
         return unchecked_evaluate(f, Vector<NumericType>(x, f.precision()));
     }
 
+    /** @brief Compose the outer object with the inner object. */
     friend ScaledFunctionPatch<M> compose(const ScalarMultivariateFunction<P>& g, const VectorScaledFunctionPatch<M>& f) {
         return ScaledFunctionPatch<M>(f.domain(), g.evaluate(f.models()));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend ScaledFunctionPatch<M> compose(const ScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f) {
         if (!subset(f.codomain(), g.domain())) {
             ScaledFunctionPatchDetail::throw_domain_error("compose", g, f);
         }
         return unchecked_compose(g, f);
     }
+    /** @brief Compose without checking domain compatibility. */
     friend ScaledFunctionPatch<M> unchecked_compose(const ScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f) {
         return _unchecked_compose_scaled_patches(g, f);
     }
 
+    /** @brief Compose the outer object with the inner object. */
     friend VectorScaledFunctionPatch<M> compose(const VectorMultivariateFunction<P>& g, const VectorScaledFunctionPatch<M>& f) {
         return VectorScaledFunctionPatch<M>(f.domain(), g.evaluate(f.models()));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend VectorScaledFunctionPatch<M> compose(const VectorMultivariateFunctionModel<P, PR, PRE>& g, const VectorScaledFunctionPatch<M>& f) {
         return VectorScaledFunctionPatch<M>(f.domain(), g.evaluate(f.models()));
     }
+    /** @brief Compose the outer object with the inner object. */
     friend VectorScaledFunctionPatch<M> compose(const VectorScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f) {
         if (!subset(f.codomain(), g.domain())) {
             ScaledFunctionPatchDetail::throw_domain_error("compose", g, f);
         }
         return unchecked_compose(g, f);
     }
+    /** @brief Compose without checking domain compatibility. */
     friend VectorScaledFunctionPatch<M> unchecked_compose(const VectorScaledFunctionPatch<M>& g, const VectorScaledFunctionPatch<M>& f) {
         return _unchecked_compose_scaled_patches(g, f);
     }
 
+    /** @brief Return the derivative with respect to the selected argument. */
     friend VectorScaledFunctionPatch<M> derivative(const VectorScaledFunctionPatch<M>& f, SizeType k) {
         ARIADNE_PRECONDITION_MSG(k < f.argument_size(), "f=" << f << "\n f.argument_size()=" << f.argument_size() << " k=" << k);
         VectorScaledFunctionPatch<M> g = f;
@@ -1101,6 +1241,7 @@ class VectorScaledFunctionPatch
         }
         return g;
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend VectorScaledFunctionPatch<M> antiderivative(const VectorScaledFunctionPatch<M>& f, SizeType k) {
         ARIADNE_PRECONDITION_MSG(k < f.argument_size(), "f=" << f << "\n f.argument_size()=" << f.argument_size() << " k=" << k);
         VectorScaledFunctionPatch<M> g = f;
@@ -1109,6 +1250,7 @@ class VectorScaledFunctionPatch
         }
         return g;
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend VectorScaledFunctionPatch<M> antiderivative(const VectorScaledFunctionPatch<M>& f, SizeType k, NumericType c) {
         ARIADNE_PRECONDITION_MSG(k < f.argument_size(), "f=" << f << "\n f.argument_size()=" << f.argument_size() << " k=" << k);
         VectorScaledFunctionPatch<M> g = f;
@@ -1117,9 +1259,11 @@ class VectorScaledFunctionPatch
         }
         return g;
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend VectorScaledFunctionPatch<M> antiderivative(const VectorScaledFunctionPatch<M>& f, SizeType k, GenericNumericType c) {
         return antiderivative(f, k, NumericType(c, f.precision()));
     }
+    /** @brief Return the norm. */
     friend NormType norm(const VectorScaledFunctionPatch<M>& f) {
         NormType res = norm(f.zero_element());
         for (SizeType i = 0; i != f.result_size(); ++i) {
@@ -1127,13 +1271,16 @@ class VectorScaledFunctionPatch
         }
         return res;
     }
+    /** @brief Return the distance between the operands. */
     NormType distance(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
         return norm(f1 - f2);
     }
+    /** @brief Return the distance between the operands. */
     NormType distance(const VectorScaledFunctionPatch<M>& f1, const VectorMultivariateFunction<P>& f2) {
         return distance(f1, VectorScaledFunctionPatch<M>(f1.domain(), f2, f1.properties()));
     }
 
+    /** @brief Return the component polynomial parts. */
     friend Vector<MultivariatePolynomial<NumericType>> polynomials(const VectorScaledFunctionPatch<M>& tfn) {
         return tfn.polynomials();
     }
@@ -1228,6 +1375,7 @@ Bool refines(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionP
     }
     return true;
 }
+/** @brief Test whether the enclosures cannot represent a common value. */
 template<class M>
 Bool inconsistent(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
     ARIADNE_PRECONDITION(f1.result_size() == f2.result_size());
@@ -1238,6 +1386,7 @@ Bool inconsistent(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunc
     }
     return false;
 }
+/** @brief Return the common refinement of the enclosures. */
 template<class M>
 VectorScaledFunctionPatch<M> refinement(const VectorScaledFunctionPatch<M>& f1, const VectorScaledFunctionPatch<M>& f2) {
     ARIADNE_PRECONDITION(f1.result_size() == f2.result_size());
@@ -1249,20 +1398,24 @@ VectorScaledFunctionPatch<M> refinement(const VectorScaledFunctionPatch<M>& f1, 
 }
 
 // Sanitised output
+/** @brief Write the value to the output stream. */
 template<class M>
 OutputStream& operator<<(OutputStream& os, const Representation<ScaledFunctionPatch<M>>& repr) {
     return repr.pointer->repr(os);
 }
+/** @brief Write the value to the output stream. */
 template<class M>
 OutputStream& operator<<(OutputStream& os, const Representation<VectorScaledFunctionPatch<M>>& repr) {
     return repr.pointer->repr(os);
 }
 
+/** @brief Non-owning wrapper selecting complete function-model output. */
 template<class F>
 struct ModelRepresentation {
     const F* pointer;
     double threshold;
 };
+/** @brief Return a wrapper for displaying the complete model representation. */
 template<class F>
 ModelRepresentation<F> model_representation(const F& f, double prpt) {
     ModelRepresentation<F> r = {&f, prpt};
@@ -1270,20 +1423,24 @@ ModelRepresentation<F> model_representation(const F& f, double prpt) {
 }
 template<class M>
 OutputStream& operator<<(OutputStream&, const ModelRepresentation<ScaledFunctionPatch<M>>&);
+/** @brief Write the value to the output stream. */
 template<class M>
 OutputStream& operator<<(OutputStream&, const ModelRepresentation<VectorScaledFunctionPatch<M>>&);
 
+/** @brief Non-owning wrapper selecting polynomial-part output. */
 template<class F>
 struct PolynomialRepresentation {
     const F* pointer;
     double threshold;
     List<String> names;
 };
+/** @brief Return a wrapper for displaying the polynomial representation. */
 template<class F>
 PolynomialRepresentation<F> polynomial_representation(const F& f, double prpt) {
     PolynomialRepresentation<F> r = {&f, prpt};
     return r;
 }
+/** @brief Return a wrapper for displaying the polynomial representation. */
 template<class F>
 PolynomialRepresentation<F> polynomial_representation(const F& f, double prpt, const List<String>& names) {
     PolynomialRepresentation<F> r = {&f, prpt, names};
@@ -1294,6 +1451,7 @@ OutputStream& operator<<(OutputStream&, const PolynomialRepresentation<ScaledFun
 template<class M>
 OutputStream& operator<<(OutputStream&, const PolynomialRepresentation<VectorScaledFunctionPatch<M>>&);
 
+/** @brief Write the value to the output stream. */
 template<class M>
 OutputStream& operator<<(OutputStream& os, const PolynomialRepresentation<VectorScaledFunctionPatch<M>>& repr) {
     const VectorScaledFunctionPatch<M>& function = *repr.pointer;
@@ -1307,6 +1465,7 @@ OutputStream& operator<<(OutputStream& os, const PolynomialRepresentation<Vector
     return os << "]";
 }
 
+/** @brief Write the value to the output stream. */
 template<class M>
 OutputStream& operator<<(OutputStream& os, const PolynomialRepresentation<List<ScaledFunctionPatch<M>>>& repr) {
     const List<ScaledFunctionPatch<M>>& functions = *repr.pointer;
@@ -1322,6 +1481,7 @@ OutputStream& operator<<(OutputStream& os, const PolynomialRepresentation<List<S
 
 #ifdef ARIADNE_UNDEF
 
+/** @brief Check the predicate at the supplied effort or validate the supplied data. */
 template<class M>
 Bool check(const Vector<ScaledFunctionPatch<M>>& tv) {
     for (SizeType i = 0; i != tv.size(); ++i) {
@@ -1332,6 +1492,7 @@ Bool check(const Vector<ScaledFunctionPatch<M>>& tv) {
     return true;
 }
 
+/** @brief Return the coefficient expansion. */
 template<class M>
 Vector<Expansion<MultiIndex, typename M::CoefficientType>> expansion(const Vector<ScaledFunctionPatch<M>>& x) {
     Vector<Expansion<MultiIndex, typename M::CoefficientType>> r(x.size());
@@ -1341,6 +1502,7 @@ Vector<Expansion<MultiIndex, typename M::CoefficientType>> expansion(const Vecto
     return r;
 }
 
+/** @brief Return the component error bounds. */
 template<class M>
 Vector<typename M::ErrorType> errors(const Vector<ScaledFunctionPatch<M>>& x) {
     Vector<typename M::ErrorType> r(x.size());
@@ -1350,6 +1512,7 @@ Vector<typename M::ErrorType> errors(const Vector<ScaledFunctionPatch<M>>& x) {
     return r;
 }
 
+/** @brief Return the stored values. */
 template<class M>
 Vector<typename M::ValueType> values(const Vector<ScaledFunctionPatch<M>>& x) {
     Vector<typename M::ValueType> r(x.size());
@@ -1359,6 +1522,7 @@ Vector<typename M::ValueType> values(const Vector<ScaledFunctionPatch<M>>& x) {
     return r;
 }
 
+/** @brief Return the component range enclosures. */
 template<class M>
 Vector<typename M::RangeType> ranges(const Vector<ScaledFunctionPatch<M>>& x) {
     Vector<typename M::RangeType> r(x.size());
@@ -1370,6 +1534,7 @@ Vector<typename M::RangeType> ranges(const Vector<ScaledFunctionPatch<M>>& x) {
 
 #endif // ARIADNE_UNDEF
 
+/** @brief Reference proxy into vector scaled function patch element storage. */
 template<class M>
 class VectorScaledFunctionPatchElementReference
     : public DispatchTranscendentalAlgebraOperations<ScaledFunctionPatch<M>, NumericType<M>>,
@@ -1384,40 +1549,66 @@ class VectorScaledFunctionPatchElementReference
     typedef ScaledFunctionPatch<M> FunctionType;
 
   public:
+    /** @brief Construct a \c VectorScaledFunctionPatchElementReference from c, i. */
     VectorScaledFunctionPatchElementReference(VectorScaledFunctionPatch<M>& c, SizeType i) : _c(&c), _i(i) {}
+    /** @brief Convert to scalar scaled function patch< m >. */
     operator ScalarScaledFunctionPatch<M>() const { return this->_c->get(this->_i); }
+    /** @brief Copy-construct the object from the supplied instance. */
     VectorScaledFunctionPatchElementReference(const VectorScaledFunctionPatchElementReference<M>& x) = default;
+    /** @brief Assign the supplied value. */
     Void operator=(const VectorScaledFunctionPatchElementReference<M>& x) { this->_c->set(this->_i, x._c->get(x._i)); }
+    /** @brief Assign the supplied value. */
     Void operator=(const ScalarScaledFunctionPatch<M>& x) { this->_c->set(this->_i, x); }
+    /** @brief Assign the supplied value. */
     Void operator=(const ScalarMultivariateFunctionPatch<P> x) {
         ScalarScaledFunctionPatch<M> sfp = factory(*this->_c).create(x);
         *this = sfp;
     }
+    /** @brief Assign the supplied value. */
     Void operator=(const ScalarMultivariateFunction<P> x) {
         ScalarScaledFunctionPatch<M> sfp = factory(*this->_c).create(x);
         *this = sfp;
     }
+    /** @brief Return the selected component. */
     ScalarScaledFunctionPatch<M> element() const { return this->_c->get(this->_i); }
+    /** @brief Return the domain. */
     const BoxDomainType& domain() const { return this->_c->domain(); }
+    /** @brief Return the selected function model. */
     const ModelType& model() const { return this->_c->_models[this->_i]; }
+    /** @brief Return the error bound. */
     ErrorType error() const { return this->_c->_models[this->_i].error(); }
+    /** @brief Set the error. */
     Void set_error(const ErrorType& e) { this->_c->_models[this->_i].set_error(e); }
+    /** @brief Increase the model error by the supplied bound. */
     Void add_error(const ErrorType& e) { this->_c->_models[this->_i].set_error(this->_c->_models[this->_i].error() + e); }
+    /** @brief Simplify the formula or model representation. */
     Void simplify() { this->_c->_models[this->_i].simplify(); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     X operator()(const Vector<X>& x) const { return this->_c->get(this->_i).operator()(x); }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const VectorScaledFunctionPatchElementReference<M>& f) { return os << f.element(); }
 
   public:
+    /** @brief Return the sum or unary positive value. */
     friend FunctionType operator+(SelfType e1, SelfType e2) { return e1.element() + e2.element(); }
+    /** @brief Return the sum or unary positive value. */
     friend FunctionType operator+(NumericType c, SelfType e) { return c + e.element(); }
+    /** @brief Return the sum or unary positive value. */
     friend FunctionType operator+(SelfType e, NumericType c) { return e.element() + c; }
+    /** @brief Return the sum or unary positive value. */
     friend FunctionType operator+(FunctionType f, SelfType e) { return f + e.element(); }
+    /** @brief Return the sum or unary positive value. */
     friend FunctionType operator+(SelfType e, FunctionType f) { return e.element() + f; }
+    /** @brief Return the product. */
     friend FunctionType operator*(SelfType e1, SelfType e2) { return e1.element() * e2.element(); }
+    /** @brief Return the product. */
     friend FunctionType operator*(NumericType c, SelfType e) { return c * e.element(); }
+    /** @brief Return the product. */
     friend FunctionType operator*(SelfType e, NumericType c) { return e.element() * c; }
+    /** @brief Return the product. */
     friend FunctionType operator*(FunctionType f, SelfType e) { return f * e.element(); }
+    /** @brief Return the product. */
     friend FunctionType operator*(SelfType e, FunctionType f) { return e.element() * f; }
 
   private:
@@ -1425,10 +1616,12 @@ class VectorScaledFunctionPatchElementReference
     SizeType _i;
 };
 
+/** @brief Reusable implementation of scaled function patch factory. */
 template<class M>
 class ScaledFunctionPatchFactoryMixin
     : public FunctionModelFactoryMixin<ScaledFunctionPatchFactory<M>, ValidatedTag, typename M::PrecisionType, typename M::ErrorPrecisionType> {};
 
+/** @brief Factory constructing compatible scaled function patch. */
 template<class M>
 class ScaledFunctionPatchFactory
     : public ScaledFunctionPatchFactoryMixin<M> {
@@ -1450,29 +1643,46 @@ class ScaledFunctionPatchFactory
     typedef typename M::CoefficientType CoefficientType;
     typedef BoxDomainType DomainType;
 
+    /** @brief Construct a \c ScaledFunctionPatchFactory from properties. */
     explicit ScaledFunctionPatchFactory(PropertiesType properties) : _properties(properties) {}
+    /** @brief Return the model configuration properties. */
     PropertiesType properties() const { return this->_properties; }
 
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     CanonicalNumericType<P, PR, PRE> create(const Number<P>& number) const;
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     ScalarScaledFunctionPatch<M> create(const BoxDomainType& domain, const ScalarFunctionInterface<P, ARG>& function) const;
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     VectorScaledFunctionPatch<M> create(const BoxDomainType& domain, const VectorFunctionInterface<P, ARG>& function) const;
 
+    /** @brief Construct a zero object with compatible characteristics. */
     ScaledFunctionPatch<M> create_zero(const DomainType& domain) const;
+    /** @brief Construct a constant object with the supplied value. */
     ScaledFunctionPatch<M> create_constant(const DomainType& domain, const GenericNumericType& value) const;
+    /** @brief Construct a constant object with the supplied value. */
     ScaledFunctionPatch<M> create_constant(const DomainType& domain, const NumericType& value) const {
         return this->create_constant(domain, Number<P>(value));
     };
+    /** @brief Construct a constant object with the supplied value. */
     template<class X = CoefficientType>
         requires(not Same<X, NumericType>)
     ScaledFunctionPatch<M> create_constant(X) const;
 
+    /** @brief Construct the function returning the selected coordinate. */
     ScaledFunctionPatch<M> create_coordinate(const DomainType& domain, SizeType index) const;
+    /** @brief Construct zero components with compatible characteristics. */
     VectorScaledFunctionPatch<M> create_zeros(SizeType result_size, const DomainType& domain) const;
+    /** @brief Construct constant components with the supplied values. */
     VectorScaledFunctionPatch<M> create_constants(const DomainType& domain, const Vector<Number<P>>& values) const;
+    /** @brief Construct the function selecting the supplied coordinates. */
     VectorScaledFunctionPatch<M> create_projection(const DomainType& domain, Range indices) const;
+    /** @brief Construct the identity function. */
     VectorScaledFunctionPatch<M> create_identity(const DomainType& domain) const;
+    /** @brief Construct the identity function. */
     ScalarScaledFunctionPatch<M> create_identity(const IntervalDomainType& domain) const { return this->create_coordinate(BoxDomainType(1u, domain), 0u); };
+    /** @brief Create a scalar number with characteristics matching the function. */
     CanonicalNumericType<P, PR, PRE> create_number(const Number<P>& number) const { return this->create(number); }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const ScaledFunctionPatchFactory<M>& factory) {
         return os << "ScaledFunctionPatchFactory( properties=" << factory._properties << " )";
     }
@@ -1481,14 +1691,17 @@ class ScaledFunctionPatchFactory
     PropertiesType _properties;
 };
 
+/** @brief Construction helper for scaled function patch. */
 template<class M>
 class ScaledFunctionPatchCreator
     : public FunctionModelCreator<ScaledFunctionPatchFactory<M>, RealVector> {
   public:
     typedef BoxDomainType DomainType;
     typedef typename M::PropertiesType PropertiesType;
+    /** @brief Construct a \c ScaledFunctionPatchCreator from domain, properties. */
     explicit ScaledFunctionPatchCreator(DomainType domain, PropertiesType properties)
         : FunctionModelCreator<ScaledFunctionPatchFactory<M>, RealVector>(domain, ScaledFunctionPatchFactory<M>(properties)) {}
+    /** @brief Return the model configuration properties. */
     PropertiesType properties() const { return this->_factory.properties(); }
 };
 

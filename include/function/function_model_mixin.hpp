@@ -48,6 +48,7 @@
 
 namespace Ariadne {
 
+/** @brief Reusable implementation of function model. */
 template<class FM, class P, class SIG, class PR = DoublePrecision, class PRE = PR>
 class FunctionModelMixin;
 template<class FM, class P, class PR = DoublePrecision, class PRE = PR>
@@ -55,6 +56,7 @@ using ScalarMultivariateFunctionModelMixin = FunctionModelMixin<FM, P, RealScala
 template<class FM, class P, class PR = DoublePrecision, class PRE = PR>
 using VectorMultivariateFunctionModelMixin = FunctionModelMixin<FM, P, RealVector(RealVector), PR, PRE>;
 
+/** @brief Reusable implementation of function model. */
 template<class FM, class P, class ARG, class PR, class PRE>
 class FunctionModelMixin<FM, P, RealScalar(ARG), PR, PRE>
     : public FunctionMixin<FM, P, RealScalar(ARG), ScalarFunctionModelInterface<P, ARG, PR, PRE>> {
@@ -79,33 +81,42 @@ class FunctionModelMixin<FM, P, RealScalar(ARG), PR, PRE>
     typedef typename Interface::RangeType RangeType;
 
   public:
+    /** @brief Return a dynamically allocated copy preserving the concrete type using the concrete implementation. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _concrete_clone() const override {
         return new FM(static_cast<const FM&>(*this));
     }
+    /** @brief Create a function patch with compatible characteristics. */
     ScalarFunctionPatchInterface<P, ARG>* _patch_create() const override {
         return this->_concrete_create();
     }
 
+    /** @brief Construct a compatible copy of the supplied object. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _create_copy() const override {
         return new FM(static_cast<const FM&>(*this));
     }
+    /** @brief Construct a zero object with compatible characteristics. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _create_zero() const override {
         return new FM(factory(static_cast<FM const&>(*this)).create_zero());
     }
+    /** @brief Construct a constant object with the supplied value. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _create_constant(const Number<P>& c) const override {
         return new FM(factory(static_cast<FM const&>(*this)).create_constant(c));
     }
+    /** @brief Construct a constant object with the supplied value. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _create_constant(const CanonicalNumericType<P, PR, PRE>& c) const override {
         return new FM(factory(static_cast<FM const&>(*this)).create_constant(c));
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _apply(UnaryElementaryOperator op) const override {
         return new FM(op(static_cast<FM const&>(*this)));
     }
+    /** @brief Apply the supplied operation to the operands. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _apply(GradedElementaryOperator op, Int n) const override {
         return new FM(op(static_cast<FM const&>(*this), n));
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _apply(
         BinaryElementaryOperator op,
         const ElementaryAlgebraInterface<CanonicalNumericType<P, PR, PRE>>& other) const override {
@@ -113,15 +124,18 @@ class FunctionModelMixin<FM, P, RealScalar(ARG), PR, PRE>
         ARIADNE_PRECONDITION(ptr);
         return new FM(op(static_cast<FM const&>(*this), *ptr));
     }
+    /** @brief Apply the supplied operation to the operands. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _apply(
         BinaryElementaryOperator op, const CanonicalNumericType<P, PR, PRE>& value) const override {
         return new FM(op(static_cast<FM const&>(*this), value));
     }
+    /** @brief Apply the operation with reversed operand order. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _rapply(
         BinaryElementaryOperator op, const CanonicalNumericType<P, PR, PRE>& value) const override {
         return new FM(op(value, static_cast<FM const&>(*this)));
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _apply(
         BinaryElementaryOperator op,
         const ElementaryAlgebraInterface<Number<P>>& other) const override {
@@ -129,114 +143,146 @@ class FunctionModelMixin<FM, P, RealScalar(ARG), PR, PRE>
         ARIADNE_PRECONDITION(ptr);
         return new FM(op(static_cast<FM const&>(*this), *ptr));
     }
+    /** @brief Apply the supplied operation to the operands. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _apply(
         BinaryElementaryOperator op, const Number<P>& value) const override {
         return new FM(op(static_cast<FM const&>(*this), value));
     }
+    /** @brief Apply the operation with reversed operand order. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _rapply(
         BinaryElementaryOperator op, const Number<P>& value) const override {
         return new FM(op(value, static_cast<FM const&>(*this)));
     }
 
+    /** @brief Return the range enclosure. */
     const GenericRangeType _range() const override {
         return static_cast<GenericRangeType>(static_cast<const FM&>(*this).range());
     }
+    /** @brief Return the component error bounds. */
     const GenericErrorType _errors() const override {
         return static_cast<const FM&>(*this).error();
     }
+    /** @brief Return the error bound. */
     const GenericErrorType _error() const override {
         return static_cast<const FM&>(*this).error();
     }
+    /** @brief Return the norm. */
     const GenericNormType _norm() const override {
         return static_cast<GenericNormType>(norm(static_cast<const FM&>(*this)));
     }
 
+    /** @brief Return the stored value. */
     const ValueType _value() const override {
         return static_cast<const FM&>(*this).value();
     }
+    /** @brief Return the error bound using the concrete implementation. */
     const ErrorType _concrete_error() const override {
         return static_cast<const FM&>(*this).error();
     }
+    /** @brief Return the norm using the concrete implementation. */
     const NormType _concrete_norm() const override {
         return norm(static_cast<const FM&>(*this));
     }
+    /** @brief Discard the error bound of the model. */
     Void _clobber() override {
         static_cast<FM&>(*this).clobber();
     }
+    /** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _concrete_derivative(SizeType j) const override {
         return new FM(derivative(static_cast<const FM&>(*this), j));
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _antiderivative(SizeType j) const override {
         return new FM(antiderivative(static_cast<const FM&>(*this), j));
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _antiderivative(SizeType j, Number<P> c) const override {
         return new FM(antiderivative(static_cast<const FM&>(*this), j, c));
     }
+    /** @brief Return an antiderivative with respect to the selected argument using the concrete implementation. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _concrete_antiderivative(SizeType j, CanonicalNumericType<P, PR, PRE> c) const override {
         return new FM(antiderivative(static_cast<const FM&>(*this), j, c));
     }
+    /** @brief Return the object restricted to the supplied domain. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _restriction(const BoxDomainType& d) const override {
         return new FM(restriction(static_cast<const FM&>(*this), d));
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     Number<P> _unchecked_evaluate(const Vector<Number<P>>& x) const override {
         return unchecked_evaluate(static_cast<const FM&>(*this), x);
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     CanonicalNumericType<P, DP> _unchecked_evaluate(const Vector<CanonicalNumericType<P, DP>>& x) const override {
         auto r = unchecked_evaluate(static_cast<const FM&>(*this), x);
         return CanonicalNumericType<P, DP>(r, x.zero_element().precision());
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     CanonicalNumericType<P, MultiplePrecision> _unchecked_evaluate(const Vector<CanonicalNumericType<P, MultiplePrecision>>& x) const override {
         auto r = unchecked_evaluate(static_cast<const FM&>(*this), x);
         return CanonicalNumericType<P, MultiplePrecision>(r, x.zero_element().precision());
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain using the concrete implementation. */
     CanonicalNumericType<P, PR, PRE> _concrete_unchecked_evaluate(const Vector<CanonicalNumericType<P, PR, PRE>>& x) const override {
         return unchecked_evaluate(static_cast<const FM&>(*this), x);
     }
+    /** @brief Fix the selected argument to the supplied value. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _partial_evaluate(SizeType j, const Number<P>& c) const override {
         return heap_copy(partial_evaluate(static_cast<const FM&>(*this), j, c));
     }
+    /** @brief Fix the selected argument to the supplied value using the concrete implementation. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _concrete_partial_evaluate(SizeType j, const CanonicalNumericType<P, PR, PRE>& c) const override {
         return heap_copy(partial_evaluate(static_cast<const FM&>(*this), j, c));
     }
 
+    /** @brief Compose the outer object with the inner object. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _compose(const ScalarUnivariateFunction<P>& f) const override {
         return heap_copy(compose(f, static_cast<const FM&>(*this)));
     }
+    /** @brief Compose the outer object with the inner object. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _compose(const VectorUnivariateFunction<P>& f) const override {
         return heap_copy(compose(f, static_cast<const FM&>(*this)));
     }
+    /** @brief Compose without checking domain compatibility. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _unchecked_compose(const ScalarUnivariateFunction<P>& f) const override {
         return heap_copy(compose(f, static_cast<const FM&>(*this)));
     }
+    /** @brief Compose without checking domain compatibility. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _unchecked_compose(const VectorUnivariateFunction<P>& f) const override {
         return heap_copy(compose(f, static_cast<const FM&>(*this)));
     }
 
+    /** @brief Embed in the larger argument space. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _embed(const BoxDomainType& d1, const BoxDomainType& d2) const override {
         return new FM(embed(d1, static_cast<const FM&>(*this), d2));
     }
+    /** @brief Test whether the first enclosure is contained in the second. */
     Bool _refines(const FunctionPatchInterface<P, SIG>& fp) const override {
         ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&fp));
         return refines(static_cast<const FM&>(*this), dynamic_cast<const FM&>(fp));
     }
+    /** @brief Test whether the first enclosure is contained in the second using the concrete implementation. */
     Boolean _concrete_refines(const ScalarFunctionModelInterface<P, ARG, PR, PRE>& f) const override {
         ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f));
         return refines(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f));
     }
+    /** @brief Test whether the enclosures cannot represent a common value using the concrete implementation. */
     Boolean _concrete_inconsistent(const ScalarFunctionModelInterface<P, ARG, PR, PRE>& f) const override {
         ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f));
         return inconsistent(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f));
     }
+    /** @brief Return the common refinement of the enclosures using the concrete implementation. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _concrete_refinement(const ScalarFunctionModelInterface<P, ARG, PR, PRE>& f) const override {
         ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f));
         return new FM(refinement(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f)));
     }
 
+    /** @brief Write the value to the output stream. */
     OutputStream& _write(OutputStream& os) const override {
         return os << static_cast<FM const&>(*this);
     }
 };
 
+/** @brief Reusable implementation of function model. */
 template<class FM, class P, class ARG, class PR, class PRE>
 class FunctionModelMixin<FM, P, RealVector(ARG), PR, PRE>
     : public FunctionMixin<FM, P, RealVector(ARG), VectorFunctionModelInterface<P, ARG, PR, PRE>>,
@@ -263,147 +309,190 @@ class FunctionModelMixin<FM, P, RealVector(ARG), PR, PRE>
     typedef typename Element<FM>::Type ScalarMultivariateFunctionType;
 
   public:
+    /** @brief Return a dynamically allocated copy preserving the concrete type using the concrete implementation. */
     virtual VectorFunctionModelInterface<P, ARG, PR, PRE>* _concrete_clone() const override { return new FM(static_cast<const FM&>(*this)); }
+    /** @brief Create a function patch with compatible characteristics. */
     virtual VectorFunctionPatchInterface<P, ARG>* _patch_create() const override { return this->_concrete_create(); }
+    /** @brief Return the selected component as a function patch. */
     virtual ScalarFunctionPatchInterface<P, ARG>* _patch_get(SizeType i) const override {
         return heap_copy(static_cast<const FM&>(*this)[i]);
     }
+    /** @brief Return the requested element or stored value using the concrete implementation. */
     virtual ScalarFunctionModelInterface<P, ARG, PR, PRE>* _concrete_get(SizeType i) const override {
         return heap_copy(static_cast<const FM&>(*this)[i]);
     }
+    /** @brief Replace the selected value. */
     virtual Void _set(SizeType i, const ScalarFunctionPatchInterface<P, ARG>& sf) override {
         if (!dynamic_cast<const typename FM::ScalarMultivariateFunctionType*>(&sf)) {
             ARIADNE_FAIL_MSG("Cannot set element of VectorMultivariateFunctionModel " << *this << " to " << sf);
         }
         static_cast<FM&>(*this).FM::set(i, dynamic_cast<const ScalarMultivariateFunctionType&>(sf));
     }
+    /** @brief Replace the selected value using the concrete implementation. */
     virtual Void _concrete_set(SizeType i, const ScalarFunctionModelInterface<P, ARG, PR, PRE>& sf) override {
         if (!dynamic_cast<const typename FM::ScalarMultivariateFunctionType*>(&sf)) {
             ARIADNE_FAIL_MSG("Cannot set element of VectorMultivariateFunctionModel " << *this << " to " << sf);
         }
         static_cast<FM&>(*this).FM::set(i, dynamic_cast<const ScalarMultivariateFunctionType&>(sf));
     }
+    /** @brief Return the range enclosure. */
     const GenericRangeType _range() const override {
         return static_cast<GenericRangeType>(static_cast<const FM&>(*this).range());
     }
+    /** @brief Return the component error bounds. */
     const Vector<GenericErrorType> _errors() const override {
         return static_cast<const FM&>(*this).errors();
     }
+    /** @brief Return the error bound. */
     const GenericErrorType _error() const override {
         return static_cast<const FM&>(*this).error();
     }
+    /** @brief Return the norm. */
     const GenericNormType _norm() const override {
         return static_cast<GenericNormType>(norm(static_cast<const FM&>(*this)));
     }
+    /** @brief Return the stored values using the concrete implementation. */
     const Vector<ValueType> _concrete_values() const override {
         return static_cast<const FM&>(*this).values();
     }
+    /** @brief Return the component error bounds using the concrete implementation. */
     const Vector<ErrorType> _concrete_errors() const override {
         return static_cast<const FM&>(*this).errors();
     }
+    /** @brief Return the error bound using the concrete implementation. */
     const ErrorType _concrete_error() const override {
         return static_cast<const FM&>(*this).error();
     }
+    /** @brief Return the norm using the concrete implementation. */
     const NormType _concrete_norm() const override {
         return norm(static_cast<const FM&>(*this));
     }
+    /** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
     virtual VectorFunctionModelInterface<P, ARG, PR, PRE>* _concrete_derivative(SizeType j) const override {
         return new FM(derivative(static_cast<const FM&>(*this), j));
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     virtual VectorFunctionModelInterface<P, ARG, PR, PRE>* _antiderivative(SizeType j) const override {
         return new FM(antiderivative(static_cast<const FM&>(*this), j));
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     virtual VectorFunctionModelInterface<P, ARG, PR, PRE>* _antiderivative(SizeType j, Number<P> c) const override {
         return new FM(antiderivative(static_cast<const FM&>(*this), j, c));
     }
+    /** @brief Return an antiderivative with respect to the selected argument using the concrete implementation. */
     virtual VectorFunctionModelInterface<P, ARG, PR, PRE>* _concrete_antiderivative(SizeType j, CanonicalNumericType<P, PR, PRE> c) const override {
         return new FM(antiderivative(static_cast<const FM&>(*this), j, c));
     }
+    /** @brief Embed in the larger argument space. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _embed(const BoxDomainType& d1, const BoxDomainType& d2) const override {
         return heap_copy(embed(d1, static_cast<const FM&>(*this), d2));
     }
+    /** @brief Return the object restricted to the supplied domain. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _restriction(const BoxDomainType& d) const override {
         return new FM(restriction(static_cast<const FM&>(*this), d));
     }
+    /** @brief Add the supplied value or component. */
     Void _adjoin(const ScalarFunctionPatchInterface<P, ARG>& f) override {
         static_cast<FM&>(*this).FM::adjoin(dynamic_cast<const ScalarMultivariateFunctionType&>(f));
     }
+    /** @brief Add the supplied value or component using the concrete implementation. */
     Void _concrete_adjoin(const ScalarFunctionModelInterface<P, ARG, PR, PRE>& f) override {
         static_cast<FM&>(*this).FM::adjoin(dynamic_cast<const ScalarMultivariateFunctionType&>(f));
     }
+    /** @brief Join the operands in their natural order. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _join(const VectorFunctionPatchInterface<P, ARG>& f) const override {
         return heap_copy(join(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f)));
     }
+    /** @brief Join the operands in their natural order using the concrete implementation. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _concrete_join(const VectorFunctionModelInterface<P, ARG, PR, PRE>& f) const override {
         return heap_copy(join(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f)));
     }
+    /** @brief Combine the operands over their respective arguments. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _combine(const VectorFunctionPatchInterface<P, ARG>& f) const override {
         return heap_copy(combine(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f)));
     }
+    /** @brief Combine the operands over their respective arguments using the concrete implementation. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _concrete_combine(const VectorFunctionModelInterface<P, ARG, PR, PRE>& f) const override {
         return heap_copy(combine(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f)));
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     Vector<Number<P>> _unchecked_evaluate(const Vector<Number<P>>& y) const override {
         return unchecked_evaluate(static_cast<const FM&>(*this), y);
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     Vector<CanonicalNumericType<P, DP>> _unchecked_evaluate(const Vector<CanonicalNumericType<P, DP>>& x) const override {
         auto pr = x.zero_element().precision();
         return Vector<CanonicalNumericType<P, DP>>(unchecked_evaluate(static_cast<const FM&>(*this), x), pr);
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain. */
     Vector<CanonicalNumericType<P, MultiplePrecision>> _unchecked_evaluate(const Vector<CanonicalNumericType<P, MultiplePrecision>>& x) const override {
         auto pr = x.zero_element().precision();
         return Vector<CanonicalNumericType<P, MultiplePrecision>>(unchecked_evaluate(static_cast<const FM&>(*this), x), pr);
     }
+    /** @brief Evaluate without checking that the argument belongs to the domain using the concrete implementation. */
     Vector<CanonicalNumericType<P, PR, PRE>> _concrete_unchecked_evaluate(const Vector<CanonicalNumericType<P, PR, PRE>>& x) const override {
         return unchecked_evaluate(static_cast<const FM&>(*this), x);
     }
+    /** @brief Compose the outer object with the inner object. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _compose(const ScalarMultivariateFunction<P>& f) const override {
         return heap_copy(compose(f, static_cast<const FM&>(*this)));
     }
+    /** @brief Compose the outer object with the inner object. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _compose(const VectorMultivariateFunction<P>& f) const override {
         return heap_copy(compose(f, static_cast<const FM&>(*this)));
     }
 
+    /** @brief Compose without checking domain compatibility. */
     ScalarFunctionModelInterface<P, ARG, PR, PRE>* _unchecked_compose(const ScalarMultivariateFunction<P>& f) const override {
         return heap_copy(compose(f, static_cast<const FM&>(*this)));
     }
+    /** @brief Compose without checking domain compatibility. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _unchecked_compose(const VectorMultivariateFunction<P>& f) const override {
         return heap_copy(compose(f, static_cast<const FM&>(*this)));
     }
 
+    /** @brief Fix the selected argument to the supplied value. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _partial_evaluate(SizeType j, const Number<P>& c) const override {
         return heap_copy(partial_evaluate(static_cast<const FM&>(*this), j, c));
     }
+    /** @brief Fix the selected argument to the supplied value using the concrete implementation. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _concrete_partial_evaluate(SizeType j, const CanonicalNumericType<P, PR, PRE>& c) const override {
         return heap_copy(partial_evaluate(static_cast<const FM&>(*this), j, c));
     }
 
+    /** @brief Discard the error bound of the model. */
     Void _clobber() override {
         return static_cast<FM&>(*this).clobber();
     }
 
+    /** @brief Test whether the first enclosure is contained in the second. */
     Bool _refines(const FunctionPatchInterface<P, SIG>& fp) const override {
         ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&fp));
         return refines(static_cast<const FM&>(*this), dynamic_cast<const FM&>(fp));
     }
+    /** @brief Test whether the enclosures cannot represent a common value using the concrete implementation. */
     Boolean _concrete_inconsistent(const VectorFunctionModelInterface<P, ARG, PR, PRE>& f) const override {
         ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f));
         return inconsistent(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f));
     }
+    /** @brief Test whether the first enclosure is contained in the second using the concrete implementation. */
     Boolean _concrete_refines(const VectorFunctionModelInterface<P, ARG, PR, PRE>& f) const override {
         ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f));
         return refines(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f));
     }
+    /** @brief Return the common refinement of the enclosures using the concrete implementation. */
     VectorFunctionModelInterface<P, ARG, PR, PRE>* _concrete_refinement(const VectorFunctionModelInterface<P, ARG, PR, PRE>& f) const override {
         ARIADNE_PRECONDITION(dynamic_cast<const FM*>(&f));
         return new FM(refinement(static_cast<const FM&>(*this), dynamic_cast<const FM&>(f)));
     }
 
+    /** @brief Write the value to the output stream. */
     OutputStream& _write(OutputStream& os) const override {
         return os << static_cast<FM const&>(*this);
     }
 };
 
+/** @brief Reusable implementation of function model factory. */
 template<class FCTRY, class P, class PR, class PRE>
 class FunctionModelFactoryMixin
     : public FunctionModelFactoryInterface<P, PR, PRE> {
@@ -418,7 +507,9 @@ class FunctionModelFactoryMixin
     typedef SD ScalarDomainType;
 
   public:
+    /** @brief Return a dynamically allocated copy preserving the concrete type. */
     virtual FunctionModelFactoryInterface<P, PR, PRE>* clone() const override { return new FCTRY(this->upcast()); }
+    /** @brief Write the value to the output stream. */
     virtual OutputStream& _write(OutputStream& os) const override { return os << this->upcast(); }
     /*
         CanonicalNumericType<P,PR,PRE> create(const Number<P>& number) const;
@@ -437,60 +528,79 @@ class FunctionModelFactoryMixin
     */
 
   private:
+    /** @brief Return a dynamically allocated moved value. */
     template<class T>
     static inline T* heap_move(T&& t) { return new T(std::forward<T>(t)); }
+    /** @brief Convert to the common interface or value type. */
     inline FCTRY const& upcast() const { return static_cast<FCTRY const&>(*this); }
 
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     virtual CanonicalNumericType<P, PR, PRE> _create(const Number<P>& number) const override {
         return this->upcast().create(number);
     }
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     virtual ScalarUnivariateFunctionPatchInterface<P>* _create(const ScalarDomainType&, const ScalarUnivariateFunctionInterface<P>&) const override {
         ARIADNE_NOT_IMPLEMENTED;
     } // return heap_move(this->upcast().create(domain,function)); };
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     virtual VectorUnivariateFunctionPatchInterface<P>* _create(const ScalarDomainType&, const VectorUnivariateFunctionInterface<P>&) const override {
         ARIADNE_NOT_IMPLEMENTED;
     } // return heap_move(this->upcast().create(domain,function)); };
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     virtual ScalarFunctionModelInterface<P, VARG, PR, PRE>* _create(const VectorDomainType& domain, const ScalarMultivariateFunctionInterface<P>& function) const override {
         return heap_move(this->upcast().create(domain, function));
     };
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     virtual VectorFunctionModelInterface<P, VARG, PR, PRE>* _create(const VectorDomainType& domain, const VectorMultivariateFunctionInterface<P>& function) const override {
         return heap_move(this->upcast().create(domain, function));
     };
 
+    /** @brief Construct a zero object with compatible characteristics. */
     virtual ScalarUnivariateFunctionPatchInterface<P>* _create_zero(const ScalarDomainType&) const override {
         ARIADNE_NOT_IMPLEMENTED;
     } // return heap_move(this->upcast().create_zero(domain)); };
+    /** @brief Construct a constant object with the supplied value. */
     virtual ScalarUnivariateFunctionPatchInterface<P>* _create_constant(const ScalarDomainType&, const Number<P>&) const override {
         ARIADNE_NOT_IMPLEMENTED;
     } // return heap_move(this->upcast().create_constant(domain,value)); };
+    /** @brief Construct zero components with compatible characteristics. */
     virtual VectorUnivariateFunctionPatchInterface<P>* _create_zeros(SizeType, const ScalarDomainType&) const override {
         ARIADNE_NOT_IMPLEMENTED;
     } // return heap_move(this->upcast().create_zeros(rsize,domain)); };
+    /** @brief Construct constant components with the supplied values. */
     virtual VectorUnivariateFunctionPatchInterface<P>* _create_constants(const ScalarDomainType&, const Vector<Number<P>>&) const override {
         ARIADNE_NOT_IMPLEMENTED;
     } // return heap_move(this->upcast().create_constants(domain,values)); };
+    /** @brief Construct the identity function. */
     virtual ScalarUnivariateFunctionPatchInterface<P>* _create_identity(const ScalarDomainType&) const override {
         ARIADNE_NOT_IMPLEMENTED;
     } // return heap_move(this->upcast().create_identity(domain)); };
 
+    /** @brief Construct a zero object with compatible characteristics. */
     virtual ScalarFunctionModelInterface<P, VARG, PR, PRE>* _create_zero(const VectorDomainType& domain) const override {
         return heap_move(this->upcast().create_zero(domain));
     };
+    /** @brief Construct a constant object with the supplied value. */
     virtual ScalarFunctionModelInterface<P, VARG, PR, PRE>* _create_constant(const VectorDomainType& domain, const Number<P>& value) const override {
         return heap_move(this->upcast().create_constant(domain, value));
     };
+    /** @brief Construct the function returning the selected coordinate. */
     virtual ScalarFunctionModelInterface<P, VARG, PR, PRE>* _create_coordinate(const VectorDomainType& domain, SizeType index) const override {
         return heap_move(this->upcast().create_coordinate(domain, index));
     };
+    /** @brief Construct zero components with compatible characteristics. */
     virtual VectorFunctionModelInterface<P, VARG, PR, PRE>* _create_zeros(SizeType rsize, const VectorDomainType& domain) const override {
         return heap_move(this->upcast().create_zeros(rsize, domain));
     };
+    /** @brief Construct constant components with the supplied values. */
     virtual VectorFunctionModelInterface<P, VARG, PR, PRE>* _create_constants(const VectorDomainType& domain, const Vector<Number<P>>& values) const override {
         return heap_move(this->upcast().create_constants(domain, values));
     };
+    /** @brief Construct the function selecting the supplied coordinates. */
     virtual VectorFunctionModelInterface<P, VARG, PR, PRE>* _create_projection(const VectorDomainType& domain, Range indices) const override {
         return heap_move(this->upcast().create_projection(domain, indices));
     };
+    /** @brief Construct the identity function. */
     virtual VectorFunctionModelInterface<P, VARG, PR, PRE>* _create_identity(const VectorDomainType& domain) const override {
         return heap_move(this->upcast().create_identity(domain));
     };

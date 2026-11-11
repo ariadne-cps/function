@@ -39,17 +39,24 @@ class Projection {
     Array<SizeType> _ind;
 
   public:
+    /** @brief Construct a \c Projection from as, ind. */
     Projection(SizeType as, Array<SizeType> ind) : _as(as), _ind(ind) {
         for (SizeType i = 0; i != this->_ind.size(); ++i) {
             ARIADNE_PRECONDITION(_ind[i] < _as);
         }
     }
+    /** @brief Return the number of result components. */
     SizeType result_size() const { return this->_ind.size(); }
+    /** @brief Return the number of scalar arguments. */
     SizeType argument_size() const { return this->_as; }
+    /** @brief Return the index sequence. */
     const Array<SizeType>& indices() const { return this->_ind; }
+    /** @brief Return the selected element or component. */
     const SizeType& operator[](SizeType i) const { return this->_ind[i]; }
+    /** @brief Return the selected index. */
     SizeType index(SizeType i) const { return this->_ind[i]; }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     Vector<X> operator()(const Vector<X>& v) const {
         Vector<X> r(this->result_size(), v.zero_element());
@@ -58,6 +65,7 @@ class Projection {
         }
         return r;
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Projection& prj) {
         return os << "Projection(" << prj._ind << ")";
     }

@@ -36,6 +36,7 @@ namespace Ariadne {
 
 template<class Y>
 using ConstantFormulaNode = OperationNode<Cnst, Y>;
+/** @brief Formula node referring to one argument coordinate. */
 template<class Y>
 class IndexFormulaNode : public OperationNode<Var, Index> {
   public:
@@ -53,120 +54,149 @@ using ScalarFormulaNode = OperationNode<BinaryElementaryOperator, Y, Formula<Y>>
 template<class Y>
 using FormulaNodeVariantType = Variant<ConstantFormulaNode<Y>, IndexFormulaNode<Y>, UnaryFormulaNode<Y>, BinaryFormulaNode<Y>, GradedFormulaNode<Y>, ScalarFormulaNode<Y>>;
 
+/** @brief Shared expression node storing a formula operation and its operands. */
 template<class Y>
 class FormulaNode
     : public FormulaNodeVariantType<Y> {
   public:
+    /** @brief Move-construct the object from the supplied instance. */
     template<class FN>
     FormulaNode(FN&& fn) : FormulaNodeVariantType<Y>(std::forward<FN>(fn)) {}
+    /** @brief Dispatch the stored alternative to the visitor. */
     template<class VIS>
     decltype(auto) accept(VIS&& vis) const {
         return std::visit(std::forward<VIS>(vis), static_cast<const FormulaNodeVariantType<Y>&>(*this));
     }
+    /** @brief Return the underlying base object. */
     const FormulaNodeVariantType<Y>& base() const { return *this; }
 };
 
 namespace FormulaNodeDetail {
 
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F, class J>
 inline auto derivative_impl(Abs, const F&, J) -> F {
     ARIADNE_THROW(std::runtime_error, "derivative(abs(f))", "Cannot take derivative of non-smooth function");
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class OP, class F, class J>
 inline decltype(auto) derivative_impl(OP op, const F& f, J j) {
     return op.derivative(f, derivative(f, j));
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F1, class F2, class J>
 inline decltype(auto) derivative_impl(Add, F1 const& f1, F2 const& f2, J j) {
     return derivative(f1, j) + derivative(f2, j);
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F1, class F2, class J>
 inline decltype(auto) derivative_impl(Sub, F1 const& f1, F2 const& f2, J j) {
     return derivative(f1, j) - derivative(f2, j);
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F1, class F2, class J>
 inline decltype(auto) derivative_impl(Mul, F1 const& f1, F2 const& f2, J j) {
     return derivative(f1, j) * f2 + f1 * derivative(f2, j);
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F1, class F2, class J>
 inline decltype(auto) derivative_impl(Div, F1 const& f1, F2 const& f2, J j) {
     return (derivative(f1, j) - derivative(f2, j) * (f1 / f2)) / f2;
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F1, class F2, class J>
 inline auto derivative_impl(Max, F1 const& f1, F2 const& f2, J) -> decltype(max(f1, f2)) {
     ARIADNE_THROW(std::runtime_error, "derivative(max(f1,f2))", "Cannot take derivative of non-smooth function.");
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F1, class F2, class J>
 inline auto derivative_impl(Min, F1 const& f1, F2 const& f2, J) -> decltype(min(f1, f2)) {
     ARIADNE_THROW(std::runtime_error, "derivative(min(f1,f2))", "Cannot take derivative of non-smooth function.");
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F, class N, class J>
 inline decltype(auto) derivative_impl(Pow op, const F& f, const N& n, J j) {
     return op.derivative(f, derivative(f, j), n);
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F, class J>
 decltype(auto) derivative_impl(UnaryElementaryOperator ops, const F& f, J j) {
     return ops.accept([&](auto op) { return derivative_impl(op, f, j); });
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F1, class F2, class J>
 decltype(auto) derivative_impl(BinaryElementaryOperator ops, F1 const& f1, F2 const& f2, J j) {
     return ops.accept([&](auto op) { return derivative_impl(op, f1, f2, j); });
 }
+/** @brief Return the derivative with respect to the selected argument using the concrete implementation. */
 template<class F, class N, class J>
 decltype(auto) derivative_impl(GradedElementaryOperator ops, const F& f, N n, J j) {
     return ops.accept([&](auto op) { return derivative_impl(op, f, n, j); });
 }
 
+/** @brief Differentiate the formula node with respect to the selected coordinate. */
 template<class Y, class J>
 Formula<Y> derivative_node(const ConstantFormulaNode<Y>&, J) {
     return Formula<Y>::constant(Y(0));
 }
+/** @brief Differentiate the formula node with respect to the selected coordinate. */
 template<class Y, class J>
 Formula<Y> derivative_node(const IndexFormulaNode<Y>& node, J j) {
     return Formula<Y>::constant(Y(Nat(node._ind) == Nat(j) ? 1 : 0));
 }
+/** @brief Differentiate the formula node with respect to the selected coordinate. */
 template<class Y, class J>
 Formula<Y> derivative_node(const UnaryFormulaNode<Y>& node, J j) {
     return derivative_impl(node._op, node._arg, j);
 }
+/** @brief Differentiate the formula node with respect to the selected coordinate. */
 template<class Y, class J>
 Formula<Y> derivative_node(const BinaryFormulaNode<Y>& node, J j) {
     return derivative_impl(node._op, node._arg1, node._arg2, j);
 }
+/** @brief Differentiate the formula node with respect to the selected coordinate. */
 template<class Y, class J>
 Formula<Y> derivative_node(const GradedFormulaNode<Y>& node, J j) {
     return derivative_impl(node._op, node._arg, node._num, j);
 }
+/** @brief Differentiate the formula node with respect to the selected coordinate. */
 template<class Y, class J>
 Formula<Y> derivative_node(const ScalarFormulaNode<Y>& node, J j) {
     return derivative_impl(node._op, Formula<Y>::constant(node._cnst), node._arg, j);
 }
 
+/** @brief Substitute a value or formula in the selected node. */
 template<class Y>
 Formula<Y> substitute_node(const ConstantFormulaNode<Y>& node, Nat, const Formula<Y>&) {
     return Formula<Y>::constant(node._val);
 }
+/** @brief Substitute a value or formula in the selected node. */
 template<class Y>
 Formula<Y> substitute_node(const IndexFormulaNode<Y>& node, Nat i, const Formula<Y>& s) {
     return Nat(node._ind) == i ? s : Formula<Y>::coordinate(Nat(node._ind));
 }
+/** @brief Substitute a value or formula in the selected node. */
 template<class Y>
 Formula<Y> substitute_node(const UnaryFormulaNode<Y>& node, Nat i, const Formula<Y>& s) {
     return Formula<Y>::unary(node._op, substitute(node._arg, i, s));
 }
+/** @brief Substitute a value or formula in the selected node. */
 template<class Y>
 Formula<Y> substitute_node(const BinaryFormulaNode<Y>& node, Nat i, const Formula<Y>& s) {
     return Formula<Y>::binary(node._op, substitute(node._arg1, i, s), substitute(node._arg2, i, s));
 }
+/** @brief Substitute a value or formula in the selected node. */
 template<class Y>
 Formula<Y> substitute_node(const GradedFormulaNode<Y>& node, Nat i, const Formula<Y>& s) {
     return Formula<Y>::graded(node._op, substitute(node._arg, i, s), node._num);
 }
+/** @brief Substitute a value or formula in the selected node. */
 template<class Y>
 Formula<Y> substitute_node(const ScalarFormulaNode<Y>& node, Nat i, const Formula<Y>& s) {
     return Formula<Y>::scalar(node._op, node._cnst, substitute(node._arg, i, s));
 }
 
+/** @brief Return the simplified formula node. */
 template<class E>
 inline E simpl(Add op, const E& e1, const E& e2) {
     if (is_constant(e1, 0))
@@ -175,6 +205,7 @@ inline E simpl(Add op, const E& e1, const E& e2) {
         return e1;
     return op(e1, e2);
 }
+/** @brief Return the simplified formula node. */
 template<class E>
 inline E simpl(Sub op, const E& e1, const E& e2) {
     if (is_constant(e1, 0))
@@ -185,6 +216,7 @@ inline E simpl(Sub op, const E& e1, const E& e2) {
         return E::constant(0);
     return op(e1, e2);
 }
+/** @brief Return the simplified formula node. */
 template<class E>
 inline E simpl(Mul op, const E& e1, const E& e2) {
     if (is_constant(e1, 0) || is_constant(e2, 1))
@@ -193,6 +225,7 @@ inline E simpl(Mul op, const E& e1, const E& e2) {
         return e2;
     return op(e1, e2);
 }
+/** @brief Return the simplified formula node. */
 template<class E>
 inline E simpl(Div op, const E& e1, const E& e2) {
     if (is_constant(e1, 0) || is_constant(e2, 1))
@@ -203,10 +236,13 @@ inline E simpl(Div op, const E& e1, const E& e2) {
         return E::constant(1);
     return op(e1, e2);
 }
+/** @brief Return the simplified formula node. */
 template<class E>
 inline E simpl(Max op, const E& e1, const E& e2) { return op(e1, e2); }
+/** @brief Return the simplified formula node. */
 template<class E>
 inline E simpl(Min op, const E& e1, const E& e2) { return op(e1, e2); }
+/** @brief Return the simplified formula node. */
 template<class E>
 inline E simpl(Pow, const E& e, Int n) {
     switch (n) {
@@ -223,14 +259,17 @@ inline E simpl(Pow, const E& e, Int n) {
     }
 }
 
+/** @brief Simplify the supplied formula node. */
 template<class Y>
 Formula<Y> simplify_node(const ConstantFormulaNode<Y>& node) {
     return Formula<Y>::constant(node._val);
 }
+/** @brief Simplify the supplied formula node. */
 template<class Y>
 Formula<Y> simplify_node(const IndexFormulaNode<Y>& node) {
     return Formula<Y>::coordinate(Nat(node._ind));
 }
+/** @brief Simplify the supplied formula node. */
 template<class Y>
 Formula<Y> simplify_node(const UnaryFormulaNode<Y>& node) {
     auto arg = simplify(node._arg);
@@ -248,17 +287,20 @@ Formula<Y> simplify_node(const UnaryFormulaNode<Y>& node) {
         }
     });
 }
+/** @brief Simplify the supplied formula node. */
 template<class Y>
 Formula<Y> simplify_node(const BinaryFormulaNode<Y>& node) {
     auto arg1 = simplify(node._arg1);
     auto arg2 = simplify(node._arg2);
     return node._op.accept([&](auto op) { return simpl(op, arg1, arg2); });
 }
+/** @brief Simplify the supplied formula node. */
 template<class Y>
 Formula<Y> simplify_node(const GradedFormulaNode<Y>& node) {
     auto arg = simplify(node._arg);
     return node._op.accept([&](auto op) { return simpl(op, arg, node._num); });
 }
+/** @brief Simplify the supplied formula node. */
 template<class Y>
 Formula<Y> simplify_node(const ScalarFormulaNode<Y>& node) {
     auto arg = simplify(node._arg);
@@ -266,149 +308,198 @@ Formula<Y> simplify_node(const ScalarFormulaNode<Y>& node) {
     return node._op.accept([&](auto op) { return simpl(op, cnst, arg); });
 }
 
+/** @brief Test whether two formula nodes are structurally identical. */
 template<class Y>
 Bool identical_node(const ConstantFormulaNode<Y>& a, const ConstantFormulaNode<Y>& b) {
     return same(a._val, b._val);
 }
+/** @brief Test whether two formula nodes are structurally identical. */
 template<class Y>
 Bool identical_node(const IndexFormulaNode<Y>& a, const IndexFormulaNode<Y>& b) {
     return a._ind == b._ind;
 }
+/** @brief Test whether two formula nodes are structurally identical. */
 template<class Y>
 Bool identical_node(const UnaryFormulaNode<Y>& a, const UnaryFormulaNode<Y>& b) {
     return a._op.code() == b._op.code() && identical(a._arg, b._arg);
 }
+/** @brief Test whether two formula nodes are structurally identical. */
 template<class Y>
 Bool identical_node(const BinaryFormulaNode<Y>& a, const BinaryFormulaNode<Y>& b) {
     return a._op.code() == b._op.code() && identical(a._arg1, b._arg1) && identical(a._arg2, b._arg2);
 }
+/** @brief Test whether two formula nodes are structurally identical. */
 template<class Y>
 Bool identical_node(const GradedFormulaNode<Y>& a, const GradedFormulaNode<Y>& b) {
     // GradedElementaryOperator is OperatorVariant<Pow>: both nodes are powers.
     return a._num == b._num && identical(a._arg, b._arg);
 }
+/** @brief Test whether two formula nodes are structurally identical. */
 template<class Y>
 Bool identical_node(const ScalarFormulaNode<Y>& a, const ScalarFormulaNode<Y>& b) {
     return a._op.code() == b._op.code() && same(a._cnst, b._cnst) && identical(a._arg, b._arg);
 }
+/** @brief Test whether two formula nodes are structurally identical. */
 template<class A, class B>
 Bool identical_node(const A&, const B&) { return false; }
 
+/** @brief Test whether a formula node represents a constant. */
 template<class Y>
 Bool is_constant_node(const ConstantFormulaNode<Y>&) { return true; }
+/** @brief Test whether a formula node represents a constant. */
 template<class Y>
 Bool is_constant_node(const IndexFormulaNode<Y>&) { return false; }
+/** @brief Test whether a formula node represents a constant. */
 template<class Y>
 Bool is_constant_node(const UnaryFormulaNode<Y>&) { return false; }
+/** @brief Test whether a formula node represents a constant. */
 template<class Y>
 Bool is_constant_node(const BinaryFormulaNode<Y>&) { return false; }
+/** @brief Test whether a formula node represents a constant. */
 template<class Y>
 Bool is_constant_node(const GradedFormulaNode<Y>&) { return false; }
+/** @brief Test whether a formula node represents a constant. */
 template<class Y>
 Bool is_constant_node(const ScalarFormulaNode<Y>&) { return false; }
 
+/** @brief Test whether a formula node is constant in the selected coordinates. */
 template<class Y>
 Bool is_constant_in_node(const ConstantFormulaNode<Y>&, const Set<Nat>&) { return true; }
+/** @brief Test whether a formula node is constant in the selected coordinates. */
 template<class Y>
 Bool is_constant_in_node(const IndexFormulaNode<Y>& node, const Set<Nat>& vars) {
     return !vars.contains(Nat(node._ind));
 }
+/** @brief Test whether a formula node is constant in the selected coordinates. */
 template<class Y>
 Bool is_constant_in_node(const UnaryFormulaNode<Y>& node, const Set<Nat>& vars) {
     return is_constant_in(node._arg, vars);
 }
+/** @brief Test whether a formula node is constant in the selected coordinates. */
 template<class Y>
 Bool is_constant_in_node(const BinaryFormulaNode<Y>& node, const Set<Nat>& vars) {
     return is_constant_in(node._arg1, vars) && is_constant_in(node._arg2, vars);
 }
+/** @brief Test whether a formula node is constant in the selected coordinates. */
 template<class Y>
 Bool is_constant_in_node(const GradedFormulaNode<Y>& node, const Set<Nat>& vars) {
     return node._num == 0 || is_constant_in(node._arg, vars);
 }
+/** @brief Test whether a formula node is constant in the selected coordinates. */
 template<class Y>
 Bool is_constant_in_node(const ScalarFormulaNode<Y>& node, const Set<Nat>& vars) {
     return is_constant_in(node._arg, vars);
 }
 
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Atan, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Acos, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Asin, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Cos, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Sin, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Tan, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Tanh, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Abs, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Sqr, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Log, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Sqrt, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Exp, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Rec, const E& e, VARS const& vars) { return is_constant_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Hlf, const E& e, VARS const& vars) { return is_affine_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Pos, const E& e, VARS const& vars) { return is_affine_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Neg, const E& e, VARS const& vars) { return is_affine_in(e, vars); }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class VARS>
 inline Bool affine_impl(Nul, const E&, VARS const&) { return true; }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E1, class E2, class VARS>
 inline Bool affine_impl(Add, E1 const& a, E2 const& b, VARS const& vars) {
     return is_affine_in(a, vars) && is_affine_in(b, vars);
 }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E1, class E2, class VARS>
 inline Bool affine_impl(Sub, E1 const& a, E2 const& b, VARS const& vars) {
     return is_affine_in(a, vars) && is_affine_in(b, vars);
 }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E1, class E2, class VARS>
 inline Bool affine_impl(Mul, E1 const& a, E2 const& b, VARS const& vars) {
     return (is_affine_in(a, vars) && is_constant_in(b, vars)) || (is_constant_in(a, vars) && is_affine_in(b, vars));
 }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E1, class E2, class VARS>
 inline Bool affine_impl(Div, E1 const& a, E2 const& b, VARS const& vars) {
     return is_affine_in(a, vars) && is_constant_in(b, vars);
 }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E1, class E2, class VARS>
 inline Bool affine_impl(Max, E1 const& a, E2 const& b, VARS const& vars) {
     return is_constant_in(a, vars) && is_constant_in(b, vars);
 }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E1, class E2, class VARS>
 inline Bool affine_impl(Min, E1 const& a, E2 const& b, VARS const& vars) {
     return is_constant_in(a, vars) && is_constant_in(b, vars);
 }
+/** @brief Determine affine dependence on the selected arguments. */
 template<class E, class N, class VARS>
 inline Bool affine_impl(Pow, const E& e, N n, VARS const& vars) {
     return n == 0 || (n == 1 && is_affine_in(e, vars)) || is_constant_in(e, vars);
 }
 
+/** @brief Test whether a formula node is affine in the selected coordinates. */
 template<class Y>
 Bool is_affine_in_node(const ConstantFormulaNode<Y>&, const Set<Nat>&) { return true; }
+/** @brief Test whether a formula node is affine in the selected coordinates. */
 template<class Y>
 Bool is_affine_in_node(const IndexFormulaNode<Y>&, const Set<Nat>&) { return true; }
+/** @brief Test whether a formula node is affine in the selected coordinates. */
 template<class Y>
 Bool is_affine_in_node(const UnaryFormulaNode<Y>& node, const Set<Nat>& vars) {
     return node._op.accept([&](auto op) { return affine_impl(op, node._arg, vars); });
 }
+/** @brief Test whether a formula node is affine in the selected coordinates. */
 template<class Y>
 Bool is_affine_in_node(const BinaryFormulaNode<Y>& node, const Set<Nat>& vars) {
     return node._op.accept([&](auto op) { return affine_impl(op, node._arg1, node._arg2, vars); });
 }
+/** @brief Test whether a formula node is affine in the selected coordinates. */
 template<class Y>
 Bool is_affine_in_node(const GradedFormulaNode<Y>& node, const Set<Nat>& vars) {
     return node._op.accept([&](auto op) { return affine_impl(op, node._arg, node._num, vars); });
 }
+/** @brief Test whether a formula node is affine in the selected coordinates. */
 template<class Y>
 Bool is_affine_in_node(const ScalarFormulaNode<Y>& node, const Set<Nat>& vars) {
     Formula<Y> cnst = Formula<Y>::constant(node._cnst);
@@ -417,120 +508,148 @@ Bool is_affine_in_node(const ScalarFormulaNode<Y>& node, const Set<Nat>& vars) {
 
 } // namespace FormulaNodeDetail
 
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 inline Formula<Y> make_formula(const Y& c) {
     return Formula<Y>::constant(c);
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 inline Formula<Y> make_formula(Cnst, const Y& c) {
     return Formula<Y>::constant(c);
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 inline Formula<Y> make_formula(Ind, SizeType j) {
     return Formula<Y>::index(j);
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 inline Formula<Y> make_formula(const UnaryElementaryOperator& op, const Formula<Y>& arg) {
     return Formula<Y>::unary(op, arg);
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 inline Formula<Y> make_formula(const BinaryElementaryOperator& op, const Formula<Y>& arg1, const Formula<Y>& arg2) {
     return Formula<Y>::binary(op, arg1, arg2);
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 inline Formula<Y> make_formula(const BinaryElementaryOperator& op, const Formula<Y>& arg1, const Y& arg2) {
     return Formula<Y>::binary(op, arg1, make_formula(arg2));
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 inline Formula<Y> make_formula(const GradedElementaryOperator& op, const Formula<Y>& arg, Int num) {
     return Formula<Y>::graded(op, arg, num);
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y, class OP>
 inline Formula<Y> make_formula(const OP& op, const Y& cnst, const Formula<Y>& arg) {
     OperatorCode op_code = static_cast<OperatorCode>((char)op.code() + ((char)OperatorCode::SADD - (char)OperatorCode::ADD));
     return Formula<Y>::scalar(Operator(op_code, OperatorKind::SCALAR), cnst, arg);
 }
 
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 Formula<Y> make_formula(const Operator& op, const Formula<Y>& arg) {
     return make_formula(UnaryElementaryOperator(op.code()), arg);
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 Formula<Y> make_formula(const Operator& op, const Formula<Y>& arg1, const Formula<Y>& arg2) {
     return make_formula(BinaryElementaryOperator(op.code()), arg1, arg2);
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 Formula<Y> make_formula(const Operator& op, const Formula<Y>& arg1, Int n2) {
     return make_formula(GradedElementaryOperator(op.code()), arg1, n2);
 }
+/** @brief Construct formula from the supplied arguments. */
 template<class Y>
 Formula<Y> make_formula(const Operator& op, const Y& c1, const Formula<Y>& arg2) {
     return make_formula(BinaryElementaryOperator(op.code()), c1, arg2);
 }
 
 namespace FormulaDetail {
+/** @brief Evaluate at the supplied argument. */
 template<class X, class Y>
 decltype(auto) evaluate(OperationNode<Cnst, Y> c, const Vector<X>& v) {
     return make_constant(c._val, v);
 }
+/** @brief Evaluate at the supplied argument. */
 template<class X, class I>
 decltype(auto) evaluate(OperationNode<Var, I> i, const Vector<X>& v) {
     return v[i._ind];
 }
+/** @brief Evaluate at the supplied argument. */
 template<class X, class OP, class A>
 decltype(auto) evaluate(OperationNode<OP, A> s, const Vector<X>& v) {
     return s._op(evaluate(s._arg, v));
 }
+/** @brief Evaluate at the supplied argument. */
 template<class X, class OP, class A1, class A2>
 decltype(auto) evaluate(OperationNode<OP, A1, A2> s, const Vector<X>& v) {
     return s._op(evaluate(s._arg1, v), evaluate(s._arg2, v));
 }
+/** @brief Evaluate at the supplied argument. */
 template<class X, class OP, class A1, class A2, class A3>
 decltype(auto) evaluate(OperationNode<OP, A1, A2, A3> s, const Vector<X>& v) {
     return s._op(evaluate(s._arg1, v), evaluate(s._arg2, v), evaluate(s._arg3, v));
 }
+/** @brief Evaluate at the supplied argument. */
 template<class X, class OP, class A>
 decltype(auto) evaluate(OperationNode<OP, A, Formula<A>> s, const Vector<X>& v) {
     return s._op(evaluate(OperationNode<Cnst, A>(s._cnst), v), evaluate(s._arg, v));
 }
+/** @brief Evaluate at the supplied argument. */
 template<class X, class OP, class A>
 decltype(auto) evaluate(OperationNode<OP, A, Int> s, const Vector<X>& v) {
     return s._op(evaluate(s._arg, v), s._num);
 }
 
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class Y>
 decltype(auto) _cached_evaluate(const OperationNode<Cnst, Y>& c, const Vector<X>& v, Map<const Void*, X>&) {
     return make_constant(c._val, v);
 }
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class I>
 decltype(auto) _cached_evaluate(const OperationNode<Var, I>& i, const Vector<X>& v, Map<const Void*, X>&) {
     return v[i._ind];
 }
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class OP, class A>
 decltype(auto) _cached_evaluate(const OperationNode<OP, A>& s, const Vector<X>& v, Map<const Void*, X>& cache) {
     return s._op(cached_evaluate(s._arg, v, cache));
 }
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class OP, class A>
 decltype(auto) _cached_evaluate(const OperationNode<OP, A, Formula<A>>& s, const Vector<X>& v, Map<const Void*, X>& cache) {
     return s._op(evaluate(ConstantFormulaNode<A>(s._cnst), v), cached_evaluate(s._arg, v, cache));
 }
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class OP, class A>
 decltype(auto) _cached_evaluate(const OperationNode<OP, Formula<A>, A>& s, const Vector<X>& v, Map<const Void*, X>& cache) {
     return s._op(s._cnst, cached_evaluate(s._arg, v, cache));
 }
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class OP, class A>
 decltype(auto) _cached_evaluate(const OperationNode<OP, A, Int>& s, const Vector<X>& v, Map<const Void*, X>& cache) {
     return s._op(cached_evaluate(s._arg, v, cache), s._num);
 }
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class OP, class A1, class A2>
 decltype(auto) _cached_evaluate(const OperationNode<OP, A1, A2>& s, const Vector<X>& v, Map<const Void*, X>& cache) {
     return s._op(cached_evaluate(s._arg1, v, cache), cached_evaluate(s._arg2, v, cache));
 }
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class OP, class A1, class A2, class A3>
 decltype(auto) _cached_evaluate(const OperationNode<OP, A1, A2, A3>& s, const Vector<X>& v, Map<const Void*, X>& cache) {
     return s._op(cached_evaluate(s._arg1, v, cache), cached_evaluate(s._arg2, v, cache), cached_evaluate(s._arg3, v, cache));
 }
 
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class OP, class... AS>
 decltype(auto) _cached_evaluate(const OperationNode<OP, AS...>&, const Vector<X>& v, Map<const Void*, X>&) {
     return v[0];
@@ -538,6 +657,7 @@ decltype(auto) _cached_evaluate(const OperationNode<OP, AS...>&, const Vector<X>
 
 } // namespace FormulaDetail
 
+/** @brief Evaluate the formula without a node cache. */
 template<class X, class Y>
 X direct_evaluate(const Formula<Y>& f, const Vector<X>& x) {
     return f.node_ref().accept([&x](auto s) { return FormulaDetail::evaluate(s, x); });
@@ -555,12 +675,14 @@ const X& cached_evaluate(const Formula<Y>& f, const Vector<X>& x, Map<const Void
     }
 }
 
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class Y>
 inline X cached_evaluate(const Formula<Y>& f, const Vector<X>& v) {
     Map<const Void*, X> cache;
     return cached_evaluate(f, v, cache);
 }
 
+/** @brief Evaluate the formula while reusing cached node values. */
 template<class X, class Y>
 Vector<X> cached_evaluate(const Vector<Formula<Y>>& f, const Vector<X>& v) {
     Vector<X> r(f.size(), zero_element(v));
@@ -571,10 +693,12 @@ Vector<X> cached_evaluate(const Vector<Formula<Y>>& f, const Vector<X>& v) {
     return r;
 }
 
+/** @brief Evaluate at the supplied argument. */
 template<class X, class Y>
 X evaluate(const Formula<Y>& f, const Vector<X>& x) {
     return cached_evaluate(f, x);
 }
+/** @brief Evaluate at the supplied argument. */
 template<class X, class Y>
 Vector<X> evaluate(const Vector<Formula<Y>>& f, const Vector<X>& x) {
     return cached_evaluate(f, x);
@@ -594,17 +718,20 @@ Formula<X> formula(const Expansion<MultiIndex, X>& e) {
 }
 
 namespace {
+/** @brief Replace the selected coordinate by the supplied formula. */
 template<class X, class Y>
 inline const Formula<Y>& _substitute_coordinate(const Nat& ie, const Nat& is, const Formula<Y>& a, const Formula<X>& s) {
     ARIADNE_ASSERT_MSG(ie != is, "Cannot substitute formula " << s << " for coordinate " << ie);
     return a;
 }
+/** @brief Replace the selected coordinate by the supplied formula. */
 template<class Y>
 inline const Formula<Y>& _substitute_coordinate(const Nat& ie, const Nat& is, const Formula<Y>& e, const Formula<Y>& s) {
     return ie == is ? s : e;
 }
 } // namespace
 
+/** @brief Replace the selected variable by the supplied formula or value. */
 template<class Y>
 Formula<Y> substitute(const Formula<Y>& a, const Nat& i, const Formula<Y>& is) {
     return a.node_ref().accept([&i, &is](auto fn) { return FormulaNodeDetail::substitute_node(fn, i, is); });
@@ -621,6 +748,7 @@ inline Formula<Y> simplify(const Formula<Y>& a) {
     return a.node_ref().accept([](auto fn) { return FormulaNodeDetail::simplify_node(fn); });
 }
 
+/** @brief Test whether the operands have the same representation. */
 inline Bool same(const EffectiveNumber& v1, const EffectiveNumber& v2) {
     // FIXME: Use symbolic approach
     DoublePrecision pr;

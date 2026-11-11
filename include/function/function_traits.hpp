@@ -40,8 +40,10 @@ namespace Ariadne {
 class UnitInterval;
 class UnitBox;
 
+/** @brief Compile-time traits for domain. */
 template<class... T>
 struct DomainTraits;
+/** @brief Compile-time traits for domain. */
 template<>
 struct DomainTraits<RealScalar> : public ScalarTraits {
     typedef RealDomain EntireSetType;
@@ -52,6 +54,7 @@ struct DomainTraits<RealScalar> : public ScalarTraits {
     template<class FLT>
     using ConcreteRangeType = Interval<UpperBound<FLT>>;
 };
+/** @brief Compile-time traits for domain. */
 template<>
 struct DomainTraits<RealVector> : public VectorTraits {
     typedef EuclideanDomain EntireSetType;
@@ -78,8 +81,10 @@ using ElementSizeType = typename ValueTraits<ElementKind<S>>::SizeType;
 template<class S>
 using ElementIndexType = typename ValueTraits<ElementKind<S>>::IndexType;
 
+/** @brief Compile-time traits for signature. */
 template<class SIG>
 struct SignatureTraits;
+/** @brief Compile-time traits for signature. */
 template<class RES, class ARG>
 struct SignatureTraits<RES(ARG)> {
     typedef ARG ArgumentKind;
@@ -107,13 +112,16 @@ struct SignatureTraits<RES(ARG)> {
     using ConcreteRangeType = typename DomainTraits<RES>::template ConcreteRangeType<FLT>;
 };
 
+/** @brief Associated type definitions for cartesian product box. */
 template<template<class> class LIN>
 struct CartesianProductBoxTypedef;
+/** @brief Associated type definitions for cartesian product box. */
 template<>
 struct CartesianProductBoxTypedef<Scalar> {
     template<class IVL>
     using Type = IVL;
 };
+/** @brief Associated type definitions for cartesian product box. */
 template<>
 struct CartesianProductBoxTypedef<Vector> {
     template<class IVL>
@@ -122,12 +130,14 @@ struct CartesianProductBoxTypedef<Vector> {
 template<template<class> class LIN, class IVL>
 using CartesianProductBoxType = typename CartesianProductBoxTypedef<LIN>::template Type<IVL>;
 
+/** @brief Compile-time traits for function model. */
 template<class P, class PR, class PRE = PR>
 struct FunctionModelTraits;
 
 template<class F>
 class UnknownError;
 
+/** @brief Compile-time traits for function model. */
 template<class PR, class PRE>
 struct FunctionModelTraits<ValidatedTag, PR, PRE> {
     typedef RawFloat<PR> F;
@@ -140,6 +150,7 @@ struct FunctionModelTraits<ValidatedTag, PR, PRE> {
     typedef ValidatedNumber GenericNumericType;
     typedef F RawFloatType;
 };
+/** @brief Compile-time traits for function model. */
 template<class PR>
 struct FunctionModelTraits<ApproximateTag, PR> {
     typedef RawFloat<PR> F;

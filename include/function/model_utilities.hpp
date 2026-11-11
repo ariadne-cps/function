@@ -32,35 +32,50 @@ namespace Ariadne {
 
 namespace {
 
+/** @brief Approximate centre accompanied by validated lower and upper bounds. */
 template<class F>
 struct ValidatedApproximation {
     Bounds<F> _v;
     Approximation<F> _a;
+    /** @brief Construct a \c ValidatedApproximation from x. */
     ValidatedApproximation(const Bounds<F>& x) : _v(x), _a(x) {}
+    /** @brief Convert to const bounds< f > &. */
     operator const Bounds<F>&() const { return _v; }
+    /** @brief Return the lower endpoint. */
     LowerBound<F> lower() const { return _v.lower(); }
+    /** @brief Return the middle value. */
     Approximation<F> middle() const { return _a; }
+    /** @brief Return the upper endpoint. */
     UpperBound<F> upper() const { return _v.upper(); }
+    /** @brief Return the underlying lower-endpoint representation. */
     const F& lower_raw() const { return _v.lower_raw(); }
+    /** @brief Return the underlying middle-value representation. */
     const F& middle_raw() const { return _a.raw(); }
+    /** @brief Return the underlying upper-endpoint representation. */
     const F& upper_raw() const { return _v.upper_raw(); }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const ValidatedApproximation<F>& x) {
         return os << "{" << x._v.lower() << ":" << x._a << ":" << x._v.upper() << "}";
     }
 };
+/** @brief Construct validated approximation from the supplied arguments. */
 template<class F>
 const Approximation<F>& make_validated_approximation(const Approximation<F>& x) { return x; }
+/** @brief Construct validated approximation from the supplied arguments. */
 template<class F>
 ValidatedApproximation<F> make_validated_approximation(const Bounds<F>& x) { return ValidatedApproximation<F>(x); }
 
+/** @brief Convert to the rounded representation. */
 template<ARawFloat F>
 Rounded<F> cast_rounded(const F& x) { return Rounded<F>(x); }
 
+/** @brief Accumulate a value while accounting for rounding error. */
 template<class F>
 inline Void acc_err(const F& ml, const F& u, F& e) {
     e = add(rounded, e, hlf(add(rounded, ml, u)));
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 F add_err(const F& x1, const F& x2, Error<F>& e) {
     F mx1 = -x1;
@@ -74,6 +89,7 @@ F add_err(const F& x1, const F& x2, Error<F>& e) {
     return r;
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 F add_err(const F& x, const ValidatedApproximation<F>& c, Error<F>& e) {
     const F& xv = x;
@@ -91,31 +107,37 @@ F add_err(const F& x, const ValidatedApproximation<F>& c, Error<F>& e) {
     return F(rv);
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 F add_err(const F& x, const Bounds<F>& c, Error<F>& e) {
     return add_err(x, ValidatedApproximation<F>(c), e);
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 Bounds<F> add_err(const Bounds<F>& x1, const Bounds<F>& x2, Error<F>&) {
     return add(x1, x2);
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> add_err(const UpperInterval<F>& x1, const UpperInterval<F>& x2, Error<F>&) {
     return add(x1, x2);
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> add_err(const UpperInterval<F>& x1, Nat n2, Error<F>&) {
     return add(x1, n2);
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 Approximation<F> add_err(const Approximation<F>& x1, const Approximation<F>& x2, UnknownError<F>&) {
     return add(x1, x2);
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 F sub_err(const F& x1, const F& x2, Error<F>& e) {
     F mx1 = -x1;
@@ -129,26 +151,31 @@ F sub_err(const F& x1, const F& x2, Error<F>& e) {
     return r;
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 Bounds<F> sub_err(const Bounds<F>& x1, const Bounds<F>& x2, Error<F>&) {
     return sub(x1, x2);
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> sub_err(const UpperInterval<F>& x1, const UpperInterval<F>& x2, Error<F>&) {
     return sub(x1, x2);
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> sub_err(const UpperInterval<F>& x1, Nat n2, Error<F>&) {
     return sub(x1, n2);
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 Approximation<F> sub_err(const Approximation<F>& x1, const Approximation<F>& x2, UnknownError<F>&) {
     return sub(x1, x2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 F mul_err(const F& x1, const F& x2, Error<F>& e) {
     F mx1 = -x1;
@@ -162,6 +189,7 @@ F mul_err(const F& x1, const F& x2, Error<F>& e) {
     return r;
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 F mul_err(const F& x, const ValidatedApproximation<F>& c, Error<F>& e) {
     const F& xv = x;
@@ -187,51 +215,61 @@ F mul_err(const F& x, const ValidatedApproximation<F>& c, Error<F>& e) {
     return F(rv);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 F mul_err(const F& x, const Bounds<F>& c, Error<F>& e) {
     return mul_err(x, ValidatedApproximation<F>(c), e);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 F mul_err(const F& x1, Nat n2, Error<F>& e) {
     return mul_err(x1, F(n2, x1.precision()), e);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Bounds<F> mul_err(const Bounds<F>& x1, const Bounds<F>& x2, Error<F>&) {
     return mul(x1, x2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Bounds<F> mul_err(const Bounds<F>& x1, const ValidatedApproximation<F>& x2, Error<F>&) {
     return mul(x1, static_cast<Bounds<F>>(x2));
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Bounds<F> mul_err(const Bounds<F>& x1, const Nat& n2, Error<F>&) {
     return mul(x1, n2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> mul_err(const UpperInterval<F>& x1, const UpperInterval<F>& x2, Error<F>&) {
     return mul(x1, x2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> mul_err(const UpperInterval<F>& x1, Nat n2, Error<F>&) {
     return mul(x1, n2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Approximation<F> mul_err(const Approximation<F>& x1, const Approximation<F>& x2, UnknownError<F>&) {
     return mul(x1, x2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Approximation<F> mul_err(const Approximation<F>& x1, Nat n2, UnknownError<F>& e) {
     return mul_err(x1, Approximation<F>(n2, x1.precision()), e);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 F div_err(const F& x1, const F& x2, Error<F>& e) {
     F mx1 = -x1;
@@ -245,41 +283,49 @@ F div_err(const F& x1, const F& x2, Error<F>& e) {
     return r;
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 F div_err(const F& x1, Nat n2, Error<F>& e) {
     return div_err(x1, F(n2, x1.precision()), e);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 Bounds<F> div_err(const Bounds<F>& x1, const Bounds<F>& x2, Error<F>&) {
     return div(x1, x2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 Bounds<F> div_err(const Bounds<F>& x1, Nat n2, Error<F>&) {
     return div(x1, n2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> div_err(const UpperInterval<F>& x1, const UpperInterval<F>& x2, Error<F>&) {
     return div(x1, x2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> div_err(const UpperInterval<F>& x1, Nat n2, Error<F>&) {
     return div(x1, n2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 Approximation<F> div_err(const Approximation<F>& x1, const Approximation<F>& x2, UnknownError<F>&) {
     return div(x1, x2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 Approximation<F> div_err(const Approximation<F>& x1, Nat n2, UnknownError<F>& e) {
     return div_err(x1, Approximation<F>(n2, x1.precision()), e);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 F fma_err(const F& x, const F& y, F z, Error<F>& e) {
     const F& xv = x.raw();
@@ -298,6 +344,7 @@ F fma_err(const F& x, const F& y, F z, Error<F>& e) {
     return F(rv);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 F fma_err(const ValidatedApproximation<F>& c, const F& x, F y, Error<F>& e) {
     const F& xv = x.raw();
@@ -326,32 +373,38 @@ F fma_err(const ValidatedApproximation<F>& c, const F& x, F y, Error<F>& e) {
     return F(rv);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 F fma_err(const Bounds<F>& c, const F& x, F y, Error<F>& e) {
     return fma_err(ValidatedApproximation<F>(c), x, y, e);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 Bounds<F> fma_err(const Bounds<F>& x, const Bounds<F>& y, Bounds<F> z, Error<F>&) {
     return fma(x, y, z);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 UpperInterval<F> fma_err(const UpperInterval<F>& x, const UpperInterval<F>& y, UpperInterval<F> z, Error<F>&) {
     return fma(x, y, z);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 Bounds<F> fma_err(const ValidatedApproximation<F>& x, const Bounds<F>& y, Bounds<F> z, Error<F>&) {
     return fma(static_cast<Bounds<F>>(x), y, z);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 Approximation<F> fma_err(const Approximation<F>& x, const Approximation<F>& y, Approximation<F> z, UnknownError<F>&) {
     return fma(x, y, z);
 }
 
 // Returns an approximation to a1*b2+a2*b2, adding error to e
+/** @brief Evaluate the linear combination while accounting for rounding error. */
 template<class F>
 F lin_err(const F& a1, const F& b1, const F& a2, const F& b2, Error<F>& e) {
     RoundingSession<F> rounding;

@@ -149,11 +149,14 @@ class FunctionFacade<P, RealVector(RealVector)> {
     Matrix<EvaluateType<P, X>> jacobian(const Vector<X>& x) const;
 };
 
+/** @brief Declare function operations for the supported operand types. */
 template<class P, class SIG>
 class DeclareFunctionOperations;
+/** @brief Declare function operations for the supported operand types. */
 template<class P, class... ARGS>
 class DeclareFunctionOperations<P, RealScalar(ARGS...)>
     : DeclareElementaryAlgebraOperations<ScalarFunction<P, ARGS...>, Number<P>> {};
+/** @brief Declare function operations for the supported operand types. */
 template<class P, class... ARGS>
 class DeclareFunctionOperations<P, RealVector(ARGS...)>
     : DeclareVectorAlgebraOperators<VectorFunction<P, ARGS...>, ScalarFunction<P, ARGS...>, Vector<Number<P>>, Number<P>> {};
@@ -161,10 +164,12 @@ class DeclareFunctionOperations<P, RealVector(ARGS...)>
 //! \brief A mixin which provides Scalar/Vector function methods and friends.
 template<class P, class SIG>
 class DispatchFunctionOperations;
+/** @brief Dispatch function operations for the supported operand types. */
 template<class P, class... ARGS>
 class DispatchFunctionOperations<P, RealScalar(ARGS...)>
     : DispatchElementaryAlgebraOperations<ScalarFunction<P, ARGS...>, Number<P>> {
 };
+/** @brief Dispatch function operations for the supported operand types. */
 template<class P, class... ARGS>
 class DispatchFunctionOperations<P, RealVector(ARGS...)>
     : DeclareVectorAlgebraOperators<VectorFunction<P, ARGS...>, ScalarFunction<P, ARGS...>, Vector<Number<P>>, Number<P>> {};
@@ -394,91 +399,111 @@ class Function
     }
     //!@}
 
+    /** @brief Return the product. */
     friend VectorFunction<P, ARG> operator*(const ScalarFunction<P, ARG>&, const Vector<Y>&);
 };
 
+/** @brief Return the characteristics required to construct compatible values. */
 template<class P, class... ARGS>
 decltype(auto) inline characteristics(const Function<P, Real(ARGS...)>& f) {
     return f.domain();
 }
 
+/** @brief Write the value to the output stream. */
 template<class P, class SIG>
 OutputStream& operator<<(OutputStream& os, const Representation<Function<P, SIG>>& f) {
     f.reference().raw_pointer()->_repr(os);
     return os;
 }
 
+/** @brief Operations supported by algebra objects. */
 template<class P, class... ARGS>
 struct AlgebraOperations<ScalarFunction<P, ARGS...>, Number<P>> {
     using F = ScalarFunction<P, ARGS...>;
     using C = Number<P>;
+    /** @brief Apply the supplied operation to the operands. */
     static ScalarFunction<P, ARGS...> apply(BinaryElementaryOperator op, const ScalarFunction<P, ARGS...>& f1, const ScalarFunction<P, ARGS...>& f2);
+    /** @brief Apply the supplied operation to the operands. */
     static ScalarFunction<P, ARGS...> apply(UnaryElementaryOperator op, const ScalarFunction<P, ARGS...>& f);
+    /** @brief Apply the supplied operation to the operands. */
     static ScalarFunction<P, ARGS...> apply(BinaryElementaryOperator op, const ScalarFunction<P, ARGS...>& f1, const Number<P>& c2);
+    /** @brief Apply the supplied operation to the operands. */
     static ScalarFunction<P, ARGS...> apply(BinaryElementaryOperator op, const Number<P>& c1, const ScalarFunction<P, ARGS...>& f2);
+    /** @brief Apply the supplied operation to the operands. */
     static ScalarFunction<P, ARGS...> apply(GradedElementaryOperator op, const ScalarFunction<P, ARGS...>& f, Int n);
 };
 
+/** @brief Write the value to the output stream. */
 template<class P, class SIG>
 inline OutputStream&
     operator<<(OutputStream& os, const Function<P, SIG>& f) {
     return f._write(os);
 }
 
+/** @brief Evaluate at the supplied argument. */
 template<class P, class C, class X>
 inline decltype(auto)
     evaluate(const UnivariateFunction<P, C>& f, const Scalar<X>& x) {
     return f(x);
 }
 
+/** @brief Evaluate at the supplied argument. */
 template<class P, class C, class X>
 inline decltype(auto)
     evaluate(const MultivariateFunction<P, C>& f, const Vector<X>& x) {
     return f(x);
 }
 
+/** @brief Return the differential at the supplied argument. */
 template<class P, class C, class X>
 inline decltype(auto)
     differential(const UnivariateFunction<P, C>& f, const X& x, DegreeType d) {
     return f.differential(x, d);
 }
 
+/** @brief Return the differential at the supplied argument. */
 template<class P, class C, class X>
 inline decltype(auto)
     differential(const MultivariateFunction<P, C>& f, const Vector<X>& x, DegreeType d) {
     return f.differential(x, d);
 }
 
+/** @brief Return the derivative with respect to the selected argument. */
 template<class P, class SIG>
     requires Same<typename SignatureTraits<SIG>::ArgumentKind, Real>
 inline Function<P, SIG> derivative(const Function<P, SIG>& f) {
     return f.derivative(IndexZero());
 }
 
+/** @brief Return the slope at the supplied argument. */
 template<class P, class X>
 Scalar<EvaluateType<P, X>>
     slope(const ScalarUnivariateFunction<P>& f, const Scalar<X>& x) {
     return differential(f, x, 1u).gradient()[0];
 }
 
+/** @brief Return the tangent at the supplied argument. */
 template<class P, class X>
 Vector<EvaluateType<P, X>>
     tangent(const VectorUnivariateFunction<P>& f, const Scalar<X>& x) {
     return column(differential(f, x, 1u).jacobian(), 0u);
 }
 
+/** @brief Return the vector of first partial derivatives. */
 template<class P, class X>
 Covector<EvaluateType<P, X>>
     gradient(const ScalarMultivariateFunction<P>& f, const Vector<X>& x) {
     return differential(f, x, 1u).gradient();
 }
 
+/** @brief Return the matrix of first partial derivatives. */
 template<class P, class X>
 Matrix<EvaluateType<P, X>>
     jacobian(const VectorMultivariateFunction<P>& f, const Vector<X>& x) {
     return differential(f, x, 1u).jacobian();
 }
 
+/** @brief Return the matrix of second partial derivatives. */
 template<class P, class X>
 Matrix<EvaluateType<P, X>>
     hessian(const ScalarMultivariateFunction<P>& f, const Vector<X>& x) {
@@ -486,6 +511,7 @@ Matrix<EvaluateType<P, X>>
 }
 
 template<class P>
+/** @brief Return the slope at the supplied argument. */
 template<class X>
 EvaluateType<P, X>
     FunctionFacade<P, RealScalar(RealScalar)>::slope(const X& x) const {
@@ -513,60 +539,105 @@ Matrix<EvaluateType<P, X>>
     return Ariadne::jacobian(static_cast<const VectorMultivariateFunction<P>&>(*this), x);
 }
 
+/** @brief Compose the outer object with the inner object. */
 EffectiveScalarUnivariateFunction compose(const EffectiveScalarUnivariateFunction& f, const EffectiveScalarUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 EffectiveScalarUnivariateFunction compose(const EffectiveScalarMultivariateFunction& f, const EffectiveVectorUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 EffectiveVectorUnivariateFunction compose(const EffectiveVectorUnivariateFunction& f, const EffectiveScalarUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 EffectiveVectorUnivariateFunction compose(const EffectiveVectorMultivariateFunction& f, const EffectiveVectorUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 EffectiveScalarMultivariateFunction compose(const EffectiveScalarUnivariateFunction& f, const EffectiveScalarMultivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 EffectiveScalarMultivariateFunction compose(const EffectiveScalarMultivariateFunction& f, const EffectiveVectorMultivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 EffectiveVectorMultivariateFunction compose(const EffectiveVectorUnivariateFunction& f, const EffectiveScalarMultivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 EffectiveVectorMultivariateFunction compose(const EffectiveVectorMultivariateFunction& f, const EffectiveVectorMultivariateFunction& g);
 
+/** @brief Compose the outer object with the inner object. */
 ValidatedScalarUnivariateFunction compose(const ValidatedScalarUnivariateFunction& f, const ValidatedScalarUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ValidatedScalarUnivariateFunction compose(const ValidatedScalarMultivariateFunction& f, const ValidatedVectorUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ValidatedVectorUnivariateFunction compose(const ValidatedVectorUnivariateFunction& f, const ValidatedScalarUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ValidatedVectorUnivariateFunction compose(const ValidatedVectorMultivariateFunction& f, const ValidatedVectorUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ValidatedScalarMultivariateFunction compose(const ValidatedScalarUnivariateFunction& f, const ValidatedScalarMultivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ValidatedScalarMultivariateFunction compose(const ValidatedScalarMultivariateFunction& f, const ValidatedVectorMultivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ValidatedVectorMultivariateFunction compose(const ValidatedVectorUnivariateFunction& f, const ValidatedScalarMultivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ValidatedVectorMultivariateFunction compose(const ValidatedVectorMultivariateFunction& f, const ValidatedVectorMultivariateFunction& g);
 
+/** @brief Compose the outer object with the inner object. */
 ApproximateScalarUnivariateFunction compose(const ApproximateScalarUnivariateFunction& f, const ApproximateScalarUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ApproximateScalarUnivariateFunction compose(const ApproximateScalarMultivariateFunction& f, const ApproximateVectorUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ApproximateVectorUnivariateFunction compose(const ApproximateVectorUnivariateFunction& f, const ApproximateScalarUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ApproximateVectorUnivariateFunction compose(const ApproximateVectorMultivariateFunction& f, const ApproximateVectorUnivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ApproximateScalarMultivariateFunction compose(const ApproximateScalarUnivariateFunction& f, const ApproximateScalarMultivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ApproximateScalarMultivariateFunction compose(const ApproximateScalarMultivariateFunction& f, const ApproximateVectorMultivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ApproximateVectorMultivariateFunction compose(const ApproximateVectorUnivariateFunction& f, const ApproximateScalarMultivariateFunction& g);
+/** @brief Compose the outer object with the inner object. */
 ApproximateVectorMultivariateFunction compose(const ApproximateVectorMultivariateFunction& f, const ApproximateVectorMultivariateFunction& g);
 
+/** @brief Multiply by the operand in place. */
 ValidatedScalarMultivariateFunction& operator*=(ValidatedScalarMultivariateFunction& sf, const ExactNumber& c);
+/** @brief Return the product. */
 EffectiveVectorMultivariateFunction operator*(const EffectiveNumber& c, const EffectiveVectorMultivariateFunction& vf);
 
+/** @brief Embed in the larger argument space. */
 EffectiveScalarMultivariateFunction embed(SizeType as1, const EffectiveScalarMultivariateFunction& f2, SizeType as3);
+/** @brief Embed in the larger argument space. */
 EffectiveVectorMultivariateFunction embed(SizeType as1, const EffectiveVectorMultivariateFunction& f2, SizeType as3);
 
+/** @brief Join the operands in their natural order. */
 EffectiveVectorMultivariateFunction join(const EffectiveScalarMultivariateFunction& f1, const EffectiveScalarMultivariateFunction& f2);
+/** @brief Join the operands in their natural order. */
 EffectiveVectorMultivariateFunction join(const EffectiveScalarMultivariateFunction& f1, const EffectiveVectorMultivariateFunction& f2);
+/** @brief Join the operands in their natural order. */
 EffectiveVectorMultivariateFunction join(const EffectiveVectorMultivariateFunction& f1, const EffectiveScalarMultivariateFunction& f2);
+/** @brief Join the operands in their natural order. */
 EffectiveVectorMultivariateFunction join(const EffectiveVectorMultivariateFunction& f1, const EffectiveVectorMultivariateFunction& f2);
 
+/** @brief Return the requested family of derivatives. */
 EffectiveVectorMultivariateFunction derivatives(const EffectiveScalarMultivariateFunction& f);
 
+/** @brief Differentiate along the supplied vector field. */
 EffectiveScalarMultivariateFunction lie_derivative(const EffectiveScalarMultivariateFunction& g, const EffectiveVectorMultivariateFunction& f);
+/** @brief Differentiate along the supplied vector field. */
 EffectiveVectorMultivariateFunction lie_derivative(const EffectiveVectorMultivariateFunction& g, const EffectiveVectorMultivariateFunction& f);
 
+/** @brief Construct formula from the supplied arguments. */
 Formula<Real> make_formula(const EffectiveScalarMultivariateFunction& f);
+/** @brief Construct formula from the supplied arguments. */
 Vector<Formula<Real>> make_formula(const EffectiveVectorMultivariateFunction& f);
 
+/** @brief Join the operands in their natural order. */
 ValidatedVectorMultivariateFunction join(const ValidatedScalarMultivariateFunction& f1, const ValidatedScalarMultivariateFunction& f2);
+/** @brief Join the operands in their natural order. */
 ValidatedVectorMultivariateFunction join(const ValidatedScalarMultivariateFunction& f1, const ValidatedVectorMultivariateFunction& f2);
+/** @brief Join the operands in their natural order. */
 ValidatedVectorMultivariateFunction join(const ValidatedVectorMultivariateFunction& f1, const ValidatedScalarMultivariateFunction& f2);
+/** @brief Join the operands in their natural order. */
 ValidatedVectorMultivariateFunction join(const ValidatedVectorMultivariateFunction& f1, const ValidatedVectorMultivariateFunction& f2);
 
+/** @brief Join the operands in their natural order. */
 ApproximateVectorMultivariateFunction join(const ApproximateScalarMultivariateFunction& f1, const ApproximateScalarMultivariateFunction& f2);
+/** @brief Join the operands in their natural order. */
 ApproximateVectorMultivariateFunction join(const ApproximateScalarMultivariateFunction& f1, const ApproximateVectorMultivariateFunction& f2);
+/** @brief Join the operands in their natural order. */
 ApproximateVectorMultivariateFunction join(const ApproximateVectorMultivariateFunction& f1, const ApproximateScalarMultivariateFunction& f2);
+/** @brief Join the operands in their natural order. */
 ApproximateVectorMultivariateFunction join(const ApproximateVectorMultivariateFunction& f1, const ApproximateVectorMultivariateFunction& f2);
 
 //! \brief A reference into an element of a vector function.
@@ -583,14 +654,21 @@ struct VectorFunctionElementReference
     typedef typename ElementType::NumericType NumericType;
     VectorFunction<P, ARGS...>& _vf;
     SizeType _i;
+    /** @brief Construct a \c VectorFunctionElementReference from vf, i. */
     VectorFunctionElementReference(VectorFunction<P, ARGS...>& vf, SizeType i) : _vf(vf), _i(i) {}
+    /** @brief Convert to scalar function< wp, args... >. */
     template<class WP>
     operator ScalarFunction<WP, ARGS...>() const;
+    /** @brief Assign the supplied value. */
     Void operator=(const ScalarFunction<P, ARGS...>& sf);
+    /** @brief Assign the supplied value and return this object. */
     VectorFunctionElementReference<P, ARGS...>& operator=(const VectorFunctionElementReference<P, ARGS...>& sfr);
+    /** @brief Return the domain. */
     DomainType domain() const;
+    /** @brief Evaluate at the supplied argument. */
     template<class XX>
     XX evaluate(const Argument<XX>& x) const;
+    /** @brief Apply the callable to the supplied arguments. */
     template<class XX>
     XX operator()(const Argument<XX>& x) const;
 };
@@ -601,6 +679,7 @@ inline VectorFunctionElementReference<P, ARGS...>::operator ScalarFunction<WP, A
     return this->_vf.get(this->_i);
 }
 
+/** @brief Construct element reference from the supplied arguments. */
 template<class P, class... ARGS>
 inline VectorFunctionElementReference<P, ARGS...> make_element_reference(VectorFunction<P, ARGS...>& vf, SizeType i) {
     return VectorFunctionElementReference<P, ARGS...>(vf, i);
@@ -620,6 +699,7 @@ inline auto Function<P, SIG>::operator[](SizeType i) const -> const ScalarFuncti
     return this->get(i);
 }
 
+/** @brief Write the value to the output stream. */
 template<class P, class... ARGS>
 inline OutputStream& operator<<(OutputStream& os, const VectorFunctionElementReference<P, ARGS...>& vfe) {
     return os << static_cast<ScalarFunction<P, ARGS...>>(vfe);
@@ -649,10 +729,15 @@ inline XX VectorFunctionElementReference<P, ARGS...>::operator()(const Argument<
     return static_cast<ScalarFunction<P, ARGS...>>(*this).evaluate(x);
 }
 
+/** @brief Enclose the function values over the supplied argument set. */
 UpperIntervalType evaluate_range(const ScalarMultivariateFunction<ValidatedTag>& f, const Vector<UpperIntervalType>& x);
+/** @brief Enclose the function values over the supplied argument set. */
 Vector<UpperIntervalType> evaluate_range(const VectorMultivariateFunction<ValidatedTag>& f, const Vector<UpperIntervalType>& x);
+/** @brief Enclose the derivative over the supplied argument set. */
 Vector<Differential<UpperIntervalType>> derivative_range(const VectorMultivariateFunction<ValidatedTag>& f, const Vector<Differential<UpperIntervalType>>& x);
+/** @brief Enclose the gradient over the supplied argument set. */
 Covector<UpperIntervalType> gradient_range(const ValidatedScalarMultivariateFunction& f, const Vector<UpperIntervalType>& x);
+/** @brief Enclose the Jacobian over the supplied argument set. */
 Matrix<UpperIntervalType> jacobian_range(const ValidatedVectorMultivariateFunction& f, const Vector<UpperIntervalType>& x);
 
 /*
@@ -697,6 +782,7 @@ class FunctionFactory
 
 typedef FunctionFactory<ValidatedTag> ValidatedFunctionFactory;
 
+/** @brief Factory constructing compatible function. */
 template<>
 class FunctionFactory<ValidatedTag> {
     using P = ValidatedTag;
@@ -706,14 +792,22 @@ class FunctionFactory<ValidatedTag> {
 
   public:
     typedef FunctionFactoryInterface<P> Interface;
+    /** @brief Construct a \c FunctionFactory from ref. */
     FunctionFactory(const Interface& ref) : _ptr(ref.clone()) {}
+    /** @brief Construct a \c FunctionFactory from ptr. */
     FunctionFactory(const Interface* ptr) : _ptr(ptr) {}
+    /** @brief Construct a \c FunctionFactory from ptr. */
     FunctionFactory(SharedPointer<const Interface> ptr) : _ptr(ptr) {}
 
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     inline ValidatedScalarMultivariateFunction create(const BoxDomainType& d, const ValidatedScalarMultivariateFunction::Interface& f) const;
+    /** @brief Construct a compatible object from the supplied value and characteristics. */
     inline ValidatedVectorMultivariateFunction create(const BoxDomainType& d, const ValidatedVectorMultivariateFunction::Interface& f) const;
+    /** @brief Construct a zero object with compatible characteristics. */
     inline ValidatedScalarMultivariateFunction create_zero(const BoxDomainType& d) const;
+    /** @brief Construct the identity function. */
     inline ValidatedVectorMultivariateFunction create_identity(const BoxDomainType& d) const;
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const FunctionFactory<ValidatedTag>& factory);
 };
 
@@ -743,6 +837,7 @@ inline ValidatedVectorMultivariateFunction FunctionFactory<ValidatedTag>::create
     return this->_ptr->create_identity(domain);
 }
 
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const ValidatedFunctionFactory& factory) {
     factory._ptr->_write(os);
     return os;

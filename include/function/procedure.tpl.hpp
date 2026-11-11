@@ -53,6 +53,7 @@ extern template class Procedure<ValidatedNumber>;
 template<class Y>
 SizeType Procedure<Y>::argument_size() const { return this->_argument_size; }
 
+/** @brief Construct procedure from the supplied arguments. */
 template<class P>
 Procedure<Number<P>> make_procedure(const ScalarMultivariateFunction<P>& f) {
     typedef Number<P> Y;
@@ -62,6 +63,7 @@ Procedure<Number<P>> make_procedure(const ScalarMultivariateFunction<P>& f) {
 
 namespace ProcedureDetail {
 
+/** @brief Convert the stored operation alternative to the requested representation. */
 template<class Y>
 Void _convert_impl(List<ProcedureInstruction>& p, List<Y>& c, const FormulaNode<Y>& f, Map<const Void*, SizeType>& cache) {
     struct Visitor {
@@ -97,6 +99,7 @@ Void _convert_impl(List<ProcedureInstruction>& p, List<Y>& c, const FormulaNode<
 
 } // namespace ProcedureDetail
 
+/** @brief Convert the supplied value to the requested representation. */
 template<class Y>
 SizeType _convert(List<ProcedureInstruction>& p, List<Y>& c, const Formula<Y>& f, Map<const Void*, SizeType>& cache) {
     if (cache.has_key(f.node_ptr())) {
@@ -108,18 +111,26 @@ SizeType _convert(List<ProcedureInstruction>& p, List<Y>& c, const Formula<Y>& f
     return num;
 }
 
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const ConstantProcedureInstruction& s) { return os << "c[" << s._val << "]"; }
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const IndexProcedureInstruction& s) { return os << "x[" << s._ind << "]"; }
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const UnaryProcedureInstruction& s) { return os << s._op << "(v[" << s._arg << "])"; }
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const BinaryProcedureInstruction& s) { return os << s._op << "(v[" << s._arg1 << "],v[" << s._arg2 << "])"; }
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const GradedProcedureInstruction& s) { return os << s._op << "(v[" << s._arg << "]," << s._num << ")"; }
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const ScalarProcedureInstruction& s) { return os << s._op << "(c[" << s._arg1 << "],v[" << s._arg2 << "])"; }
 
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const ProcedureInstruction& pri) {
     pri.accept([&os](auto s) { os << s; });
     return os;
 }
 
+/** @brief Write the value to the output stream. */
 template<class Y>
 Void _write(OutputStream& os, const List<ProcedureInstruction>& p, const List<Y>&) {
     for (SizeType i = 0; i != p.size(); ++i) {
@@ -160,6 +171,7 @@ OutputStream& Procedure<Y>::_write(OutputStream& os) const {
     return os;
 }
 
+/** @brief Add the operand in place. */
 template<class Y>
 Procedure<Y>& operator+=(Procedure<Y>& f, const Y& c) {
     f._constants.append(c);
@@ -199,6 +211,7 @@ OutputStream& Vector<Procedure<Y>>::_write(OutputStream& os) const {
     return os;
 }
 
+/** @brief Scalar operand representation for algebra operations. */
 template<class OP>
 struct AlgebraScalar {};
 
@@ -207,11 +220,14 @@ namespace ProcedureDetail {
 // Some Graded operations intentionally throw rather than produce a value.
 // Keep those cases out of the value-assignment branch: MSVC ARM64 correctly
 // diagnoses an assignment following a guaranteed throw as unreachable.
+/** @brief Compile-time predicate testing whether a type is graded procedure value. */
 template<class X>
 struct IsGradedProcedureValue : std::false_type {};
+/** @brief Compile-time predicate testing whether a type is graded procedure value. */
 template<class A>
 struct IsGradedProcedureValue<Graded<A>> : std::true_type {};
 
+/** @brief Propagate values or constraints through the operation. */
 template<class X, class OP>
 Void propagate(X& r, OP op, const X& x1, const X& x2) {
     if constexpr (IsGradedProcedureValue<X>::value &&
@@ -228,6 +244,7 @@ Void propagate(X& r, OP op, const X& x1, const X& x2) {
         r = op(x1, x2);
     }
 }
+/** @brief Propagate values or constraints through the operation. */
 template<class X, class OP>
 Void propagate(X& r, OP op, const X& x) {
     if constexpr (IsGradedProcedureValue<X>::value && Same<OP, Abs>) {
@@ -247,6 +264,7 @@ Void propagate(X& r, OP op, const X& x) {
         r = op(x);
     }
 }
+/** @brief Propagate values or constraints through the operation. */
 template<class X, class OP, class Y>
     requires(not Same<X, Y>)
 Void propagate(X& r, OP op, const Y& y1, const X& x2) {
@@ -270,6 +288,7 @@ Void propagate(X& r, OP op, const Y& y1, const X& x2) {
     }
 }
 
+/** @brief Propagate values or constraints through the operation. */
 template<class X>
 Void propagate(UnivariateSecondDifferential<X>& r, Asin op, const UnivariateSecondDifferential<X>& x) {
     const X one = nul(x.value()) + 1;
@@ -281,6 +300,7 @@ Void propagate(UnivariateSecondDifferential<X>& r, Asin op, const UnivariateSeco
         inv_sqrt_q * x.gradient(),
         inv_sqrt_q * x.half_hessian() + half_second * sqr(x.gradient()));
 }
+/** @brief Propagate values or constraints through the operation. */
 template<class X>
 Void propagate(UnivariateSecondDifferential<X>& r, Acos op, const UnivariateSecondDifferential<X>& x) {
     const X one = nul(x.value()) + 1;
@@ -294,18 +314,22 @@ Void propagate(UnivariateSecondDifferential<X>& r, Acos op, const UnivariateSeco
         first * x.half_hessian() + half_second * sqr(x.gradient()));
 }
 
+/** @brief Propagate values or constraints through the operation. */
 template<class X>
 Void propagate(X& r, BinaryElementaryOperator eop, const X& x1, const X& x2) {
     eop.accept([&](auto op) { propagate(r, op, x1, x2); });
 }
+/** @brief Propagate values or constraints through the operation. */
 template<class X>
 Void propagate(X& r, UnaryElementaryOperator eop, const X& x) {
     eop.accept([&](auto op) { propagate(r, op, x); });
 }
+/** @brief Propagate values or constraints through the operation. */
 template<class X, class N>
 Void propagate(X& r, GradedElementaryOperator eop, const X& x, N n) {
     eop.accept([&](auto op) { r = op(x, n); });
 }
+/** @brief Propagate values or constraints through the operation. */
 template<class Y, class X>
     requires(not Same<Y, UnivariateSecondDifferential<X>>)
 Void propagate(UnivariateSecondDifferential<X>& r, BinaryElementaryOperator eop, const Y& y1, const UnivariateSecondDifferential<X>& x2) {
@@ -317,11 +341,13 @@ Void propagate(UnivariateSecondDifferential<X>& r, BinaryElementaryOperator eop,
         }
     });
 }
+/** @brief Propagate values or constraints through the operation. */
 template<class Y, class X>
 Void propagate(X& r, BinaryElementaryOperator eop, const Y& y1, const X& x2) {
     eop.accept([&](auto op) { propagate(r, op, y1, x2); });
 }
 
+/** @brief Execute the procedure using the supplied arguments and workspace using the concrete implementation. */
 template<class X, class Y>
 Void _execute_impl(SizeType r, List<X>& v, const ProcedureInstruction& pri, const List<Y>& c, const Vector<X>& x) {
     struct Visitor {
@@ -342,6 +368,7 @@ Void _execute_impl(SizeType r, List<X>& v, const ProcedureInstruction& pri, cons
 } // namespace ProcedureDetail
 
 // \related Procedure \brief Evaluate a function \a f defined by an algorithmic procedure
+/** @brief Execute the procedure using the supplied arguments and workspace. */
 template<class X, class Y>
 Void _execute(List<X>& v, const List<ProcedureInstruction>& p, const List<Y>& c, const Vector<X>& x) {
     ARIADNE_PRECONDITION(v.size() == p.size());
@@ -350,26 +377,31 @@ Void _execute(List<X>& v, const List<ProcedureInstruction>& p, const List<Y>& c,
     }
 }
 
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Add, X& a1, X& a2) {
     restrict(a1, r - a2);
     restrict(a2, r - a1);
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Sub, X& a1, X& a2) {
     restrict(a1, a2 + r);
     restrict(a2, a1 - r);
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Mul, X& a1, X& a2) {
     restrict(a1, r / a2);
     restrict(a2, r / a1);
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Div, X& a1, X& a2) {
     restrict(a1, a2 * r);
     restrict(a2, a1 / r);
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Max, X& a1, X& a2) {
     if (definitely(r.is_empty())) {
@@ -381,6 +413,7 @@ Void backpropagate(const X& r, Max, X& a1, X& a2) {
     restrict(a1, X(-inf, r.upper_bound()));
     restrict(a2, X(-inf, r.upper_bound()));
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Min, X& a1, X& a2) {
     if (definitely(r.is_empty())) {
@@ -393,14 +426,19 @@ Void backpropagate(const X& r, Min, X& a1, X& a2) {
     restrict(a2, X(r.lower_bound(), +inf));
 }
 
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Add, const Y& c1, X& a2) { restrict(a2, r - c1); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Sub, const Y& c1, X& a2) { restrict(a2, c1 - r); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Mul, const Y& c1, X& a2) { restrict(a2, r / c1); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Div, const Y& c1, X& a2) { restrict(a2, c1 / r); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Max, const Y&, X& a2) {
     if (definitely(r.is_empty())) {
@@ -409,6 +447,7 @@ Void backpropagate(const X& r, Max, const Y&, X& a2) {
     }
     restrict(a2, X(-inf, r.upper_bound()));
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Min, const Y&, X& a2) {
     if (definitely(r.is_empty())) {
@@ -418,14 +457,19 @@ Void backpropagate(const X& r, Min, const Y&, X& a2) {
     restrict(a2, X(r.lower_bound(), +inf));
 }
 
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Add, X& a1, const Y& c2) { restrict(a1, r - c2); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Sub, X& a1, const Y& c2) { restrict(a1, c2 + r); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Mul, X& a1, const Y& c2) { restrict(a1, r / c2); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Div, X& a1, const Y& c2) { restrict(a1, c2 * r); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Max, X& a1, const Y&) {
     if (definitely(r.is_empty())) {
@@ -434,6 +478,7 @@ Void backpropagate(const X& r, Max, X& a1, const Y&) {
     }
     restrict(a1, X(-inf, r.upper_bound()));
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, Min, X& a1, const Y&) {
     if (definitely(r.is_empty())) {
@@ -443,16 +488,20 @@ Void backpropagate(const X& r, Min, X& a1, const Y&) {
     restrict(a1, X(r.lower_bound(), +inf));
 }
 
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Nul, X& a) {
     if (definitely(r.is_empty()) || definitely(r.upper_bound() < 0) || definitely(r.lower_bound() > 0)) {
         restrict(a, X::empty_interval());
     }
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Pos, X& a) { restrict(a, r); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Neg, X& a) { restrict(a, neg(r)); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Hlf, X& a) {
     if (definitely(r.is_empty())) {
@@ -461,14 +510,17 @@ Void backpropagate(const X& r, Hlf, X& a) {
     }
     restrict(a, r + r);
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Rec, X& a) { restrict(a, rec(r)); }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Sqr, X& a) {
     // sqrt(UpperIntervalType) is defined as the hull of the inverse image
     // {x : x^2 in r}, so it already preserves both square-root branches.
     restrict(a, sqrt(r));
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Pow, X& a, Int) {
     if (definitely(r.is_empty())) {
@@ -477,6 +529,7 @@ Void backpropagate(const X& r, Pow, X& a, Int) {
     // Integer powers can have disconnected and sign-dependent inverse images.
     // Defer pruning until a sound multi-branch contractor is available.
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Sqrt, X& a) {
     if (definitely(r.is_empty())) {
@@ -485,6 +538,7 @@ Void backpropagate(const X& r, Sqrt, X& a) {
     }
     restrict(a, sqr(r));
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Exp, X& a) {
     if (definitely(r.is_empty())) {
@@ -493,6 +547,7 @@ Void backpropagate(const X& r, Exp, X& a) {
     }
     restrict(a, log(r));
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Log, X& a) {
     if (definitely(r.is_empty())) {
@@ -505,30 +560,35 @@ Void backpropagate(const X& r, Log, X& a) {
 // represent them without a hull, so defer periodic backward pruning until a
 // multi-branch contractor is available. Empty forward images are still
 // propagated to preserve inconsistency detection.
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Sin, X& a) {
     if (definitely(r.is_empty())) {
         restrict(a, r);
     }
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Cos, X& a) {
     if (definitely(r.is_empty())) {
         restrict(a, r);
     }
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Tan, X& a) {
     if (definitely(r.is_empty())) {
         restrict(a, r);
     }
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Tanh, X& a) {
     if (definitely(r.is_empty())) {
         restrict(a, r);
     }
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Asin, X& a) {
     if (definitely(r.is_empty())) {
@@ -537,6 +597,7 @@ Void backpropagate(const X& r, Asin, X& a) {
     }
     restrict(a, sin(r));
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Acos, X& a) {
     if (definitely(r.is_empty())) {
@@ -545,6 +606,7 @@ Void backpropagate(const X& r, Acos, X& a) {
     }
     restrict(a, cos(r));
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Atan, X& a) {
     if (definitely(r.is_empty())) {
@@ -554,6 +616,7 @@ Void backpropagate(const X& r, Atan, X& a) {
     restrict(a, tan(r));
 }
 
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Abs, X& a) {
     if (definitely(r.is_empty())) {
@@ -568,11 +631,13 @@ Void backpropagate(const X& r, Abs, X& a) {
     restrict(a, X(-upper, +upper));
 }
 
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Equal, X& a1, X& a2) {
     restrict(a1, r);
     restrict(a2, r);
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, Leq, X& a1, X& a2) {
     static_cast<void>(r);
@@ -580,27 +645,33 @@ Void backpropagate(const X& r, Leq, X& a1, X& a2) {
     restrict(a2, X(a1.lower(), +inf));
 }
 
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, UnaryElementaryOperator eop, X& a) {
     return eop.accept([&r, &a](auto op) { backpropagate(r, op, a); });
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, BinaryElementaryOperator eop, X& a1, X& a2) {
     return eop.accept([&r, &a1, &a2](auto op) { backpropagate(r, op, a1, a2); });
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X>
 Void backpropagate(const X& r, GradedElementaryOperator eop, X& a1, Int n2) {
     return eop.accept([&r, &a1, n2](auto op) { backpropagate(r, op, a1, n2); });
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, BinaryElementaryOperator eop, const Y& c1, X& a2) {
     return eop.accept([&r, &c1, &a2](auto op) { backpropagate(r, op, c1, a2); });
 }
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void backpropagate(const X& r, BinaryElementaryOperator eop, X& a1, const Y& c2) {
     return eop.accept([&r, &a1, &c2](auto op) { backpropagate(r, op, a1, c2); });
 }
 
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void _backpropagate(SizeType r, Vector<X>& x, List<X>& v, ProcedureInstruction pri, const List<Y>& c) {
     struct Visitor {
@@ -618,6 +689,7 @@ Void _backpropagate(SizeType r, Vector<X>& x, List<X>& v, ProcedureInstruction p
     pri.accept(Visitor{r, x, v, c});
 }
 
+/** @brief Propagate output constraints backward through the operation. */
 template<class X, class Y>
 Void _backpropagate(Vector<X>& x, List<X>& v, const List<ProcedureInstruction>& p, const List<Y>& c) {
     ARIADNE_PRECONDITION(v.size() == p.size());
@@ -630,70 +702,90 @@ Void _backpropagate(Vector<X>& x, List<X>& v, const List<ProcedureInstruction>& 
     // POSTCONDITION: No nan's get propagated to x
 }
 
+/** @brief Accumulate derivatives backward through the operation. */
 template<class X, class D>
 void back_gradient(const D& dr, Add, const X&, D& da1, const X&, D& da2) {
     da1 += dr;
     da2 += dr;
 }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class X, class D>
 void back_gradient(const D& dr, Sub, const X&, D& da1, const X&, D& da2) {
     da1 += dr;
     da2 -= dr;
 }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class X, class D>
 void back_gradient(const D& dr, Mul, const X& a1, D& da1, const X& a2, D& da2) {
     da1 += dr * a2;
     da2 += a1 * dr;
 }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class X, class D>
 void back_gradient(const D& dr, Div, const X& a1, D& da1, const X& a2, D& da2) {
     da1 += dr / a2;
     da2 -= dr / a2 * (a1 / a2);
 }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class X, class D>
 void back_gradient(const D&, Max, const X&, D&, const X&, D&) { ARIADNE_FAIL_MSG("Cannot take derivative of a non-smooth procedure operator."); }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class X, class D>
 void back_gradient(const D&, Min, const X&, D&, const X&, D&) { ARIADNE_FAIL_MSG("Cannot take derivative of a non-smooth procedure operator."); }
 
+/** @brief Accumulate derivatives backward through the operation. */
 template<class Y, class X, class D>
 void back_gradient(const D& dr, Add, const Y&, const X&, D& da2) { da2 += dr; }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class Y, class X, class D>
 void back_gradient(const D& dr, Sub, const Y&, const X&, D& da2) { da2 -= dr; }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class Y, class X, class D>
 void back_gradient(const D& dr, Mul, const Y& c1, const X&, D& da2) { da2 += c1 * dr; }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class Y, class X, class D>
 void back_gradient(const D& dr, Div, const Y& c1, const X& a2, D& da2) { da2 -= (dr / a2) * (c1 / a2); }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class Y, class X, class D>
 void back_gradient(const D&, Max, const Y&, const X&, D&) { ARIADNE_FAIL_MSG("Cannot take derivative of a non-smooth procedure operator."); }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class Y, class X, class D>
 void back_gradient(const D&, Min, const Y&, const X&, D&) { ARIADNE_FAIL_MSG("Cannot take derivative of a non-smooth procedure operator."); }
 
+/** @brief Accumulate derivatives backward through the operation. */
 template<class OP, class X, class D>
 void back_gradient(const D& dr, OP op, const X& a, D& da) { da += op.derivative(a, dr); }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class X, class D>
 void back_gradient(const D&, Abs, const X&, D&) { ARIADNE_FAIL_MSG("Cannot take derivative of a non-smooth procedure operator."); }
 
+/** @brief Accumulate derivatives backward through the operation. */
 template<class N, class X, class D>
 void back_gradient(const D& dr, Pow op, const X& a, D& da, N n) { da += op.derivative(a, dr, n); }
 
+/** @brief Accumulate derivatives backward through the operation. */
 template<class X, class D>
 void back_gradient(const D& dr, BinaryElementaryOperator eop, const X& a1, D& da1, const X& a2, D& da2) {
     eop.accept([&dr, &a1, &da1, &a2, &da2](auto op) { return back_gradient(dr, op, a1, da1, a2, da2); });
 }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class X, class D>
 void back_gradient(const D& dr, UnaryElementaryOperator eop, const X& a, D& da) {
     eop.accept([&dr, &a, &da](auto op) { return back_gradient(dr, op, a, da); });
 }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class Y, class X, class D>
 void back_gradient(const D& dr, BinaryElementaryOperator eop, const Y& c1, const X& a2, D& da2) {
     eop.accept([&dr, &c1, &a2, &da2](auto op) { return back_gradient(dr, op, c1, a2, da2); });
 }
+/** @brief Accumulate derivatives backward through the operation. */
 template<class N, class X, class D>
 void back_gradient(const D& dr, GradedElementaryOperator eop, const X& a, D& da, N n) {
     eop.accept([&dr, &a, &da, n](auto op) { return back_gradient(dr, op, a, da, n); });
 }
 
 namespace ProcedureDetail {
+/** @brief Accumulate derivatives backward through the operation using the concrete implementation. */
 template<class X, class Y>
 void _back_gradient_impl(SizeType r, const ProcedureInstruction& pri, const Vector<X>& x, const List<Y>& c, List<X>& v, List<X>& dv, Covector<X>& dfx) {
     struct Visitor {
@@ -714,6 +806,7 @@ void _back_gradient_impl(SizeType r, const ProcedureInstruction& pri, const Vect
 }
 } // namespace ProcedureDetail
 
+/** @brief Return the vector of first partial derivatives. */
 template<class X, class Y>
 Covector<X> gradient(const Procedure<Y>& f, const Vector<X>& x) {
     ARIADNE_PRECONDITION(f.argument_size() == x.size());
@@ -743,6 +836,7 @@ Covector<X> gradient(const Procedure<Y>& f, const Vector<X>& x) {
 
 namespace Ariadne {
 
+/** @brief Return the matrix of second partial derivatives. */
 template<class X, class Y>
 X hessian(const Procedure<Y>& f, const Vector<X>& x, const Vector<X>& s) {
     ARIADNE_PRECONDITION(f.argument_size() == x.size());

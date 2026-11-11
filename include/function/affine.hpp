@@ -47,9 +47,11 @@ class FloatFactory;
 template<class X>
 class Affine;
 
+/** @brief Provide algebra operations for the supported operand types. */
 template<class A, class X = typename A::NumericType>
 struct ProvideAlgebraOperations;
 
+/** @brief Provide algebra operations for the supported operand types. */
 template<class X>
 struct ProvideAlgebraOperations<Affine<X>, X> {
     //! \relates Affine
@@ -107,22 +109,30 @@ struct ProvideAlgebraOperations<Affine<X>, X> {
     //! \brief The derivative of an affine expression gives a constant.
     friend inline X derivative(const Affine<X>& f, Nat k) { return f.derivative(k); }
 
+    /** @brief Return the sum or unary positive value. */
     template<GenericNumber Y>
     friend decltype(auto) operator+(const Affine<X>& x, const Y& y) { return x + factory(x).create(y); }
+    /** @brief Return the difference or additive inverse. */
     template<GenericNumber Y>
     friend decltype(auto) operator-(const Affine<X>& x, const Y& y) { return x - factory(x).create(y); }
+    /** @brief Return the product. */
     template<GenericNumber Y>
     friend decltype(auto) operator*(const Affine<X>& x, const Y& y) { return x * factory(x).create(y); }
+    /** @brief Return the quotient. */
     template<GenericNumber Y>
     friend decltype(auto) operator/(const Affine<X>& x, const Y& y) { return x / factory(x).create(y); }
+    /** @brief Return the sum or unary positive value. */
     template<GenericNumber Y>
     friend decltype(auto) operator+(const Y& y, const Affine<X>& x) { return factory(x).create(y) + x; }
+    /** @brief Return the difference or additive inverse. */
     template<GenericNumber Y>
     friend decltype(auto) operator-(const Y& y, const Affine<X>& x) { return factory(x).create(y) - x; }
+    /** @brief Return the product. */
     template<GenericNumber Y>
     friend decltype(auto) operator*(const Y& y, const Affine<X>& x) { return factory(x).create(y) * x; }
 };
 
+/** @brief Return a factory for compatible objects. */
 template<class X>
 FloatFactory<PrecisionType<X>> factory(const Affine<X>& a) {
     return FloatFactory<PrecisionType<X>>(a.value().precision());
@@ -154,15 +164,20 @@ class Affine
     typedef Tuple<SizeType, CoefficientCharacteristicsType> CharacteristicsType;
 
   public:
+    /** @brief Construct a \c Affine from n, prs. */
     template<class... PRS>
         requires Constructible<X, PRS...>
     explicit Affine(SizeType n, PRS... prs) : _c(0, prs...), _g(n, prs...) {}
+    /** @brief Construct a \c Affine from g, c. */
     explicit Affine(const Covector<X>& g, const X& c) : _c(c), _g(g) {}
+    /** @brief Construct a \c Affine from c, g. */
     explicit Affine(X c, InitializerList<X> g) : _c(c), _g(g) {}
+    /** @brief Copy-construct the object from the supplied instance. */
     template<class XX>
     explicit Affine(const Affine<XX>& aff)
         : _c(aff.b()), _g(aff.a()) {}
 
+    /** @brief Assign the supplied value and return this object. */
     Affine<X>& operator=(const X& c) {
         this->_c = c;
         for (SizeType i = 0; i != this->_g.size(); ++i) {
@@ -170,47 +185,64 @@ class Affine
         }
         return *this;
     }
+    /** @brief Construct a constant with the supplied value. */
     static Affine<X> constant(SizeType n, X c) {
         return Affine<X>(Covector<X>(n, nul(c)), c);
     }
+    /** @brief Construct or return the selected coordinate. */
     template<class... PRS>
         requires Constructible<X, Nat, PRS...>
     static Affine<X> coordinate(SizeType n, SizeType j, PRS... prs) {
         return Affine<X>(Covector<X>::unit(n, j, prs...), X(0u, prs...));
     }
+    /** @brief Construct or return the coordinate family. */
     template<class... PRS>
         requires Constructible<X, Nat, PRS...>
     static Vector<Affine<X>> coordinates(SizeType n, PRS... prs) {
         return Vector<Affine<X>>(n, [&](SizeType i) { return Affine<X>::coordinate(n, i, prs...); }, Affine<X>(n, prs...));
     }
+    /** @brief Construct the selected independent variable. */
     template<class... PRS>
         requires Constructible<X, Nat, PRS...>
     static Affine<X> variable(SizeType n, SizeType j, PRS... prs) { return coordinate(n, j, prs...); }
+    /** @brief Construct the independent variables. */
     template<class... PRS>
         requires Constructible<X, Nat, PRS...>
     static Vector<Affine<X>> variables(SizeType n, PRS... prs) { return coordinates(n, prs...); }
 
+    /** @brief Return the selected element or component. */
     const X& operator[](SizeType i) const { return this->_g[i]; }
+    /** @brief Return the selected element or component. */
     X& operator[](Nat i) { return this->_g[i]; }
 
+    /** @brief Return the linear coefficients of the affine object. */
     const Covector<X>& a() const { return this->_g; }
+    /** @brief Return the constant part of the affine object. */
     const X& b() const { return this->_c; }
 
+    /** @brief Return the vector of first partial derivatives. */
     const Covector<X>& gradient() const { return this->_g; }
+    /** @brief Return the vector of first partial derivatives. */
     const X& gradient(SizeType i) const { return this->_g[i]; }
+    /** @brief Return the stored value. */
     const X& value() const { return this->_c; }
 
+    /** @brief Return the number of scalar arguments. */
     SizeType argument_size() const { return this->_g.size(); }
+    /** @brief Return the common characteristics of the coefficients. */
     CoefficientCharacteristicsType coefficient_characteristics() const {
         return get_characteristics(this->_c);
     }
+    /** @brief Return the characteristics required to construct compatible values. */
     CharacteristicsType characteristics() const {
         return std::make_tuple(this->argument_size(), this->coefficient_characteristics());
     }
 
+    /** @brief Evaluate at the supplied argument. */
     template<class Y>
     Y evaluate(const Vector<Y>& x) const;
 
+    /** @brief Return the derivative with respect to the selected argument. */
     const X& derivative(SizeType j) const { return this->_g[j]; }
 
   private:
@@ -231,6 +263,7 @@ Y Affine<X>::evaluate(const Vector<Y>& x) const {
     return r;
 }
 
+/** @brief Write the value to the output stream. */
 template<class X>
 OutputStream& operator<<(OutputStream& os, const Affine<X>& f) {
     os << f.b();

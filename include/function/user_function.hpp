@@ -51,8 +51,11 @@ namespace Ariadne {
 //! \brief Template structure containing scalar function meta-information.
 template<SizeType AS, SizeType PS = 0u, DegreeType SM = 255u>
 struct ScalarMultivariateFunctionData {
+    /** @brief Return the number of scalar arguments. */
     static SizeType argument_size() { return AS; }
+    /** @brief Return the number of parameters. */
     static SizeType parameter_size() { return PS; }
+    /** @brief Return the supported differentiation order. */
     static DegreeType smoothness() { return SM; }
 };
 
@@ -72,44 +75,59 @@ template<class F>
 class ScalarUserFunction
     : public EffectiveScalarMultivariateFunction {
   private:
+    /** @brief Non-owning wrapper selecting representation output for a value. */
     class Representation
         : public ScalarMultivariateFunctionMixin<Representation, EffectiveTag> {
       private:
         Vector<EffectiveNumber> _p;
 
       public:
+        /** @brief Construct a \c Representation from p. */
         Representation(const Vector<EffectiveNumber>& p) : _p(p) {}
 
+        /** @brief Compute the value at the requested accuracy or effort. */
         template<class R, class A>
         inline Void _compute(R& r, const A& a) const { F::compute(r, a, _p); }
 
+        /** @brief Return a dynamically allocated copy preserving the concrete type. */
         virtual Representation* clone() const { return new Representation(*this); }
 
+        /** @brief Return the number of scalar arguments. */
         virtual SizeType argument_size() const { return F::argument_size(); }
+        /** @brief Return the number of parameters. */
         virtual SizeType parameter_size() const { return F::parameter_size(); }
 
+        /** @brief Return the derivative with respect to the selected argument. */
         virtual EffectiveScalarMultivariateFunction derivative(SizeType) const { ARIADNE_NOT_IMPLEMENTED; }
 
+        /** @brief Return the vector of first partial derivatives. */
         virtual Covector<FloatDPApproximation> gradient(const Vector<FloatDPApproximation>& x) const {
             return this->evaluate(Differential<FloatDPApproximation>::variables(1u, x)).gradient();
         }
+        /** @brief Return the vector of first partial derivatives. */
         virtual Covector<FloatDPBounds> gradient(const Vector<FloatDPBounds>& x) const {
             return this->evaluate(Differential<FloatDPBounds>::variables(1u, x)).gradient();
         }
 
+        /** @brief Write the representation of the object. */
         virtual OutputStream& repr(OutputStream& os) const {
             return os << "USER";
         }
+        /** @brief Write the value to the output stream. */
         virtual OutputStream& _write(OutputStream& os) const {
             return os << "ScalarUserFunction( argument_size=" << this->argument_size() << " )";
         }
     };
 
   public:
+    /** @brief Construct a \c ScalarUserFunction with the specified characteristics. */
     ScalarUserFunction() : EffectiveScalarMultivariateFunction(new Representation(Vector<EffectiveNumber>(this->parameter_size()))) {}
+    /** @brief Construct a \c ScalarUserFunction from p. */
     ScalarUserFunction(const Vector<Real>& p) : EffectiveScalarMultivariateFunction(new Representation(Vector<EffectiveNumber>(p))) {}
+    /** @brief Construct a \c ScalarUserFunction from p. */
     ScalarUserFunction(const Vector<EffectiveNumber>& p) : EffectiveScalarMultivariateFunction(new Representation(p)) {}
 
+    /** @brief Return the number of parameters. */
     SizeType parameter_size() const { return F().parameter_size(); }
     // const Vector<ValidatedNumericType> parameters() const { return _p; }
 };
@@ -119,12 +137,16 @@ template<SizeType RS, SizeType AS, SizeType PS = 0u, DegreeType SM = 255u>
 class VectorMultivariateFunctionData {
   public:
     //!
+    /** @brief Return the number of result components. */
     static SizeType result_size() { return RS; }
     //!
+    /** @brief Return the number of scalar arguments. */
     static SizeType argument_size() { return AS; }
     //!
+    /** @brief Return the number of parameters. */
     static SizeType parameter_size() { return PS; }
     //!
+    /** @brief Return the supported differentiation order. */
     static DegreeType smoothness() { return SM; }
 };
 
@@ -146,32 +168,44 @@ class VectorUserFunction
     typedef DoublePrecision PR;
 
   private:
+    /** @brief Non-owning wrapper selecting representation output for a value. */
     class Representation
         : public VectorMultivariateFunctionMixin<Representation, EffectiveTag> {
       public:
+        /** @brief Construct a \c Representation from p. */
         Representation(const Vector<EffectiveNumber>& p) : _p(p) {}
 
+        /** @brief Return a dynamically allocated copy preserving the concrete type. */
         virtual Representation* clone() const { return new Representation(*this); }
 
+        /** @brief Return the number of result components. */
         virtual SizeType result_size() const { return F::result_size(); }
+        /** @brief Return the number of scalar arguments. */
         virtual SizeType argument_size() const { return F::argument_size(); }
+        /** @brief Return the number of parameters. */
         virtual SizeType parameter_size() const { return F::parameter_size(); }
 
+        /** @brief Compute the value at the requested accuracy or effort. */
         template<class R, class A>
         inline Void _compute(R& r, const A& a) const { F::compute(r, a, _p); }
 
+        /** @brief Return the matrix of first partial derivatives. */
         virtual Matrix<FloatDPApproximation> jacobian(const Vector<FloatDPApproximation>& x) const {
             return Ariadne::jacobian(this->evaluate(Differential<FloatDPApproximation>::variables(1u, x)));
         }
+        /** @brief Return the matrix of first partial derivatives. */
         virtual Matrix<FloatDPBounds> jacobian(const Vector<FloatDPBounds>& x) const {
             return Ariadne::jacobian(this->evaluate(Differential<FloatDPBounds>::variables(1u, x)));
         }
 
+        /** @brief Return the requested element or stored value. */
         virtual EffectiveScalarMultivariateFunction::Interface* _get(SizeType) const { ARIADNE_NOT_IMPLEMENTED; }
+        /** @brief Return the selected element or component. */
         virtual EffectiveScalarMultivariateFunction operator[](SizeType) const { ARIADNE_NOT_IMPLEMENTED; }
 
         // TODO: Find a better way for writing functions which can handle transformations which may not have a
         // _write() method or operator<<.
+        /** @brief Write the value to the output stream. */
         virtual OutputStream& _write(OutputStream& os) const {
             return os << "VectorUserFunction( result_size=" << this->result_size() << ", argument_size=" << this->argument_size() << " )";
         }
@@ -180,7 +214,9 @@ class VectorUserFunction
     };
 
   public:
+    /** @brief Construct a \c VectorUserFunction from p. */
     VectorUserFunction(const Vector<EffectiveNumber>& p) : EffectiveVectorMultivariateFunction(new Representation(p)) {}
+    /** @brief Return the stored parameters. */
     const Vector<EffectiveNumber>& parameters() const { return dynamic_cast<const Representation*>(this->raw_pointer())->_p; }
 };
 

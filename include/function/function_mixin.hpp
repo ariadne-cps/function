@@ -58,6 +58,7 @@ typedef ElementaryAlgebra<ApproximateNumber> ApproximateElementaryAlgebra;
 typedef ElementaryAlgebra<ValidatedNumber> ValidatedElementaryAlgebra;
 typedef ElementaryAlgebra<EffectiveNumber> EffectiveElementaryAlgebra;
 
+/** @brief Reusable implementation of function. */
 template<class F, class P, class SIG, class I = FunctionInterface<P, SIG>>
 class FunctionMixin {};
 template<class F, class P, class... ARGS>
@@ -73,24 +74,31 @@ using ScalarMultivariateFunctionMixin = ScalarFunctionMixin<F, P, RealVector>;
 template<class F, class P>
 using VectorMultivariateFunctionMixin = VectorFunctionMixin<F, P, RealVector>;
 
+/** @brief Return a dynamically allocated copy. */
 template<class T>
 T* heap_copy(const T& t) { return new T(t); }
+/** @brief Return a dynamically allocated moved value. */
 template<class T>
 T* heap_move(T&& t) { return new T(std::move(t)); }
 
+/** @brief Return a dynamically allocated copy. */
 template<class P, class D>
 ScalarFunctionInterface<P, D>* heap_copy(const ScalarFunction<P, D>& f) { return f.raw_pointer()->_clone(); }
 
+/** @brief Construct domain from the supplied arguments. */
 template<class D>
 D make_domain(SizeType d);
+/** @brief Construct domain from the supplied arguments. */
 template<>
 inline IntervalDomainType make_domain(SizeType d) {
     ARIADNE_PRECONDITION(d == 1u);
     return IntervalDomainType(-inf, +inf);
 }
+/** @brief Construct domain from the supplied arguments. */
 template<>
 inline BoxDomainType make_domain(SizeType d) { return BoxDomainType(d, IntervalDomainType(-inf, +inf)); }
 
+/** @brief Reusable implementation of function. */
 template<class F, class SIG, class I>
 class FunctionMixin<F, Void, SIG, I> {
     using D = typename SignatureTraits<SIG>::DomainType;
@@ -103,15 +111,20 @@ class FunctionMixin<F, Void, SIG, I> {
     typedef typename FunctionInterface<Void, SIG>::ResultSizeType ResultSizeType;
 
   protected:
+    /** @brief Construct a \c FunctionMixin with the specified characteristics. */
     FunctionMixin() {}
+    /** @brief Evaluate with the supplied arguments using the concrete implementation. */
     template<class X>
     ElementType<C, X> _base_call(const ElementType<D, X>& x) const;
 
   protected:
+    /** @brief Write the underlying function object. */
     OutputStream& _write_base(OutputStream& os) const { return os << static_cast<const F&>(*this); }
+    /** @brief Write the representation of the underlying function object. */
     OutputStream& _repr_base(OutputStream& os) const { return os << representation(static_cast<const F&>(*this)); }
 };
 
+/** @brief Reusable implementation of function. */
 template<class F, class SIG, class I>
 class FunctionMixin<F, ApproximateTag, SIG, I>
     : public virtual I,
@@ -127,26 +140,42 @@ class FunctionMixin<F, ApproximateTag, SIG, I>
     using Result = typename SignatureTraits<SIG>::template Result<X>;
 
   public:
+    /** @brief Return the number of scalar arguments. */
     virtual ArgumentSizeType argument_size() const override = 0;
+    /** @brief Return the number of result components. */
     virtual ResultSizeType result_size() const override = 0;
+    /** @brief Return a dynamically allocated copy preserving the concrete type. */
     virtual FunctionInterface<ApproximateTag, SIG>* _clone() const override;
+    /** @brief Return the derivative with respect to the selected argument. */
     virtual FunctionInterface<ApproximateTag, SIG>* _derivative(ElementIndexType<D> i) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ApproximateNumber> _call(const Argument<ApproximateNumber>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatDPApproximation> _call(const Argument<FloatDPApproximation>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatMPApproximation> _call(const Argument<FloatMPApproximation>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatDPApproximation>> _call(const Argument<Differential<FloatDPApproximation>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatMPApproximation>> _call(const Argument<Differential<FloatMPApproximation>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ApproximateTag, FloatDP>> _call(const Argument<TaylorModel<ApproximateTag, FloatDP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ApproximateTag, FloatMP>> _call(const Argument<TaylorModel<ApproximateTag, FloatMP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Formula<ApproximateNumber>> _call(const Argument<Formula<ApproximateNumber>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ElementaryAlgebra<ApproximateNumber>> _call(const Argument<ElementaryAlgebra<ApproximateNumber>>& x) const override;
 
   protected:
+    /** @brief Write the value to the output stream. */
     virtual OutputStream& _write(OutputStream& os) const override { return this->_write_base(os); }
+    /** @brief Write the representation of the object. */
     virtual OutputStream& _repr(OutputStream& os) const override { return this->_repr_base(os); }
 };
 
 // A wrapper for classes with non-static _compute and _compute_approx methods
+/** @brief Reusable implementation of function. */
 template<class F, class SIG, class I>
 class FunctionMixin<F, ValidatedTag, SIG, I>
     : public virtual I,
@@ -161,41 +190,71 @@ class FunctionMixin<F, ValidatedTag, SIG, I>
     using Result = typename SignatureTraits<SIG>::template Result<X>;
 
   public:
+    /** @brief Return the number of scalar arguments. */
     virtual ArgumentSizeType argument_size() const override = 0;
+    /** @brief Return the number of result components. */
     virtual ResultSizeType result_size() const override = 0;
+    /** @brief Return a dynamically allocated copy preserving the concrete type. */
     virtual FunctionInterface<ValidatedTag, SIG>* _clone() const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ApproximateNumber> _call(const Argument<ApproximateNumber>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatDPApproximation> _call(const Argument<FloatDPApproximation>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatMPApproximation> _call(const Argument<FloatMPApproximation>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatDPApproximation>> _call(const Argument<Differential<FloatDPApproximation>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatMPApproximation>> _call(const Argument<Differential<FloatMPApproximation>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ApproximateTag, FloatDP>> _call(const Argument<TaylorModel<ApproximateTag, FloatDP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ApproximateTag, FloatMP>> _call(const Argument<TaylorModel<ApproximateTag, FloatMP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Formula<ApproximateNumber>> _call(const Argument<Formula<ApproximateNumber>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ElementaryAlgebra<ApproximateNumber>> _call(const Argument<ElementaryAlgebra<ApproximateNumber>>& x) const override;
+    /** @brief Return the derivative with respect to the selected argument. */
     virtual FunctionInterface<ValidatedTag, SIG>* _derivative(ElementIndexType<D> i) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ValidatedNumber> _call(const Argument<ValidatedNumber>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatDPBounds> _call(const Argument<FloatDPBounds>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatMPBounds> _call(const Argument<FloatMPBounds>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatDPBounds>> _call(const Argument<Differential<FloatDPBounds>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatMPBounds>> _call(const Argument<Differential<FloatMPBounds>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatDP>> _call(const Argument<TaylorModel<ValidatedTag, FloatDP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatMP>> _call(const Argument<TaylorModel<ValidatedTag, FloatMP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatDPBounds>> _call(const Argument<TaylorModel<ValidatedTag, FloatDPBounds>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatMPBounds>> _call(const Argument<TaylorModel<ValidatedTag, FloatMPBounds>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatDPUpperInterval>> _call(const Argument<TaylorModel<ValidatedTag, FloatDPUpperInterval>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatMPUpperInterval>> _call(const Argument<TaylorModel<ValidatedTag, FloatMPUpperInterval>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Formula<ValidatedNumber>> _call(const Argument<Formula<ValidatedNumber>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ElementaryAlgebra<ValidatedNumber>> _call(const Argument<ElementaryAlgebra<ValidatedNumber>>& x) const override;
 
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ValidatedScalarMultivariateFunction> _call(const Argument<ValidatedScalarMultivariateFunction>& x) const override;
 
   protected:
+    /** @brief Write the value to the output stream. */
     virtual OutputStream& _write(OutputStream& os) const override { return this->_write_base(os); }
+    /** @brief Write the representation of the object. */
     virtual OutputStream& _repr(OutputStream& os) const override { return this->_repr_base(os); }
 };
 
 // A wrapper for classes with non-static _compute and _compute_approx methods
+/** @brief Reusable implementation of function. */
 template<class F, class SIG, class I>
 class FunctionMixin<F, EffectiveTag, SIG, I>
     : public virtual I,
@@ -210,62 +269,103 @@ class FunctionMixin<F, EffectiveTag, SIG, I>
     using Result = typename SignatureTraits<SIG>::template Result<X>;
 
   public:
+    /** @brief Return the number of scalar arguments. */
     virtual ArgumentSizeType argument_size() const override = 0;
+    /** @brief Return the number of result components. */
     virtual ResultSizeType result_size() const override = 0;
+    /** @brief Return a dynamically allocated copy preserving the concrete type. */
     virtual FunctionInterface<EffectiveTag, SIG>* _clone() const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ApproximateNumber> _call(const Argument<ApproximateNumber>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatDPApproximation> _call(const Argument<FloatDPApproximation>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatMPApproximation> _call(const Argument<FloatMPApproximation>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatDPApproximation>> _call(const Argument<Differential<FloatDPApproximation>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatMPApproximation>> _call(const Argument<Differential<FloatMPApproximation>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ApproximateTag, FloatDP>> _call(const Argument<TaylorModel<ApproximateTag, FloatDP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ApproximateTag, FloatMP>> _call(const Argument<TaylorModel<ApproximateTag, FloatMP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Formula<ApproximateNumber>> _call(const Argument<Formula<ApproximateNumber>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ElementaryAlgebra<ApproximateNumber>> _call(const Argument<ElementaryAlgebra<ApproximateNumber>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ValidatedNumber> _call(const Argument<ValidatedNumber>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatDPBounds> _call(const Argument<FloatDPBounds>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<FloatMPBounds> _call(const Argument<FloatMPBounds>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatDPBounds>> _call(const Argument<Differential<FloatDPBounds>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Differential<FloatMPBounds>> _call(const Argument<Differential<FloatMPBounds>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatDP>> _call(const Argument<TaylorModel<ValidatedTag, FloatDP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatMP>> _call(const Argument<TaylorModel<ValidatedTag, FloatMP>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatDPBounds>> _call(const Argument<TaylorModel<ValidatedTag, FloatDPBounds>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatMPBounds>> _call(const Argument<TaylorModel<ValidatedTag, FloatMPBounds>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatDPUpperInterval>> _call(const Argument<TaylorModel<ValidatedTag, FloatDPUpperInterval>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<TaylorModel<ValidatedTag, FloatMPUpperInterval>> _call(const Argument<TaylorModel<ValidatedTag, FloatMPUpperInterval>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Formula<ValidatedNumber>> _call(const Argument<Formula<ValidatedNumber>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ElementaryAlgebra<ValidatedNumber>> _call(const Argument<ElementaryAlgebra<ValidatedNumber>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ValidatedScalarMultivariateFunction> _call(const Argument<ValidatedScalarMultivariateFunction>& x) const override;
+    /** @brief Return the derivative with respect to the selected argument. */
     virtual FunctionInterface<EffectiveTag, SIG>* _derivative(ElementIndexType<D> i) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<EffectiveNumber> _call(const Argument<EffectiveNumber>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Real> _call(const Argument<Real>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ElementaryAlgebra<Real>> _call(const Argument<ElementaryAlgebra<Real>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Formula<Real>> _call(const Argument<Formula<Real>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<ElementaryAlgebra<EffectiveNumber>> _call(const Argument<ElementaryAlgebra<EffectiveNumber>>& x) const override;
+    /** @brief Evaluate with the supplied arguments. */
     virtual Result<Formula<EffectiveNumber>> _call(const Argument<Formula<EffectiveNumber>>& x) const override;
 
   protected:
+    /** @brief Write the value to the output stream. */
     virtual OutputStream& _write(OutputStream& os) const override { return this->_write_base(os); }
+    /** @brief Write the representation of the object. */
     virtual OutputStream& _repr(OutputStream& os) const override { return this->_repr_base(os); }
 };
 
+/** @brief Reusable implementation of function getter. */
 template<class F, class P, class SIG>
 class FunctionGetterMixin;
 
+/** @brief Reusable implementation of function getter. */
 template<class F, class P, class... ARGS>
 class FunctionGetterMixin<F, P, RealScalar(ARGS...)> {
 };
 
+/** @brief Reusable implementation of function getter. */
 template<class F, class P, class... ARGS>
 class FunctionGetterMixin<F, P, RealVector(ARGS...)>
     : public virtual VectorOfFunctionInterface<P, ARGS...> {
+    /** @brief Return the requested element or stored value. */
     virtual ScalarFunctionInterface<P, ARGS...>* _get(SizeType i) const override;
 };
 
+/** @brief Reusable implementation of scalar function. */
 template<class F, class P, class... ARGS>
 class ScalarFunctionMixin
     : public FunctionMixin<F, P, RealScalar(ARGS...)> {};
 
+/** @brief Reusable implementation of vector function. */
 template<class F, class P, class... ARGS>
 class VectorFunctionMixin
     : public FunctionMixin<F, P, RealVector(ARGS...)>,
@@ -291,8 +391,10 @@ FunctionInterface<EffectiveTag, SIG>* FunctionMixin<F, EffectiveTag, SIG, I>::_c
     return new F(static_cast<const F&>(*this));
 }
 
+/** @brief Return a dynamically allocated moved value. */
 template<class T>
 inline T* _heap_move(T&& t) { return new T(std::forward<T>(t)); }
+/** @brief Return a dynamically allocated moved value. */
 template<class P, class SIG>
 inline FunctionInterface<P, SIG>* _heap_move(Function<P, SIG>&& f) {
     return f.raw_pointer()->_clone();

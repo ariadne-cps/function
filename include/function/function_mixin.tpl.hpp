@@ -39,8 +39,10 @@
 
 namespace Ariadne {
 
+/** @brief Create a result object with compatible dimension and characteristics. */
 template<class X>
 Scalar<X> create_result(SizeOne, X z) { return z; }
+/** @brief Create a result object with compatible dimension and characteristics. */
 template<class X>
 Vector<X> create_result(SizeType n, X z) { return Vector<X>(n, z); }
 

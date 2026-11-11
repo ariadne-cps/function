@@ -49,37 +49,52 @@
 
 namespace Ariadne {
 
+/** @brief Test equality of the operands. */
 template<class PR>
 Bool operator==(const Sweeper<PR>&, const Sweeper<PR>&) { return true; }
 
+/** @brief Exception reporting zero. */
 template<class F>
 class ZeroError {
   public:
+    /** @brief Construct a \c ZeroError with the specified characteristics. */
     template<class... PRS>
         requires Constructible<Error<F>, PRS...>
     ZeroError(PRS...) {}
+    /** @brief Return the underlying numeric representation. */
     F raw() const;
+    /** @brief Return the working precision. */
     typename F::PrecisionType precision() const;
+    /** @brief Convert to error< f >. */
     operator Error<F>() const;
 };
 
+/** @brief Exception reporting unknown. */
 template<class F>
 class UnknownError {
   public:
     //    template<class... PRS> requires Constructible<Error<F>,PRS...> UnknownError(PRS...) { }
+    /** @brief Construct a \c UnknownError with the specified characteristics. */
     template<class... PRS>
     UnknownError(PRS...) {}
+    /** @brief Test whether the operands have the same representation. */
     friend Bool same(const UnknownError&, const UnknownError&) { return true; }
+    /** @brief Return the underlying numeric representation. */
     F raw() const;
+    /** @brief Return the working precision. */
     typename F::PrecisionType precision() const;
+    /** @brief Convert to positive approximation< f >. */
     operator PositiveApproximation<F>() const;
 };
 
+/** @brief Return the display name of the type. */
 template<>
 String class_name<UnknownError<FloatDP>>();
+/** @brief Return the display name of the type. */
 template<>
 String class_name<UnknownError<FloatMP>>();
 
+/** @brief Pair of model operands used for product evaluation. */
 template<class T1, class T2>
 struct Product;
 
@@ -107,6 +122,7 @@ using ApproximateTaylorModelDP = TaylorModel<ApproximateTag, FloatDP>;          
 using ApproximateTaylorModelMP = TaylorModel<ApproximateTag, FloatMP>;                  //!< <p/>
 //!@}
 
+/** @brief Compile-time predicate testing whether a type is scalar. */
 template<class P, class F>
 struct IsScalar<TaylorModel<P, F>> {
     static const Bool value = true;
@@ -114,13 +130,17 @@ struct IsScalar<TaylorModel<P, F>> {
 
 class IntersectionException;
 
+/** @brief Exception reporting intersection. */
 class IntersectionException : public std::runtime_error {
   public:
+    /** @brief Construct a \c IntersectionException from what. */
     IntersectionException(const StringType& what) : std::runtime_error(what) {}
 };
 
+/** @brief Compile-time traits for model numeric. */
 template<class P, class F>
 struct ModelNumericTraits;
+/** @brief Compile-time traits for model numeric. */
 template<class F>
 struct ModelNumericTraits<ValidatedTag, Interval<UpperBound<F>>>
     : public FunctionModelTraits<ValidatedTag, PrecisionType<F>> {
@@ -129,6 +149,7 @@ struct ModelNumericTraits<ValidatedTag, Interval<UpperBound<F>>>
     //    typedef Bounds<F> NumericType;
     typedef F RawFloatType;
 };
+/** @brief Compile-time traits for model numeric. */
 template<class F>
 struct ModelNumericTraits<ValidatedTag, Bounds<F>>
     : public FunctionModelTraits<ValidatedTag, PrecisionType<F>> {
@@ -136,11 +157,13 @@ struct ModelNumericTraits<ValidatedTag, Bounds<F>>
     typedef Bounds<F> NumericType;
     typedef F RawFloatType;
 };
+/** @brief Compile-time traits for model numeric. */
 template<class F>
 struct ModelNumericTraits<ValidatedTag, F>
     : public FunctionModelTraits<ValidatedTag, PrecisionType<F>> {
     typedef F CoefficientType;
 };
+/** @brief Compile-time traits for model numeric. */
 template<class F>
 struct ModelNumericTraits<ApproximateTag, F>
     : public FunctionModelTraits<ApproximateTag, PrecisionType<F>> {
@@ -150,21 +173,26 @@ struct ModelNumericTraits<ApproximateTag, F>
 template<class P, class F>
 using ModelNumericType = typename ModelNumericTraits<P, F>::NumericType;
 
+/** @brief Associated type definitions for model numeric. */
 template<class P, class F>
 struct ModelNumericTypedef;
+/** @brief Associated type definitions for model numeric. */
 template<class F>
 struct ModelNumericTypedef<ValidatedTag, UpperInterval<F>> {
     typedef UpperInterval<F> Type;
 };
+/** @brief Associated type definitions for model numeric. */
 template<class F>
 struct ModelNumericTypedef<ValidatedTag, F> {
     typedef FloatBounds<typename F::PrecisionType> Type;
 };
+/** @brief Associated type definitions for model numeric. */
 template<class F>
 struct ModelNumericTypedef<ApproximateTag, F> {
     typedef FloatApproximation<typename F::PrecisionType> Type;
 };
 
+/** @brief Operations supported by algebra objects. */
 template<class P, class F>
 struct AlgebraOperations<TaylorModel<P, F>>
     : NormedAlgebraOperations<TaylorModel<P, F>> {
@@ -172,21 +200,37 @@ struct AlgebraOperations<TaylorModel<P, F>>
     typedef TaylorModel<P, F> ModelType;
     typedef ModelNumericType<P, F> NumericType;
     using NormedAlgebraOperations<TaylorModel<P, F>>::apply;
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Nul, const TaylorModel<P, F>& tm);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Pos, TaylorModel<P, F> tm);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Neg, TaylorModel<P, F> tm);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Add, TaylorModel<P, F> tm, const X& c);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Mul, TaylorModel<P, F> tm, const X& c);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Add, const TaylorModel<P, F>& tm1, const TaylorModel<P, F>& tm2);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Sub, const TaylorModel<P, F>& tm1, const TaylorModel<P, F>& tm2);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Mul, const TaylorModel<P, F>& tm1, const TaylorModel<P, F>& tm2);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Min, const TaylorModel<P, F>& tm1, const TaylorModel<P, F>& tm2);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Max, const TaylorModel<P, F>& tm1, const TaylorModel<P, F>& tm2);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Max, const TaylorModel<P, F>& tm, const X& c);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Min, const TaylorModel<P, F>& tm, const X& c);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Max, const X& c, const TaylorModel<P, F>& tm);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Min, const X& c, const TaylorModel<P, F>& tm);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Abs, const TaylorModel<P, F>& tm);
+    /** @brief Apply the supplied operation to the operands. */
     static TaylorModel<P, F> apply(Tanh, const TaylorModel<P, F>& tm);
 };
 
@@ -272,7 +316,9 @@ class TaylorModel
     TaylorModel(SizeType as, SweeperType swp);
     //! \brief Construct from a map giving the expansion, a constant giving the error, and an accuracy parameter.
     TaylorModel(const Expansion<MultiIndex, ExactDouble>& f, const ExactDouble& e, SweeperType swp);
+    /** @brief Construct a \c TaylorModel from f, e, swp. */
     TaylorModel(const Expansion<MultiIndex, CoefficientType>& f, const ErrorType& e, SweeperType swp);
+    /** @brief Construct a \c TaylorModel from f, e, swp. */
     TaylorModel(const Expansion<MultiIndex, RawFloatType>& f, const RawFloatType& e, SweeperType swp);
     //! \brief Fast swap with another Taylor model.
     Void swap(TaylorModel<P, F>& tm);
@@ -282,6 +328,7 @@ class TaylorModel
     TaylorModel<P, F> create_zero() const;
     //! \brief A constant element of the algebra of Taylor models, with the same number of arguments and accuracy parameters.
     TaylorModel<P, F> create_constant(NumericType c) const;
+    /** @brief Construct a constant object with the supplied value. */
     TaylorModel<P, F> create_constant(GenericNumericType) const;
     //! \brief The \a j<sup>th</sup> coordinate element of the algebra of Taylor models, with the same number of arguments and accuracy parameters.
     TaylorModel<P, F> create_coordinate(SizeType j) const;
@@ -296,6 +343,7 @@ class TaylorModel
     //
     //! \brief Set equal to an interval constant, keeping the same number of arguments.
     TaylorModel<P, F>& operator=(const NumericType& c);
+    /** @brief Assign the supplied value and return this object. */
     TaylorModel<P, F>& operator=(const GenericNumericType& c);
     //!@}
 
@@ -358,6 +406,7 @@ class TaylorModel
         return same(tm1._expansion, tm2._expansion) && same(tm1._error, tm2._error);
     }
 
+    /** @brief Test whether the first operand is less than the second. */
     decltype(auto) operator<(const TaylorModel<P, F>& sd) const {
         if constexpr (Same<P, ValidatedTag>) {
             return (sd - *this) > 0;
@@ -419,6 +468,7 @@ class TaylorModel
     NormType norm() const;
     //! \brief An over-approximation to the supremum norm.
     friend typename TaylorModel<P, F>::NormType norm(const TaylorModel<P, F>& tm) { return tm.norm(); }
+    /** @brief Return an upper bound on the absolute value. */
     friend typename TaylorModel<P, F>::NormType mag(const TaylorModel<P, F>& tm) { return tm.norm(); }
 
     //! \brief A value \c e such that analytic functions are evaluated to a tolerance of \c e. Equal to the sweep threshold.
@@ -432,6 +482,7 @@ class TaylorModel
     Void set_gradient(SizeType j, const CoefficientType& c) {
         this->_expansion.set(MultiIndex::unit(this->argument_size(), j), c);
     }
+    /** @brief Set the gradient. */
     Void set_gradient(SizeType j, const Dyadic& c) {
         this->set_gradient(j, CoefficientType(c, this->precision()));
     }
@@ -440,6 +491,7 @@ class TaylorModel
         ARIADNE_PRECONDITION(ne.raw() >= 0.0_x);
         this->_error = ne;
     }
+    /** @brief Set the error. */
     Void set_error(Nat m) { this->_error = m; }
 
     //! \brief The coefficient of the term in $x^a$.
@@ -462,6 +514,7 @@ class TaylorModel
     DegreeType degree() const;
     //! \brief The number of nonzero terms in the expansion.
     SizeType number_of_terms() const { return this->_expansion.number_of_terms(); }
+    /** @brief Return the number of nonzero stored terms. */
     SizeType number_of_nonzeros() const { return this->_expansion.number_of_nonzeros(); }
     //!@}
 
@@ -479,9 +532,11 @@ class TaylorModel
     friend ArithmeticType<CoefficientType, ApproximateNumericType> evaluate(const TaylorModel<P, F>& f, const Vector<ApproximateNumericType>& x) {
         return TaylorModel<P, F>::_evaluate(f, x);
     }
+    /** @brief Evaluate at the supplied argument. */
     friend ArithmeticType<CoefficientType, ValidatedNumericType> evaluate(const TaylorModel<P, F>& f, const Vector<ValidatedNumericType>& x) {
         return TaylorModel<P, F>::_evaluate(f, x);
     }
+    /** @brief Evaluate at the supplied argument. */
     template<class X = NumericType>
         requires(not Same<X, ValidatedNumericType>)
     friend ArithmeticType<CoefficientType, ValidatedNumericType> evaluate(const TaylorModel<P, F>& f, const Vector<X>& x) {
@@ -506,7 +561,9 @@ class TaylorModel
     //! \brief Scale the variable by post-composing with an affine map taking the interval ivl to the unit interval
     friend TaylorModel<P, F> compose(const TaylorModel<P, F>& tf, const VectorUnscaling& u);
 
+    /** @brief Evaluate at the supplied argument. */
     friend TaylorModel<P, F> evaluate(const TaylorModel<P, F>& f, const Vector<TaylorModel<P, F>>& g) { return compose(f, g); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class A>
     ArithmeticType<CoefficientType, A> operator()(const Vector<A>&) const;
     //!@}
@@ -524,14 +581,17 @@ class TaylorModel
     friend Covector<X> gradient(const TaylorModel<P, F>& x, const Vector<X>& v);
     //    Covector<X> gradient(Vector<X> const& v) const;
 
+    /** @brief Map from the physical domain to the normalized domain. */
     friend TaylorModel<P, F> unscale(TaylorModel<P, F> tm, const IntervalDomainType& dom) {
         tm.unscale(dom);
         return tm;
     }
+    /** @brief Return an antiderivative with respect to the selected argument. */
     friend TaylorModel<P, F> antiderivative(TaylorModel<P, F> tm, SizeType k) {
         tm.antidifferentiate(k);
         return tm;
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend TaylorModel<P, F> derivative(TaylorModel<P, F> tm, SizeType k) {
         tm.differentiate(k);
         return tm;
@@ -601,11 +661,13 @@ class TaylorModel
 
     //! \brief Remove all terms based on the \a swp conditions.
     TaylorModel<P, F>& sweep(const SweeperType& swp);
+    /** @brief Simplify the formula or model representation. */
     TaylorModel<P, F>& simplify(const SweeperType& prp);
 
     //! \brief Remove all terms whose coefficient has magnitude
     //! lower than the cutoff threshold of the quantity.
     TaylorModel<P, F>& sweep();
+    /** @brief Simplify the formula or model representation. */
     TaylorModel<P, F>& simplify();
     //! \brief Sorts keys.
     TaylorModel<P, F>& sort();
@@ -623,6 +685,7 @@ class TaylorModel
     //
     //! \brief Specify a policy to use to remove low-impact terms.
     Void set_sweeper(SweeperType swp) { this->_sweeper = swp; }
+    /** @brief Set the properties. */
     Void set_properties(PropertiesType prp) { this->_sweeper = prp; }
     //! \brief A shared pointer to an object using for removing low-impact terms.
     SweeperType sweeper() const { return this->_sweeper; }
@@ -658,29 +721,48 @@ class TaylorModel
     //!@}
 
   public:
+    /** @brief Return the string representation. */
     OutputStream& str(OutputStream&) const;
+    /** @brief Write the representation of the object. */
     OutputStream& repr(OutputStream&) const;
 
   public: // FIXME: Should be private
+    /** @brief Set the error. */
     Void _set_error(const RawFloat<PR>& ne) {
         ARIADNE_PRECONDITION(ne >= 0);
         this->_error = ErrorType(ne);
     }
+    /** @brief Append the supplied element or sequence. */
     Void _append(const MultiIndex& a, const CoefficientType& v) { this->_expansion.append(a, v); }
+    /** @brief Test whether the enclosures admit a common value. */
     static Bool _consistent(const TaylorModel<P, F>& tm1, const TaylorModel<P, F>& tm2);
+    /** @brief Test whether the enclosures cannot represent a common value. */
     static Bool _inconsistent(const TaylorModel<P, F>& tm1, const TaylorModel<P, F>& tm2);
+    /** @brief Test whether the first enclosure is contained in the second. */
     static Bool _refines(const TaylorModel<P, F>& tm1, const TaylorModel<P, F>& tm2);
+    /** @brief Return the common refinement of the enclosures. */
     static TaylorModel<P, F> _refinement(const TaylorModel<P, F>& tm1, const TaylorModel<P, F>& tm2);
+    /** @brief Embed the scalar error in the target model representation. */
     static TaylorModel<P, F> _embed_error(const TaylorModel<P, F>& tm);
+    /** @brief Eliminate the selected variables from the model. */
     static TaylorModel<P, F> _discard_variables(const TaylorModel<P, F>&, const Array<SizeType>& variables);
+    /** @brief Split the domain or model along the selected coordinate. */
     static TaylorModel<P, F> _split(const TaylorModel<P, F>& tm, SizeType k, SplitPart part);
+    /** @brief Embed in the larger argument space. */
     static TaylorModel<P, F> _embed(SizeType as1, const TaylorModel<P, F>& tm2, SizeType as3);
+    /** @brief Compose the outer object with the inner object. */
     static TaylorModel<P, F> _compose(const TaylorModel<P, F>& tf, const Vector<TaylorModel<P, F>>& tg);
+    /** @brief Compose the outer object with the inner object. */
     static TaylorModel<P, F> _compose(const Unscaling& uf, const TaylorModel<P, F>& tg);
+    /** @brief Fix the selected argument to the supplied value. */
     static TaylorModel<P, F> _partial_evaluate(const TaylorModel<P, F>& x, SizeType k, NumericType c);
+    /** @brief Return the vector of first partial derivatives. */
     static Covector<X> _gradient(const TaylorModel<P, F>& x, const Vector<X>& v);
+    /** @brief Evaluate at the supplied argument. */
     static ArithmeticType<CoefficientType, IntervalNumericType> _evaluate(const TaylorModel<P, F>& x, const Vector<IntervalNumericType>& v);
+    /** @brief Evaluate at the supplied argument. */
     static ArithmeticType<CoefficientType, ValidatedNumericType> _evaluate(const TaylorModel<P, F>& x, const Vector<ValidatedNumericType>& v);
+    /** @brief Evaluate at the supplied argument. */
     static ArithmeticType<CoefficientType, ApproximateNumericType> _evaluate(const TaylorModel<P, F>& x, const Vector<ApproximateNumericType>& v);
 };
 
@@ -691,6 +773,7 @@ auto TaylorModel<P, F>::operator()(const Vector<A>& x) const -> ArithmeticType<C
     return horner_evaluate(this->expansion(), x) + FloatBounds<typename F::PrecisionType>(-this->error(), +this->error());
 }
 
+/** @brief Test whether the enclosures cannot represent a common value. */
 template<class F>
 Bool inconsistent(const Vector<TaylorModel<ValidatedTag, F>>& tm1, const Vector<TaylorModel<ValidatedTag, F>>& tm2) {
     ARIADNE_ASSERT(tm1.size() == tm2.size());
@@ -702,6 +785,7 @@ Bool inconsistent(const Vector<TaylorModel<ValidatedTag, F>>& tm1, const Vector<
     return false;
 }
 
+/** @brief Test whether the first enclosure is contained in the second. */
 template<class F>
 Bool refines(const Vector<TaylorModel<ValidatedTag, F>>& tm1, const Vector<TaylorModel<ValidatedTag, F>>& tm2) {
     ARIADNE_ASSERT(tm1.size() == tm2.size());
@@ -713,6 +797,7 @@ Bool refines(const Vector<TaylorModel<ValidatedTag, F>>& tm1, const Vector<Taylo
     return true;
 }
 
+/** @brief Return the common refinement of the enclosures. */
 template<class F>
 Vector<TaylorModel<ValidatedTag, F>> refinement(const Vector<TaylorModel<ValidatedTag, F>>& tm1, const Vector<TaylorModel<ValidatedTag, F>>& tm2) {
     ARIADNE_ASSERT(tm1.size() == tm2.size());
@@ -723,12 +808,14 @@ Vector<TaylorModel<ValidatedTag, F>> refinement(const Vector<TaylorModel<Validat
     return r;
 }
 
+/** @brief Evaluate at the supplied argument. */
 template<class P, class F, class X>
 decltype(auto) evaluate(const Vector<TaylorModel<P, F>>& tf, const Vector<X>& x) {
     typedef decltype(evaluate(tf[0], x)) R;
     return Vector<R>(tf.size(), [&](SizeType i) { return evaluate(tf[i], x); }, characteristics(evaluate(tf.zero_element(), x)));
 }
 
+/** @brief Fix the selected argument to the supplied value. */
 template<class F>
 Vector<TaylorModel<ValidatedTag, F>> partial_evaluate(const Vector<TaylorModel<ValidatedTag, F>>& tf, SizeType k, const typename TaylorModel<ValidatedTag, F>::NumericType& c) {
     Vector<TaylorModel<ValidatedTag, F>> r(tf.size(), ValidatedTaylorModel<F>::zero(tf.zero_element().argument_size() - 1u, tf.zero_element().sweeper()));
@@ -738,6 +825,7 @@ Vector<TaylorModel<ValidatedTag, F>> partial_evaluate(const Vector<TaylorModel<V
     return r;
 }
 
+/** @brief Compose the outer object with the inner object. */
 template<class F>
 Vector<TaylorModel<ValidatedTag, F>> compose(const Vector<TaylorModel<ValidatedTag, F>>& tf, const Vector<TaylorModel<ValidatedTag, F>>& tg) {
     Vector<TaylorModel<ValidatedTag, F>> r(tf.size(), tg.zero_element());
@@ -747,6 +835,7 @@ Vector<TaylorModel<ValidatedTag, F>> compose(const Vector<TaylorModel<ValidatedT
     return r;
 }
 
+/** @brief Map from the physical domain to the normalized domain. */
 template<class P, class F>
 Vector<TaylorModel<P, F>> unscale(const Vector<TaylorModel<P, F>>& x, const Vector<IntervalDomainType>& dom) {
     Vector<TaylorModel<P, F>> r(x.size());
@@ -756,12 +845,14 @@ Vector<TaylorModel<P, F>> unscale(const Vector<TaylorModel<P, F>>& x, const Vect
     return r;
 }
 
+/** @brief Compose the outer object with the inner object. */
 template<class P, class F>
 Vector<TaylorModel<P, F>> compose(const VectorUnscaling& u, const Vector<TaylorModel<P, F>>& g) {
     ARIADNE_PRECONDITION_MSG(u.size() == g.size(), "u=" << u.domain() << ", g=" << g);
     return Vector<TaylorModel<P, F>>(u.size(), [&u, &g](SizeType i) { return compose(u[i], g[i]); });
 }
 
+/** @brief Compose the outer object with the inner object. */
 template<class P, class F>
 Vector<TaylorModel<P, F>> compose(const Vector<TaylorModel<P, F>>& x,
                                   const VectorUnscaling& u,
@@ -769,6 +860,7 @@ Vector<TaylorModel<P, F>> compose(const Vector<TaylorModel<P, F>>& x,
     return compose(x, compose(u, y));
 }
 
+/** @brief Return an antiderivative with respect to the selected argument. */
 template<class P, class F>
 Vector<TaylorModel<P, F>> antiderivative(const Vector<TaylorModel<P, F>>& x, SizeType k) {
     Vector<TaylorModel<P, F>> r(x.size());
@@ -778,6 +870,7 @@ Vector<TaylorModel<P, F>> antiderivative(const Vector<TaylorModel<P, F>>& x, Siz
     return r;
 }
 
+/** @brief Return the derivative with respect to the selected argument. */
 template<class P, class F>
 Vector<TaylorModel<P, F>> derivative(const Vector<TaylorModel<P, F>>& x, SizeType k) {
     Vector<TaylorModel<P, F>> r(x.size());
@@ -787,16 +880,19 @@ Vector<TaylorModel<P, F>> derivative(const Vector<TaylorModel<P, F>>& x, SizeTyp
     return r;
 }
 
+/** @brief Combine the operands over their respective arguments. */
 template<class P, class F>
 Vector<TaylorModel<P, F>> combine(const Vector<TaylorModel<P, F>>& x1, const Vector<TaylorModel<P, F>>& x2) {
     return join(embed(0u, x1, x2.zero_element().argument_size()), embed(x1.zero_element().argument_size(), x2, 0u));
 }
 
+/** @brief Embed in the larger argument space. */
 template<class F>
 Vector<TaylorModel<ValidatedTag, F>> embed(SizeType as1, const Vector<TaylorModel<ValidatedTag, F>>& x2, SizeType as3) {
     return Vector<TaylorModel<ValidatedTag, F>>(x2.size(), [as1, &x2, as3](SizeType i) { return embed(as1, x2[i], as3); });
 }
 
+/** @brief Split the domain or model along the selected coordinate. */
 template<class P, class F>
 Vector<TaylorModel<P, F>> split(const Vector<TaylorModel<P, F>>& x, SizeType j, SplitPart h) {
     Vector<TaylorModel<P, F>> r(x.size(), x.zero_element());
@@ -806,6 +902,7 @@ Vector<TaylorModel<P, F>> split(const Vector<TaylorModel<P, F>>& x, SizeType j, 
     return r;
 }
 
+/** @brief Return the component range enclosures. */
 template<class P, class F>
 Vector<typename TaylorModel<P, F>::RangeType> ranges(const Vector<TaylorModel<P, F>>& f) {
     Vector<typename TaylorModel<P, F>::RangeType> r(f.size());
@@ -815,6 +912,7 @@ Vector<typename TaylorModel<P, F>::RangeType> ranges(const Vector<TaylorModel<P,
     return r;
 }
 
+/** @brief Return the component error bounds. */
 template<class P, class F>
 Vector<typename TaylorModel<P, F>::ErrorType> errors(const Vector<TaylorModel<P, F>>& h) {
     Vector<typename TaylorModel<P, F>::ErrorType> e(h.size());
@@ -824,6 +922,7 @@ Vector<typename TaylorModel<P, F>::ErrorType> errors(const Vector<TaylorModel<P,
     return e;
 }
 
+/** @brief Return the component norms. */
 template<class P, class F>
 Vector<typename TaylorModel<P, F>::NormType> norms(const Vector<TaylorModel<P, F>>& h) {
     Vector<typename TaylorModel<P, F>::NormType> r(h.size());
@@ -833,6 +932,7 @@ Vector<typename TaylorModel<P, F>::NormType> norms(const Vector<TaylorModel<P, F
     return r;
 }
 
+/** @brief Return the norm. */
 template<class P, class F>
 typename TaylorModel<P, F>::NormType norm(const Vector<TaylorModel<P, F>>& h) {
     typename TaylorModel<P, F>::NormType r = 0u;
@@ -844,14 +944,19 @@ typename TaylorModel<P, F>::NormType norm(const Vector<TaylorModel<P, F>>& h) {
 
 template<class F>
 Matrix<Bounds<F>> jacobian(const Vector<TaylorModel<ValidatedTag, F>>& x, const Vector<Bounds<F>>& y);
+/** @brief Return the matrix of first partial derivatives. */
 template<class F>
 Matrix<Bounds<F>> jacobian(const Vector<TaylorModel<ValidatedTag, F>>& x, const Vector<Bounds<F>>& y, Array<SizeType>& p);
+/** @brief Return the Jacobian value at the supplied argument. */
 template<class F>
 Matrix<F> jacobian_value(const Vector<TaylorModel<ValidatedTag, F>>& x);
+/** @brief Return the Jacobian value at the supplied argument. */
 template<class F>
 Matrix<F> jacobian_value(const Vector<TaylorModel<ValidatedTag, F>>& x, const Array<SizeType>& p);
+/** @brief Enclose the Jacobian over the supplied argument set. */
 template<class F>
 Matrix<UpperInterval<F>> jacobian_range(const Vector<TaylorModel<ValidatedTag, F>>& x);
+/** @brief Enclose the Jacobian over the supplied argument set. */
 template<class F>
 Matrix<UpperInterval<F>> jacobian_range(const Vector<TaylorModel<ValidatedTag, F>>& x, const Array<SizeType>& p);
 

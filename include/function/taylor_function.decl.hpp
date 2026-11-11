@@ -39,7 +39,9 @@ class Sweeper;
 template<class P>
 class FunctionPatchFactoryInterface;
 
+/** @brief Construct taylor function patch factory from the supplied arguments. */
 FunctionPatchFactoryInterface<ValidatedTag>* make_taylor_function_patch_factory();
+/** @brief Construct taylor function patch factory from the supplied arguments. */
 FunctionPatchFactoryInterface<ValidatedTag>* make_taylor_function_patch_factory(const Sweeper<FloatDP>& sweeper);
 
 } // namespace Ariadne

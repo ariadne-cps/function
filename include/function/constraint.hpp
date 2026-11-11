@@ -51,39 +51,51 @@ class Constraint {
 
   public:
     //! <p/>
+    /** @brief Construct a \c Constraint from l, f, u. */
     Constraint(const LowerBoundType& l, const FunctionType& f, const UpperBoundType& u)
         : _function(f), _lower_bound(l), _upper_bound(u) { ARIADNE_ASSERT_MSG(decide(l <= u), "f=" << f << "\nl=" << l << ", u=" << u); }
 
     //! <p/>
+    /** @brief Construct a \c Constraint from f, x. */
     Constraint(const FunctionType& f, const BoundType& x)
         : _function(f), _lower_bound(x), _upper_bound(x) {}
 
+    /** @brief Copy-construct the object from the supplied instance. */
     template<ConvertibleTo<F> FF, ConvertibleTo<R> RR>
     Constraint(const Constraint<FF, RR>& c)
         : _function(static_cast<F>(c.function())), _lower_bound(c.lower_bound()), _upper_bound(c.upper_bound()) {}
 
+    /** @brief Construct a \c Constraint from l, f, u. */
     template<ConvertibleTo<F> FF, class RR>
         requires Constructible<R, RR, DoublePrecision>
     Constraint(const RR& l, const FF& f, const RR& u)
         : _function(static_cast<F>(f)), _lower_bound(l, dp), _upper_bound(u, dp) {}
 
+    /** @brief Copy-construct the object from the supplied instance. */
     template<ConvertibleTo<F> FF, class RR>
         requires Constructible<R, RR, DoublePrecision>
     Constraint(const Constraint<FF, RR>& c)
         : _function(static_cast<F>(c.function())), _lower_bound(c.lower_bound(), dp), _upper_bound(c.upper_bound(), dp) {}
 
+    /** @brief Set the function. */
     Void set_function(const FunctionType& f) { this->_function = f; }
+    /** @brief Return the constrained function. */
     FunctionType& function() { return this->_function; }
     //! <p/>
+    /** @brief Return the constrained function. */
     const FunctionType& function() const { return this->_function; }
     //! <p/>
+    /** @brief Return the number of scalar arguments. */
     SizeType argument_size() const { return this->_function.argument_size(); }
     //! <p/>
+    /** @brief Return the lower bound. */
     const LowerBoundType& lower_bound() const { return this->_lower_bound; }
     //! <p/>
+    /** @brief Return the upper bound. */
     const UpperBoundType& upper_bound() const { return this->_upper_bound; }
 
     // FIXME: This function should not be used as it breaks type safety
+    /** @brief Return the lower and upper bounds. */
     const Interval<FloatDP> bounds() const {
         DoublePrecision pr;
         return cast_exact(Interval<FloatDPUpperBound>({_lower_bound, pr}, {_upper_bound, pr}));
@@ -105,85 +117,105 @@ using ApproximateConstraint = Constraint<ApproximateScalarMultivariateFunction, 
 using ValidatedExactConstraint = Constraint<ValidatedScalarMultivariateFunction, ExactNumber>;      //!< <p/>
 //!@}
 
+/** @brief Write the value to the output stream. */
 template<class X, class R>
 OutputStream& operator<<(OutputStream& os, const Constraint<X, R>& c) {
     return os << c.lower_bound() << "<=" << c.function() << "<=" << c.upper_bound();
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline EffectiveConstraint operator<=(const EffectiveNumber& c, const EffectiveScalarMultivariateFunction& f) {
     return EffectiveConstraint(c, f, infinity);
 }
 
+/** @brief Test whether the first operand is greater than or equal to the second. */
 inline EffectiveConstraint operator>=(const EffectiveNumber& c, const EffectiveScalarMultivariateFunction& f) {
     return EffectiveConstraint(-infinity, f, c);
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline EffectiveConstraint operator<=(const EffectiveScalarMultivariateFunction& f, const EffectiveNumber& c) {
     return EffectiveConstraint(-infinity, f, c);
 }
 
+/** @brief Test whether the first operand is greater than or equal to the second. */
 inline EffectiveConstraint operator>=(const EffectiveScalarMultivariateFunction& f, const EffectiveNumber& c) {
     return EffectiveConstraint(c, f, infinity);
 }
 
+/** @brief Test equality of the operands. */
 inline EffectiveConstraint operator==(const EffectiveScalarMultivariateFunction& f, const EffectiveNumber& c) {
     return EffectiveConstraint(f, c);
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline EffectiveConstraint operator<=(const EffectiveScalarMultivariateFunction& f, double c) {
     return f <= Dyadic(c);
 }
 
+/** @brief Test whether the first operand is greater than or equal to the second. */
 inline EffectiveConstraint operator>=(const EffectiveScalarMultivariateFunction& f, double c) {
     return f >= Dyadic(c);
 }
 
+/** @brief Test equality of the operands. */
 inline EffectiveConstraint operator==(const EffectiveScalarMultivariateFunction& f, double c) {
     return f == Dyadic(c);
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline EffectiveConstraint operator<=(const EffectiveConstraint& nc, const EffectiveNumber& c) {
     ARIADNE_ASSERT(decide(nc.upper_bound() == infty));
     return EffectiveConstraint(nc.lower_bound(), nc.function(), c);
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline ValidatedExactConstraint operator<=(const ExactNumber& c, const ValidatedScalarMultivariateFunction& f) {
     return ValidatedExactConstraint(c, f, ExactNumber(+infty));
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline ValidatedExactConstraint operator<=(const ValidatedScalarMultivariateFunction& f, const ExactNumber& c) {
     return ValidatedExactConstraint(-infty, f, c);
 }
 
+/** @brief Test whether the first operand is greater than or equal to the second. */
 inline ValidatedExactConstraint operator>=(const ValidatedScalarMultivariateFunction& f, const ExactNumber& c) {
     return ValidatedExactConstraint(c, f, +infty);
 }
 
+/** @brief Test equality of the operands. */
 inline ValidatedExactConstraint operator==(const ValidatedScalarMultivariateFunction& f, const ExactNumber& c) {
     return ValidatedExactConstraint(c, f, c);
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline ValidatedExactConstraint operator<=(const ValidatedExactConstraint& nc, const ExactNumber& c) {
     ARIADNE_ASSERT(nc.upper_bound() == infty);
     return ValidatedExactConstraint(nc.lower_bound(), nc.function(), c);
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline ValidatedExactConstraint operator<=(const ValidatedScalarMultivariateFunction& f1, const ValidatedScalarMultivariateFunction& f2) {
     return (f1 - f2) <= ExactNumber(0);
 }
 
+/** @brief Test whether the first operand is greater than or equal to the second. */
 inline ValidatedExactConstraint operator>=(const ValidatedScalarMultivariateFunction& f1, const ValidatedScalarMultivariateFunction& f2) {
     return (f1 - f2) >= ExactNumber(0);
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline ValidatedConstraint operator<=(const ValidatedNumber& c, const ValidatedScalarMultivariateFunction& f) {
     return ValidatedConstraint(c, f, ExactNumber(+infty));
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline ValidatedConstraint operator<=(const ValidatedScalarMultivariateFunction& f, const ValidatedNumber& c) {
     return ValidatedConstraint(ExactNumber(-infty), f, c);
 }
 
+/** @brief Test whether the first operand is less than or equal to the second. */
 inline ValidatedConstraint operator<=(const ValidatedConstraint& nc, const ValidatedNumber& c) {
     ARIADNE_ASSERT(decide(nc.upper_bound() == infty));
     return ValidatedConstraint(nc.lower_bound(), nc.function(), c);

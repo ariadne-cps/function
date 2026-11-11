@@ -37,14 +37,22 @@
 
 namespace Ariadne {
 
+/** @brief Apply the supplied operation to the operands. */
 UpperIntervalType apply(const ValidatedScalarUnivariateFunction& f, const UpperIntervalType& ivl);
+/** @brief Apply the supplied operation to the operands. */
 UpperBoxType apply(const ValidatedVectorUnivariateFunction& f, const UpperIntervalType& ivl);
+/** @brief Apply the supplied operation to the operands. */
 UpperIntervalType apply(const ValidatedScalarMultivariateFunction& f, const UpperBoxType& bx);
+/** @brief Apply the supplied operation to the operands. */
 UpperBoxType apply(const ValidatedVectorMultivariateFunction& f, const UpperBoxType& bx);
 
+/** @brief Return the image of the supplied domain under the function. */
 UpperIntervalType image(const UpperIntervalType& ivl, const ValidatedScalarUnivariateFunction& f);
+/** @brief Return the image of the supplied domain under the function. */
 UpperBoxType image(const UpperIntervalType& ivl, const ValidatedVectorUnivariateFunction& f);
+/** @brief Return the image of the supplied domain under the function. */
 UpperIntervalType image(const UpperBoxType& bx, const ValidatedScalarMultivariateFunction& f);
+/** @brief Return the image of the supplied domain under the function. */
 UpperBoxType image(const UpperBoxType& bx, const ValidatedVectorMultivariateFunction& f);
 
 } // namespace Ariadne

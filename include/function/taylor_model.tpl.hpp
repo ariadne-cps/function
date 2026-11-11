@@ -84,50 +84,68 @@ template<class F>
 UnknownError<F> operator+(UnknownError<F>, UnknownError<F>) { return UnknownError<F>(); }
 template<class F>
 UnknownError<F> operator*(UnknownError<F>, UnknownError<F>) { return UnknownError<F>(); }
+/** @brief Add the operand in place. */
 template<class F>
 UnknownError<F>& operator+=(UnknownError<F>& e, const UnknownError<F>&) { return e; }
+/** @brief Multiply by the operand in place. */
 template<class F>
 UnknownError<F>& operator*=(UnknownError<F>& e, const UnknownError<F>&) { return e; }
 
+/** @brief Return the sum or unary positive value. */
 template<class F>
 UnknownError<F> operator+(UnknownError<F>, const PositiveApproximation<F>&) { return UnknownError<F>(); }
+/** @brief Add the operand in place. */
 template<class F>
 UnknownError<F>& operator+=(UnknownError<F>& e, const PositiveApproximation<F>&) { return e; }
+/** @brief Multiply by the operand in place. */
 template<class F>
 UnknownError<F>& operator*=(UnknownError<F>& e, const PositiveApproximation<F>&) { return e; }
+/** @brief Write the value to the output stream. */
 template<class F>
 OutputStream& operator<<(OutputStream& os, const UnknownError<F>&) { return os << "???"; }
+/** @brief Add the operand in place. */
 template<class F>
 UnknownError<F>& operator+=(UnknownError<F>& e, const ExactDouble&) { return e; }
 
+/** @brief Return the additive zero with the operand characteristics. */
 template<class F>
 const ZeroError<F>& nul(const ZeroError<F>& e) { return e; }
+/** @brief Return the sum or unary positive value. */
 template<class F>
 const PositiveUpperBound<F>& operator+(const PositiveUpperBound<F>& r, const ZeroError<F>&) { return r; }
+/** @brief Add the operand in place. */
 template<class F>
 PositiveUpperBound<F>& operator+=(PositiveUpperBound<F>&, const ZeroError<F>&) {}
+/** @brief Add the operand in place. */
 template<class F>
 ZeroError<F>& operator+=(ZeroError<F>&, const ZeroError<F>&) {}
 
+/** @brief Compute the product of the first two operands plus the third. */
 template<class F>
 Bounds<F> fma(const Bounds<F>& x1, const Bounds<F>& x2, Bounds<F> y) { return x1 * x2 + y; }
+/** @brief Divide by the operand in place. */
 template<class F>
 Bounds<F>& operator/=(Bounds<F>& x, TwoExp y) { return x *= Dyadic(rec(y)); }
 
+/** @brief Divide by the operand in place. */
 template<class F>
 Approximation<F>& operator/=(Approximation<F>& x, TwoExp y) { return x /= Dyadic(y); }
+/** @brief Compute the product of the first two operands plus the third. */
 template<class F>
 Approximation<F> fma(const Approximation<F>& x, const Approximation<F>& y, Approximation<F> z) {
     z._a = fma(near, x._a, y._a, z._a);
     return std::move(z);
 }
+/** @brief Return an enclosure enlarged by the supplied symmetric error. */
 template<class F>
 Approximation<F> pm(UnknownError<F> e) { return Approximation<F>(e.precision()); }
 
+/** @brief Divide by the operand in place. */
 template<class F>
 UpperInterval<F>& operator/=(UpperInterval<F>& ivl1, const ValidatedNumber& y2) {
     return ivl1 = ivl1 / y2;
 }
+/** @brief Divide by the operand in place. */
 template<class F>
 UpperInterval<F>& operator/=(UpperInterval<F>& ivl1, const Dyadic& w2) {
     return ivl1 = ivl1 / w2;
@@ -135,21 +153,26 @@ UpperInterval<F>& operator/=(UpperInterval<F>& ivl1, const Dyadic& w2) {
 
 // namespace {
 //  Operations for Interval<UpperBound<F>> coefficients
+/** @brief Convert to the singleton representation. */
 template<class X>
 const X& cast_singleton(const X& x) { return x; }
+/** @brief Convert to the singleton representation. */
 template<class F>
 Bounds<F> cast_singleton(const Interval<UpperBound<F>>& ivl) {
     return Bounds<F>(ivl.lower_bound(), ivl.upper_bound());
 }
 
+/** @brief Return the sum or unary positive value. */
 template<class F>
 ApproximateInterval<F> operator+(const ApproximateInterval<F>& x1, const ApproximateInterval<F>& x2) {
     return ApproximateInterval<F>(x1.lower_bound() + x2.lower_bound(), x1.upper_bound() + x2.upper_bound());
 }
+/** @brief Return the difference or additive inverse. */
 template<class F>
 ApproximateInterval<F> operator-(const ApproximateInterval<F>& x1, const ApproximateInterval<F>& x2) {
     return ApproximateInterval<F>(x1.lower_bound() - x2.upper_bound(), x1.upper_bound() - x2.lower_bound());
 }
+/** @brief Return the product. */
 template<class F>
 ApproximateInterval<F> operator*(const ApproximateInterval<F>& x1, const ApproximateInterval<F>& x2) {
     Bounds<F> b1(x1.lower_bound().raw(), x1.upper_bound().raw());
@@ -157,14 +180,17 @@ ApproximateInterval<F> operator*(const ApproximateInterval<F>& x1, const Approxi
     return make_interval(b1 * b2);
 }
 
+/** @brief Return the sum or unary positive value. */
 template<class F>
 ApproximateInterval<F> operator+(ApproximateInterval<F> x1, const Approximation<F>& x2) {
     return ApproximateInterval<F>(x1.lower_bound() + x2, x1.upper_bound() + x2);
 }
+/** @brief Return the difference or additive inverse. */
 template<class F>
 ApproximateInterval<F> operator-(ApproximateInterval<F> x1, const Approximation<F>& x2) {
     return ApproximateInterval<F>(x1.lower_bound() - x2, x1.upper_bound() - x2);
 }
+/** @brief Return the product. */
 template<class F>
 ApproximateInterval<F> operator*(ApproximateInterval<F> x1, const Approximation<F>& x2) {
     if (x2.raw() >= 0) {
@@ -173,14 +199,17 @@ ApproximateInterval<F> operator*(ApproximateInterval<F> x1, const Approximation<
         return ApproximateInterval<F>(x1.upper_bound() * x2, x1.lower_bound() * x2);
     }
 }
+/** @brief Return the sum or unary positive value. */
 template<class F>
 ApproximateInterval<F> operator+(const Approximation<F>& x1, ApproximateInterval<F> x2) {
     return ApproximateInterval<F>(x1 + x2.lower_bound(), x1 + x2.upper_bound());
 }
+/** @brief Return the difference or additive inverse. */
 template<class F>
 ApproximateInterval<F> operator-(const Approximation<F>& x1, ApproximateInterval<F> x2) {
     return ApproximateInterval<F>(x1 - x2.upper_bound(), x1 - x2.lower_bound());
 }
+/** @brief Return the product. */
 template<class F>
 ApproximateInterval<F> operator*(const Approximation<F>& x1, ApproximateInterval<F> x2) {
     return x2 * x1;
@@ -191,6 +220,7 @@ template<class F> ApproximateInterval<F> operator+(UpperInterval<F> x1, Approxim
 template<class F> ApproximateInterval<F> operator-(UpperInterval<F> x1, Approximation<F> const& x2) {
     return ApproximateInterval<F>(x1.lower_bound()-x2,x1.upper_bound()-x2); }
 */
+/** @brief Return the product. */
 template<class F>
 ApproximateInterval<F> operator*(const UpperInterval<F>& x1, const Approximation<F>& x2) {
     if (x2.raw() >= 0) {
@@ -205,15 +235,18 @@ template<class F> ApproximateInterval<F> operator+(Approximation<F> const& x1, U
 template<class F> ApproximateInterval<F> operator-(Approximation<F> const& x1, UpperInterval<F> x2) {
     return ApproximateInterval<F>(x1-x2.upper_bound(),x1-x2.lower_bound()); }
 */
+/** @brief Return the product. */
 template<class F>
 ApproximateInterval<F> operator*(const Approximation<F>& x1, const UpperInterval<F>& x2) {
     return x2 * x1;
 }
 
+/** @brief Return the product. */
 template<class F>
 ApproximateInterval<F> operator*(const UpperInterval<F>& x1, const ApproximateInterval<F>& x2) {
     return ApproximateInterval<F>(x1) * x2;
 }
+/** @brief Return the product. */
 template<class F>
 ApproximateInterval<F> operator*(const ApproximateInterval<F>& x1, const UpperInterval<F>& x2) {
     return x1 * ApproximateInterval<F>(x2);
@@ -221,59 +254,75 @@ ApproximateInterval<F> operator*(const ApproximateInterval<F>& x1, const UpperIn
 
 //} // namespace
 
+/** @brief Return an upper bound on the absolute value. */
 template<class F>
 PositiveUpperBound<F> mag(const Interval<UpperBound<F>>& ivl) {
     return cast_positive(max(-ivl.lower_bound(), ivl.upper_bound()));
 }
+/** @brief Return an upper bound on the absolute value. */
 template<class F>
 PositiveApproximation<F> mag(const Interval<Approximation<F>>& ivl) {
     return cast_positive(max(-ivl.lower_bound(), ivl.upper_bound()));
 }
 
+/** @brief Return the maximum of the operands. */
 template<class F>
 ValidatedIntervalTaylorModel<F> max(const ValidatedIntervalTaylorModel<F>& x1, const Bounds<F>& x2);
+/** @brief Return the maximum of the operands. */
 template<class F>
 ValidatedIntervalTaylorModel<F> max(const Bounds<F>& x1, const ValidatedIntervalTaylorModel<F>& x2);
+/** @brief Return the minimum of the operands. */
 template<class F>
 ValidatedIntervalTaylorModel<F> min(const ValidatedIntervalTaylorModel<F>& x1, const Bounds<F>& x2);
 template<class F>
 ValidatedIntervalTaylorModel<F> max(const Bounds<F>& x1, const ValidatedIntervalTaylorModel<F>& x2);
 
+/** @brief Test whether the first operand is less than the second. */
 inline Bool operator<(const MultiIndex& a1, const MultiIndex& a2) {
     return reverse_lexicographic_less(a1, a2);
 }
 
 namespace TaylorModelDetail {
 
+/** @brief Convert the interval to the requested endpoint representation. */
 using Ariadne::convert_interval;
 
 inline const ExactDouble MACHINE_EPSILON(2.2204460492503131e-16);
 
+/** @brief Convert the interval to the requested endpoint representation. */
 inline const Interval<FloatDPUpperBound>& convert_interval(const Interval<FloatDPUpperBound>& ivl, DoublePrecision) {
     return ivl;
 }
+/** @brief Convert the interval to the requested endpoint representation. */
 inline Interval<FloatDPUpperBound> convert_interval(const Interval<FloatMPUpperBound>& ivl, DoublePrecision pr) {
     return Interval<FloatDPUpperBound>(FloatDP(ivl.lower_bound().raw(), down, pr), FloatDP(ivl.upper_bound().raw(), up, pr));
 }
 
+/** @brief Convert the interval to the requested endpoint representation. */
 inline const Interval<FloatDPApproximation>& convert_interval(const Interval<FloatDPApproximation>& ivl, DoublePrecision) {
     return ivl;
 }
+/** @brief Convert the interval to the requested endpoint representation. */
 inline Interval<FloatDPApproximation> convert_interval(const Interval<FloatMPApproximation>& ivl, DoublePrecision pr) {
     return Interval<FloatDPApproximation>(FloatDP(ivl.lower_bound().raw(), near, pr), FloatDP(ivl.upper_bound().raw(), near, pr));
 }
 
+/** @brief Test whether the representation is identically zero. */
 template<class FLT>
 Bool is_same_as_zero(const Approximation<FLT>& xa) { return xa.raw() == 0; }
+/** @brief Test whether the representation is identically zero. */
 template<class FLT>
 Bool is_same_as_zero(const Bounds<FLT>& xb) { return xb.lower_raw() == 0 && xb.upper_raw() == 0; }
+/** @brief Test whether the representation is identically zero. */
 template<class FLT>
 Bool is_same_as_zero(FLT const& xv) { return xv == 0; }
+/** @brief Test whether the representation is identically zero. */
 template<class FLT>
 Bool is_same_as_zero(const UpperInterval<FLT>& xv) { return xv.lower_bound().raw() == 0 && xv.upper_bound().raw() == 0; }
 
 } // namespace TaylorModelDetail
 
+/** @brief Create a model with default value and compatible characteristics. */
 template<class F>
 F create_default() {
     if constexpr (Same<F, FloatDP>) {
@@ -401,17 +450,20 @@ DegreeType TaylorModel<P, F>::degree() const {
     return deg;
 }
 
+/** @brief Set the err. */
 template<class F>
 UpperInterval<F> set_err(const UpperInterval<F>& x, Error<F>&) {
     return x;
 }
 
+/** @brief Set the err. */
 template<class F>
 F set_err(const Bounds<F>& x, Error<F>& e) {
     e += x.error();
     return x.value();
 }
 
+/** @brief Set the err. */
 template<class F>
 const Approximation<F>& set_err(const Approximation<F>& x, UnknownError<F>&) {
     return x;
@@ -434,30 +486,44 @@ TaylorModel<P, F>& TaylorModel<P, F>::operator=(const GenericNumericType& c) {
 
 namespace TaylorModelDetail { // Shared implementation of Taylor arithmetic
 
+/** @brief Approximate centre accompanied by validated lower and upper bounds. */
 template<class F>
 struct ValidatedApproximation {
     Bounds<F> _v;
     Approximation<F> _a;
+    /** @brief Construct a \c ValidatedApproximation from x. */
     ValidatedApproximation(const Bounds<F>& x) : _v(x), _a(x) {}
+    /** @brief Convert to const bounds< f > &. */
     operator const Bounds<F>&() const { return _v; }
+    /** @brief Return the lower bound. */
     LowerBound<F> lower_bound() const { return _v.lower_bound(); }
+    /** @brief Return the middle value. */
     Approximation<F> middle() const { return _a; }
+    /** @brief Return the upper bound. */
     UpperBound<F> upper_bound() const { return _v.upper_bound(); }
+    /** @brief Return the underlying lower-endpoint representation. */
     const F& lower_raw() const { return _v.lower_raw(); }
+    /** @brief Return the underlying middle-value representation. */
     const F& middle_raw() const { return _a.raw(); }
+    /** @brief Return the underlying upper-endpoint representation. */
     const F& upper_raw() const { return _v.upper_raw(); }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const ValidatedApproximation<F>& x) {
         return os << "{" << x._v.lower_bound() << ":" << x._a << ":" << x._v.upper_bound() << "}";
     }
 };
+/** @brief Construct validated approximation from the supplied arguments. */
 template<class F>
 const Approximation<F>& make_validated_approximation(const Approximation<F>& x) { return x; }
+/** @brief Construct validated approximation from the supplied arguments. */
 template<class F>
 ValidatedApproximation<F> make_validated_approximation(const Bounds<F>& x) { return ValidatedApproximation<F>(x); }
 
+/** @brief Convert to the rounded representation. */
 template<ARawFloat F>
 Rounded<F> cast_rounded(const F& x) { return Rounded<F>(x); }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 F add_err(const F& x1, const F& x2, Error<F>& e) {
     Rounded<F> mx1 = -x1;
@@ -473,6 +539,7 @@ F add_err(const F& x1, const F& x2, Error<F>& e) {
     return r.raw();
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 F add_err(const F& x, const ValidatedApproximation<F>& c, Error<F>& e) {
     const Rounded<F>& xv = x.raw();
@@ -491,31 +558,37 @@ F add_err(const F& x, const ValidatedApproximation<F>& c, Error<F>& e) {
     return rv.raw();
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 F add_err(const F& x, const Bounds<F>& c, Error<F>& e) {
     return add_err(x, ValidatedApproximation<F>(c), e);
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 Bounds<F> add_err(const Bounds<F>& x1, const Bounds<F>& x2, Error<F>&) {
     return add(x1, x2);
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> add_err(const UpperInterval<F>& x1, const UpperInterval<F>& x2, Error<F>&) {
     return add(x1, x2);
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> add_err(const UpperInterval<F>& x1, Nat n2, Error<F>&) {
     return add(x1, n2);
 }
 
+/** @brief Return the sum of the operands and account for rounding error. */
 template<class F>
 Approximation<F> add_err(const Approximation<F>& x1, const Approximation<F>& x2, UnknownError<F>&) {
     return add(x1, x2);
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 F sub_err(const F& x1, const F& x2, Error<F>& e) {
     Rounded<F> mx1 = -x1;
@@ -531,26 +604,31 @@ F sub_err(const F& x1, const F& x2, Error<F>& e) {
     return r;
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 Bounds<F> sub_err(const Bounds<F>& x1, const Bounds<F>& x2, Error<F>&) {
     return sub(x1, x2);
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> sub_err(const UpperInterval<F>& x1, const UpperInterval<F>& x2, Error<F>&) {
     return sub(x1, x2);
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> sub_err(const UpperInterval<F>& x1, Nat n2, Error<F>&) {
     return sub(x1, n2);
 }
 
+/** @brief Return the difference of the operands and account for rounding error. */
 template<class F>
 Approximation<F> sub_err(const Approximation<F>& x1, const Approximation<F>& x2, UnknownError<F>&) {
     return sub(x1, x2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 F mul_err(const F& x1, const F& x2, Error<F>& e) {
     Rounded<F> mx1 = -x1;
@@ -566,6 +644,7 @@ F mul_err(const F& x1, const F& x2, Error<F>& e) {
     return r;
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 F mul_err(const F& x, const ValidatedApproximation<F>& c, Error<F>& e) {
     const Rounded<F>& xv = x.raw();
@@ -592,51 +671,61 @@ F mul_err(const F& x, const ValidatedApproximation<F>& c, Error<F>& e) {
     return rv.raw();
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 F mul_err(const F& x, const Bounds<F>& c, Error<F>& e) {
     return mul_err(x, ValidatedApproximation<F>(c), e);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 F mul_err(const F& x1, Nat n2, Error<F>& e) {
     return mul_err(x1, F(n2, x1.precision()), e);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Bounds<F> mul_err(const Bounds<F>& x1, const Bounds<F>& x2, Error<F>&) {
     return mul(x1, x2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Bounds<F> mul_err(const Bounds<F>& x1, const ValidatedApproximation<F>& x2, Error<F>&) {
     return mul(x1, static_cast<Bounds<F>>(x2));
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Bounds<F> mul_err(const Bounds<F>& x1, const Nat& n2, Error<F>&) {
     return mul(x1, n2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> mul_err(const UpperInterval<F>& x1, const UpperInterval<F>& x2, Error<F>&) {
     return mul(x1, x2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> mul_err(const UpperInterval<F>& x1, Nat n2, Error<F>&) {
     return mul(x1, n2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Approximation<F> mul_err(const Approximation<F>& x1, const Approximation<F>& x2, UnknownError<F>&) {
     return mul(x1, x2);
 }
 
+/** @brief Return the product of the operands and account for rounding error. */
 template<class F>
 Approximation<F> mul_err(const Approximation<F>& x1, Nat n2, UnknownError<F>& e) {
     return mul_err(x1, Approximation<F>(n2, x1.precision()), e);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 F div_err(const F& x1, const F& x2, Error<F>& e) {
     Rounded<F> mx1 = -x1;
@@ -652,41 +741,49 @@ F div_err(const F& x1, const F& x2, Error<F>& e) {
     return r;
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 F div_err(const F& x1, Nat n2, Error<F>& e) {
     return div_err(x1, F(n2, x1.precision()), e);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 Bounds<F> div_err(const Bounds<F>& x1, const Bounds<F>& x2, Error<F>&) {
     return div(x1, x2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 Bounds<F> div_err(const Bounds<F>& x1, Nat n2, Error<F>&) {
     return div(x1, n2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> div_err(const UpperInterval<F>& x1, const UpperInterval<F>& x2, Error<F>&) {
     return div(x1, x2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 UpperInterval<F> div_err(const UpperInterval<F>& x1, Nat n2, Error<F>&) {
     return div(x1, n2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 Approximation<F> div_err(const Approximation<F>& x1, const Approximation<F>& x2, UnknownError<F>&) {
     return div(x1, x2);
 }
 
+/** @brief Return the quotient of the operands and account for rounding error. */
 template<class F>
 Approximation<F> div_err(const Approximation<F>& x1, Nat n2, UnknownError<F>& e) {
     return div_err(x1, Approximation<F>(n2, x1.precision()), e);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 F fma_err(const F& x, const F& y, F z, Error<F>& e) {
     const Rounded<F>& xv = x.raw();
@@ -705,6 +802,7 @@ F fma_err(const F& x, const F& y, F z, Error<F>& e) {
     return rv.raw();
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 F fma_err(const ValidatedApproximation<F>& c, const F& x, F y, Error<F>& e) {
     const Rounded<F>& xv = x.raw();
@@ -732,31 +830,37 @@ F fma_err(const ValidatedApproximation<F>& c, const F& x, F y, Error<F>& e) {
     return rv.raw();
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 F fma_err(const Bounds<F>& c, const F& x, F y, Error<F>& e) {
     return fma_err(ValidatedApproximation<F>(c), x, y, e);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 Bounds<F> fma_err(const Bounds<F>& x, const Bounds<F>& y, Bounds<F> z, Error<F>&) {
     return fma(x, y, z);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 UpperInterval<F> fma_err(const UpperInterval<F>& x, const UpperInterval<F>& y, UpperInterval<F> z, Error<F>&) {
     return fma(x, y, z);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 Bounds<F> fma_err(const ValidatedApproximation<F>& x, const Bounds<F>& y, Bounds<F> z, Error<F>&) {
     return fma(static_cast<Bounds<F>>(x), y, z);
 }
 
+/** @brief Compute the product of the first two operands plus the third and account for rounding error. */
 template<class F>
 Approximation<F> fma_err(const Approximation<F>& x, const Approximation<F>& y, Approximation<F> z, UnknownError<F>&) {
     return fma(x, y, z);
 }
 
+/** @brief Apply the operation to the sparse polynomial expansion. */
 template<class V, class OP>
 inline decltype(auto) _sparse_apply(OP const& op_err, V& r) {
     auto e = r.error();
@@ -767,6 +871,7 @@ inline decltype(auto) _sparse_apply(OP const& op_err, V& r) {
     r.error() += e;
 }
 
+/** @brief Apply the operation to the sparse polynomial expansion. */
 template<class V, class OP>
 inline Void _sparse_apply(OP const& op_err, V& r, const V& x, const V& y) {
     auto e = r.error();
@@ -803,62 +908,88 @@ inline Void _sparse_apply(OP const& op_err, V& r, const V& x, const V& y) {
     r.error() += e;
 }
 
+/** @brief Return the sum of the operands. */
 template<class X>
 const X& add(const X& x, Zero) { return x; }
+/** @brief Return the sum of the operands. */
 template<class X>
 const X& add(Zero, const X& x) { return x; }
+/** @brief Return the difference of the operands. */
 template<class X>
 const X& sub(const X& x, Zero) { return x; }
+/** @brief Return the difference of the operands. */
 template<class X>
 X sub(Zero, const X& x) { return neg(x); }
+/** @brief Return the product of the operands. */
 template<class X>
 Zero mul(const X&, Zero) { return Zero{}; }
+/** @brief Return the product of the operands. */
 template<class X>
 Zero mul(Zero, const X&) { return Zero{}; }
 
+/** @brief Negation kernel carrying a rounding-error bound. */
 struct NegErr {
+    /** @brief Apply the callable to the supplied arguments. */
     template<class V, class E>
     decltype(auto) operator()(V&& v, E&) const { return neg(std::forward<V>(v)); }
 };
+/** @brief Addition kernel carrying a rounding-error bound. */
 struct AddErr {
+    /** @brief Apply the callable to the supplied arguments. */
     template<class V, class E>
     inline V operator()(const V& xv, const V& yv, E& e) const { return add_err(xv, yv, e); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class V, class E>
     inline const V& operator()(const V& xv, Zero, E&) const { return xv; }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class V, class E>
     inline const V& operator()(Zero, const V& yv, E&) const { return yv; }
 };
+/** @brief Subtraction kernel carrying a rounding-error bound. */
 struct SubErr {
+    /** @brief Apply the callable to the supplied arguments. */
     template<class V, class E>
     inline V operator()(const V& xv, const V& yv, E& e) const { return sub_err(xv, yv, e); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class V, class E>
     inline const V& operator()(const V& xv, Zero, E&) const { return xv; }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class V, class E>
     inline V operator()(Zero, const V& yv, E&) const { return neg(yv); }
 };
+/** @brief Multiplication kernel carrying a rounding-error bound. */
 struct MulErr {
+    /** @brief Apply the callable to the supplied arguments. */
     template<class VX, class VY, class E>
     inline decltype(auto) operator()(VX const& xv, VY const& yv, E& e) const { return mul_err(xv, yv, e); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class V, class E>
     inline Zero operator()(const V&, Zero, E&) const { return Zero{}; }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class V, class E>
     inline Zero operator()(Zero, const V&, E&) const { return Zero{}; }
 };
+/** @brief Multiply-add kernel carrying a rounding-error bound. */
 struct FmaErr {
+    /** @brief Apply the callable to the supplied arguments. */
     template<class C, class VX, class VY, class E>
     inline decltype(auto) operator()(const C& c, VX const& xv, VY const& yv, E& e) const { return fma_err(c, xv, yv, e); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class C, class V, class E>
     inline V operator()(const C& c, const V& xv, Zero, E& e) const { return mul_err(c, xv, e); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class C, class V, class E>
     inline const V& operator()(const C&, Zero, const V& yv, E&) const { return yv; }
 };
 
 // Inplace negation
+/** @brief Return the additive inverse. */
 template<class P, class F>
 Void _neg(TaylorModel<P, F>& r) {
     _sparse_apply(NegErr(), r);
 }
 
+/** @brief Scale the stored coefficients by the supplied scalar. */
 template<class P, class F>
 Void _scal(TaylorModel<P, F>& r, const TwoExp& c) {
     if (c.exponent() == 0) {
@@ -868,6 +999,7 @@ Void _scal(TaylorModel<P, F>& r, const TwoExp& c) {
     _sparse_apply(std::bind(MulErr(), std::placeholders::_1, c, std::placeholders::_2), r);
 }
 
+/** @brief Scale the stored coefficients by the supplied scalar. */
 template<class P, class F, class C>
 Void _scal(TaylorModel<P, F>& r, const C& c) {
     r.error() *= mag(c);
@@ -883,6 +1015,7 @@ template<class F> Void _scal(TaylorModel<ValidatedTag,F>& r, const Bounds<F>& c)
 }
 */
 
+/** @brief Increment the constant coefficient by the supplied scalar. */
 template<class P, class F>
 inline Void _incr(TaylorModel<P, F>& r, const MultiIndex& a) {
     for (typename TaylorModel<P, F>::Iterator iter = r.begin(); iter != r.end(); ++iter) {
@@ -890,6 +1023,7 @@ inline Void _incr(TaylorModel<P, F>& r, const MultiIndex& a) {
     }
 }
 
+/** @brief Increment the constant coefficient by the supplied scalar. */
 template<class P, class F>
 inline Void _incr(TaylorModel<P, F>& r, SizeType j) {
     for (typename TaylorModel<P, F>::Iterator iter = r.begin(); iter != r.end(); ++iter) {
@@ -897,6 +1031,7 @@ inline Void _incr(TaylorModel<P, F>& r, SizeType j) {
     }
 }
 
+/** @brief Accumulate the supplied value. */
 template<class P, class F, class C>
 inline Void _acc(TaylorModel<P, F>& r, const C& c) {
     using CoefficientType = typename TaylorModel<P, F>::CoefficientType;
@@ -921,6 +1056,7 @@ inline Void _acc(TaylorModel<P, F>& r, const C& c) {
 //   than using two loops
 // Use opposite rounding to compute difference of upward and downward roundings,
 //   as this seems to be marginally faster than changing the rounding mode
+/** @brief Return the sum of the operands. */
 template<class P, class F>
 inline TaylorModel<P, F> _add(const TaylorModel<P, F>& x, const TaylorModel<P, F>& y) {
     // ARIADNE_PRECONDITION(x.sweeper()==y.sweeper());
@@ -931,6 +1067,7 @@ inline TaylorModel<P, F> _add(const TaylorModel<P, F>& x, const TaylorModel<P, F
     return r;
 }
 
+/** @brief Return the difference of the operands. */
 template<class P, class F>
 inline TaylorModel<P, F> _sub(const TaylorModel<P, F>& x, const TaylorModel<P, F>& y) {
     TaylorModel<P, F> r(x.argument_size(), x.sweeper());
@@ -941,6 +1078,7 @@ inline TaylorModel<P, F> _sub(const TaylorModel<P, F>& x, const TaylorModel<P, F
     return r;
 }
 
+/** @brief Accumulate the scalar multiple of the supplied model. */
 template<class P, class F>
 inline Void _sma(TaylorModel<P, F>& r, const TaylorModel<P, F>& x, const typename TaylorModel<P, F>::NumericType& c, const TaylorModel<P, F>& y) {
     typedef typename F::PrecisionType PR;
@@ -962,12 +1100,14 @@ inline Void _sma(TaylorModel<P, F>& r, const TaylorModel<P, F>& x, const typenam
 // Compute r+=x*y
 // Compute monomial-by-monomial in y
 // Avoid changing rounding mode
+/** @brief Reusable indexed workspace for dense accumulation of Taylor coefficients. */
 template<class C>
 struct TaylorDenseAccumulatorWorkspace {
     std::vector<SizeType> slot_to_touched;
     std::vector<SizeType> touched_slots;
     std::vector<C> touched_coefficients;
 
+    /** @brief Prepare reusable workspace for the supplied dimensions. */
     Void prepare(SizeType requested_slots, SizeType expected_occupied) {
         const SizeType unused = std::numeric_limits<SizeType>::max();
         if (slot_to_touched.size() < requested_slots) {
@@ -983,6 +1123,7 @@ struct TaylorDenseAccumulatorWorkspace {
         }
     }
 
+    /** @brief Reset the accumulator entries used by the preceding operation. */
     Void reset_used_slots() {
         const SizeType unused = std::numeric_limits<SizeType>::max();
         for (SizeType slot: touched_slots) {
@@ -991,6 +1132,7 @@ struct TaylorDenseAccumulatorWorkspace {
     }
 };
 
+/** @brief Accumulate the product in place. */
 template<class P, class F>
 inline Void _ifma(TaylorModel<P, F>& r, const TaylorModel<P, F>& x, const TaylorModel<P, F>& y) {
     using CoefficientType = typename TaylorModel<P, F>::CoefficientType;
@@ -1269,6 +1411,7 @@ inline Void _ifma(TaylorModel<P, F>& r, const TaylorModel<P, F>& x, const Taylor
     return;
 }
 
+/** @brief Compute the product of the first two operands plus the third. */
 template<class P, class F>
 inline TaylorModel<P, F> _fma(const TaylorModel<P, F>& x, const TaylorModel<P, F>& y, TaylorModel<P, F> z) {
     ARIADNE_PRECONDITION(x.argument_size() == y.argument_size());
@@ -1277,6 +1420,7 @@ inline TaylorModel<P, F> _fma(const TaylorModel<P, F>& x, const TaylorModel<P, F
     return z;
 }
 
+/** @brief Return the product of the operands. */
 template<class P, class F>
 inline TaylorModel<P, F> _mul(const TaylorModel<P, F>& x, const TaylorModel<P, F>& y) {
     ARIADNE_PRECONDITION(x.argument_size() == y.argument_size());
@@ -1672,11 +1816,13 @@ TaylorModel<P, F> AlgebraOperations<TaylorModel<P, F>>::apply(Min op, const Nume
 
 // Arithmetical functions (sqr, pow)
 
+/** @brief Return the square. */
 template<class P, class F>
 TaylorModel<P, F> sqr(const TaylorModel<P, F>& x) {
     return x * x;
 }
 
+/** @brief Raise the value to the specified power. */
 template<class P, class F>
 TaylorModel<P, F> pow(const TaylorModel<P, F>& x, Int n) {
     TaylorModel<P, F> r = x.create_constant(1);
@@ -1697,9 +1843,11 @@ TaylorModel<P, F> pow(const TaylorModel<P, F>& x, Int n) {
 
 template<class X>
 class Series;
+/** @brief Univariate series with a bounded truncation degree. */
 template<class X>
 class TaylorSeries;
 
+/** @brief Compose the outer object with the inner object. */
 template<class P, class F>
 TaylorModel<P, F>
     compose(const TaylorSeries<typename F::PrecisionType>& ts, const TaylorModel<P, F>& tv) {
@@ -1724,6 +1872,7 @@ TaylorModel<P, F>
 // Compose using the Taylor formula with a constant truncation error. This method
 // is usually better than _compose1 since there is no blow-up of the trunction
 // error.
+/** @brief Compose the outer object with the inner object. */
 template<class P, class F>
 TaylorModel<P, F>
     compose(const AnalyticFunction& fn, const TaylorModel<P, F>& tm) {
@@ -1884,6 +2033,7 @@ Void TaylorModel<P, F>::antidifferentiate(SizeType k) {
     x.error() += e;
 }
 
+/** @brief Return an antiderivative with respect to the selected argument. */
 template<class P, class F>
 TaylorModel<P, F> antiderivative(const TaylorModel<P, F>& x, SizeType k) {
     TaylorModel<P, F> r(x);
@@ -1920,6 +2070,7 @@ Void TaylorModel<P, F>::differentiate(SizeType k) {
     r.expansion().resize(static_cast<SizeType>(riter - r.begin()));
 }
 
+/** @brief Return the derivative with respect to the selected argument. */
 template<class P, class F>
 TaylorModel<P, F> derivative(const TaylorModel<P, F>& x, SizeType k) {
     TaylorModel<P, F> rx = x;
@@ -2023,17 +2174,21 @@ TaylorModel<P, F> TaylorModel<P, F>::_compose(const Unscaling& u, const TaylorMo
     return r;
 }
 
+/** @brief Cache of successive powers of an argument for model evaluation. */
 template<class T>
 class Powers {
   public:
+    /** @brief Construct a \c Powers from t. */
     explicit Powers(const T& t) {
         _values.push_back(t * 0 + 1);
         _values.push_back(t);
     }
+    /** @brief Construct a \c Powers from z, t. */
     explicit Powers(const T& z, const T& t) {
         _values.push_back(z);
         _values.push_back(t);
     }
+    /** @brief Return the selected element or component. */
     const T& operator[](SizeType i) const {
         while (_values.size() <= i) {
             _values.push_back(_values[1] * _values.back());
@@ -2045,19 +2200,23 @@ class Powers {
     mutable std::vector<T> _values;
 };
 
+/** @brief Cache of successive powers of an argument for model evaluation. */
 template<class F>
 class Powers<Bounds<F>> {
     typedef Bounds<F> T;
 
   public:
+    /** @brief Construct a \c Powers from t. */
     explicit Powers(const T& t) {
         _values.push_back(T(1, t.precision()));
         _values.push_back(t);
     }
+    /** @brief Construct a \c Powers from z, t. */
     explicit Powers(const T& z, const T& t) {
         _values.push_back(z);
         _values.push_back(t);
     }
+    /** @brief Return the selected element or component. */
     const T& operator[](SizeType i) const {
         while (_values.size() <= i) {
             if (_values.size() % 2 == 0) {
@@ -2151,14 +2310,17 @@ TaylorModel<P, F> TaylorModel<P, F>::_split(const TaylorModel<P, F>& tm, SizeTyp
 
 // Banach algebra operations
 
+/** @brief Return the quotient. */
 template<class F>
 TaylorModel<ValidatedTag, UpperInterval<F>> operator/(const TaylorModel<ValidatedTag, UpperInterval<F>>& x1, const F& x2) {
     return x1 / UpperInterval<F>(x2);
 }
+/** @brief Divide by the operand in place. */
 template<class F>
 TaylorModel<ValidatedTag, UpperInterval<F>>& operator/=(TaylorModel<ValidatedTag, UpperInterval<F>>& x1, const F& x2) {
     return x1 /= UpperInterval<F>(x2);
 }
+/** @brief Return the difference or additive inverse. */
 template<class F>
 TaylorModel<ValidatedTag, UpperInterval<F>> operator-(TaylorModel<ValidatedTag, UpperInterval<F>> x1, const F& x2) {
     return x1 - UpperInterval<F>(x2);
@@ -2199,6 +2361,7 @@ auto TaylorModel<P, F>::norm() const -> NormType {
     return r;
 }
 
+/** @brief Return the norm. */
 template<class P, class F>
 typename TaylorModel<P, F>::NormType norm(const TaylorModel<P, F>& tm) {
     return tm.norm();
@@ -2229,6 +2392,7 @@ Bool TaylorModel<P, F>::_inconsistent(const TaylorModel<P, F>& tm1, const Taylor
     return (mag(tm1.value() - tm2.value()).raw() > (tm1.error() + tm2.error()).raw());
 }
 
+/** @brief Test whether the enclosures cannot represent a common value. */
 template<class F>
 inline Bool inconsistent(const UpperInterval<F>& x1, const UpperInterval<F>& x2) {
     return definitely(disjoint(x1, x2));
@@ -2385,6 +2549,7 @@ Vector<TaylorModel<P, F>> TaylorModel<P, F>::scalings(const BoxDomainType& d, Sw
 // Jacobian matrices
 
 // Compute the Jacobian over an arbitrary domain
+/** @brief Return the matrix of first partial derivatives. */
 template<class F>
 Matrix<Bounds<F>>
     jacobian(const Vector<TaylorModel<ValidatedTag, F>>& f, const Vector<Bounds<F>>& x) {
@@ -2398,6 +2563,7 @@ Matrix<Bounds<F>>
 }
 
 // Compute the Jacobian over an arbitrary domain
+/** @brief Return the matrix of first partial derivatives. */
 template<class F>
 Matrix<Bounds<F>>
     jacobian(const Vector<TaylorModel<ValidatedTag, F>>& f, const Vector<Bounds<F>>& x, const Array<SizeType>& p) {
@@ -2418,6 +2584,7 @@ Matrix<Bounds<F>>
 }
 
 // Compute the Jacobian at the origin
+/** @brief Return the Jacobian value at the supplied argument. */
 template<class P, class F>
 Matrix<F>
     jacobian_value(const Vector<TaylorModel<P, F>>& f) {
@@ -2438,6 +2605,7 @@ Matrix<F>
 }
 
 // Compute the Jacobian at the origin with respect to the variables args.
+/** @brief Return the Jacobian value at the supplied argument. */
 template<class P, class F>
 Matrix<F>
     jacobian_value(const Vector<TaylorModel<P, F>>& f, const Array<SizeType>& p) {
@@ -2460,6 +2628,7 @@ Matrix<F>
 }
 
 // Compute the Jacobian over the unit domain
+/** @brief Enclose the Jacobian over the supplied argument set. */
 template<class P, class F>
 Matrix<typename TaylorModel<P, F>::RangeType>
     jacobian_range(const Vector<TaylorModel<P, F>>& f) {
@@ -2488,6 +2657,7 @@ Matrix<typename TaylorModel<P, F>::RangeType>
 }
 
 // Compute the Jacobian over the unit domain, with respect to the variables p.
+/** @brief Enclose the Jacobian over the supplied argument set. */
 template<class P, class F>
 Matrix<typename TaylorModel<P, F>::RangeType>
     jacobian_range(const Vector<TaylorModel<P, F>>& f, const Array<SizeType>& p) {
@@ -2516,6 +2686,7 @@ Matrix<typename TaylorModel<P, F>::RangeType>
     return J;
 }
 
+/** @brief Return the value parts of the polynomial coefficients. */
 template<class F>
 TaylorModel<ValidatedTag, F> value_coefficients(const TaylorModel<ValidatedTag, Bounds<F>>& tm) {
     TaylorModel<ValidatedTag, F> r(tm.argument_size(), tm.sweeper());
@@ -2529,6 +2700,7 @@ TaylorModel<ValidatedTag, F> value_coefficients(const TaylorModel<ValidatedTag, 
     return r;
 }
 
+/** @brief Return the coefficients in their exact representation. */
 template<class F>
 TaylorModel<ValidatedTag, Bounds<F>> exact_coefficients(const TaylorModel<ValidatedTag, Bounds<F>>& tm) {
     TaylorModel<ValidatedTag, Bounds<F>> r(tm.argument_size(), tm.sweeper());

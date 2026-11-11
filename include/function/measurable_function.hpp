@@ -38,6 +38,7 @@
 
 namespace Ariadne {
 
+/** @brief Polymorphic function exposing measurable-set preimages. */
 template<class P, class SIG>
 class MeasurableFunction;
 template<class SIG>
@@ -56,30 +57,38 @@ using ValidatedContinuousFunction = ContinuousFunction<ValidatedTag, SIG>;
 using EffectiveScalarUnivariateContinuousFunction = ContinuousFunction<EffectiveTag, Real(Real)>;
 using ValidatedScalarUnivariateContinuousFunction = ContinuousFunction<ValidatedTag, Real(Real)>;
 
+/** @brief Polymorphic interface for measurable function. */
 template<class P, class SIG>
 class MeasurableFunctionInterface;
 
+/** @brief Polymorphic interface for measurable function. */
 template<class P, class RES, class ARG>
 class MeasurableFunctionInterface<P, RES(ARG)> {
     using SIG = RES(ARG);
 
   public:
+    /** @brief Destroy the object and release its owned resources. */
     virtual ~MeasurableFunctionInterface() = default;
+    /** @brief Return the preimage of the supplied set. */
     virtual LowerMeasurableSet<P, ARG> _preimage(OpenSet<P, RES>) const = 0;
 };
 
 template<class P, class SIG>
 class MeasurableFunction;
 
+/** @brief Compile-time predicate testing whether a type is measurable function. */
 template<class F, class P, class SIG>
 struct IsMeasurableFunction;
 
+/** @brief Compile-time predicate testing whether a type is measurable function. */
 template<class F, class P, class R, class A>
 struct IsMeasurableFunction<F, P, R(A)> {
     using LMS = LowerMeasurableSet<P, A>;
     using OPS = OpenSet<P, R>;
+    /** @brief Evaluate the compile-time or runtime predicate for the supplied arguments. */
     template<class FF, class = decltype(declval<LMS>() = preimage(declval<OPS>(), declval<FF>()))>
     static std::true_type test(int);
+    /** @brief Evaluate the compile-time or runtime predicate for the supplied arguments. */
     template<class FF>
     static std::false_type test(...);
     static const bool value = decltype(test<F>(1))::value;
@@ -88,6 +97,7 @@ struct IsMeasurableFunction<F, P, R(A)> {
 template<class F, class P, class SIG>
 concept AMeasurableFunction = IsMeasurableFunction<F, P, SIG>::value;
 
+/** @brief Polymorphic function exposing measurable-set preimages. */
 template<class P, class RES, class ARG>
 class MeasurableFunction<P, RES(ARG)>
     : public Handle<const MeasurableFunctionInterface<P, RES(ARG)>> {
@@ -96,15 +106,20 @@ class MeasurableFunction<P, RES(ARG)>
 
   public:
     using Handle<const Interface>::Handle;
+    /** @brief Return the number of references to the shared representation. */
     SizeType ref_count() const { return this->_ptr.ref_count(); }
+    /** @brief Construct a \c MeasurableFunction with the specified characteristics. */
     template<AMeasurableFunction<P, SIG> F>
     MeasurableFunction(const F&);
+    /** @brief Return the preimage of the supplied set. */
     LowerMeasurableSet<P, ARG> preimage(const OpenSet<P, RES>& u) const { return this->_ptr->_preimage(u); }
 };
 
+/** @brief Adapter exposing measurable function. */
 template<class F, class P, class SIG>
 class MeasurableFunctionWrapper;
 
+/** @brief Adapter exposing measurable function. */
 template<class F, class P, class RES, class ARG>
 class MeasurableFunctionWrapper<F, P, RES(ARG)>
     : public MeasurableFunctionInterface<P, RES(ARG)>,
@@ -112,14 +127,17 @@ class MeasurableFunctionWrapper<F, P, RES(ARG)>
     using SIG = RES(ARG);
 
   public:
+    /** @brief Return the preimage of the supplied set. */
     virtual LowerMeasurableSet<P, ARG> _preimage(const OpenSet<P, RES>& ops) const final override {
         return preimage(ops, static_cast<const F&>(*this));
     }
 };
 
+/** @brief Sequence of finite function approximations indexed by accuracy. */
 template<class SIG>
 class FastFanSequence;
 
+/** @brief Sequence of finite function approximations indexed by accuracy. */
 template<class RES, class ARG>
 class FastFanSequence<RES(ARG)>
     : public Sequence<ValidatedContinuousFunction<RES(ARG)>> {
@@ -128,7 +146,9 @@ class FastFanSequence<RES(ARG)>
 
   public:
     using Sequence<ValidatedContinuousFunction<SIG>>::Sequence;
+    /** @brief Return the preimage of the supplied set. */
     LowerMeasurableSet<P, ARG> preimage(const OpenSet<P, RES>& ops) const;
+    /** @brief Return the preimage of the supplied set. */
     friend LowerMeasurableSet<P, ARG> preimage(const OpenSet<P, RES>& ops, const FastFanSequence<RES(ARG)>& ffs) {
         return ffs.preimage(ops);
     }
@@ -136,9 +156,11 @@ class FastFanSequence<RES(ARG)>
 
 static_assert(AMeasurableFunction<FastFanSequence<Real(Real)>, EffectiveTag, Real(Real)>);
 
+/** @brief Finite approximation of a measurable function with a measure-error bound. */
 template<class SIG, class PR, class PRE = PR>
 class FanModel;
 
+/** @brief Finite approximation of a measurable function with a measure-error bound. */
 template<class PR, class PRE>
 class FanModel<Real(Real), PR, PRE> {
     using P = ValidatedTag;
@@ -155,15 +177,22 @@ class FanModel<Real(Real), PR, PRE> {
     FloatError<PRE> _measure_error;
 
   public:
+    /** @brief Construct a \c FanModel from dom, fn, err. */
     FanModel(DomainType dom, ValidatedContinuousFunction<SIG> fn, FloatError<PRE> err)
         : _domain(dom), _function(fn), _measure_error(err) {}
+    /** @brief Return the domain. */
     const DomainType& domain() const { return this->_domain; }
+    /** @brief Return the constrained function. */
     const ValidatedContinuousFunction<SIG>& function() const { return this->_function; }
+    /** @brief Return the error bound on the set measure. */
     const ErrorType& measure_error() const { return this->_measure_error; }
+    /** @brief Return the preimage of the supplied set. */
     ValidatedLowerMeasurableSet<ARG> preimage(const ValidatedOpenSet<RES>&) const;
+    /** @brief Return the preimage of the supplied set. */
     friend LowerMeasurableSet<P, ARG> preimage(const OpenSet<P, RES>& ops, const FanModel<Real(Real), PR, PRE>& fm) {
         return fm.preimage(ops);
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const FanModel<SIG, PR, PRE>& fm) {
         return os << "FanModel(domain=" << fm._domain << ",function=" << fm._function << ",measure_error=" << fm._measure_error << ")";
     }
@@ -172,6 +201,7 @@ class FanModel<Real(Real), PR, PRE> {
 static_assert(AMeasurableFunction<FanModel<Real(Real), DoublePrecision, DoublePrecision>, ValidatedTag, Real(Real)>);
 
 // TODO: Move to Interval
+/** @brief Return the image of the supplied domain under the function. */
 template<class PR>
 Interval<UpperBound<PR>> image(const Interval<UpperBound<PR>>& ivl, const ValidatedContinuousFunction<Real(Real)>& f) {
     return f(cast_singleton(ivl));
@@ -191,6 +221,7 @@ auto FanModel<Real(Real), PR, PRE>::preimage(const ValidatedOpenSet<Real>& rng) 
     return LowerMeasurableSetModel(ivls, this->_measure_error);
 }
 
+/** @brief Return interval components of the preimage. */
 template<class PR>
 UnionOfIntervals<Float<PR>> preimage_intervals(const ValidatedContinuousFunction<Real(Real)>& f, ValidatedRegularSet<Real> rgs, Interval<Float<PR>> ivl, Accuracy acc) {
     Interval<Float<PR>> rng = cast_exact(image(ivl, f));
@@ -206,6 +237,7 @@ UnionOfIntervals<Float<PR>> preimage_intervals(const ValidatedContinuousFunction
     }
 }
 
+/** @brief Return interval components of the preimage. */
 template<class PR>
 UnionOfIntervals<Float<PR>> preimage_intervals(const ValidatedContinuousFunction<Real(Real)>& f, ValidatedOpenSet<Real> ops, Interval<Float<PR>> ivl, Accuracy acc) {
     if (definitely(ops.covers(cast_exact(image(ivl, f))))) {
@@ -218,6 +250,7 @@ UnionOfIntervals<Float<PR>> preimage_intervals(const ValidatedContinuousFunction
     }
 }
 
+/** @brief Return the preimage of the supplied set. */
 inline ValidatedOpenSet<Real> preimage(const ValidatedContinuousFunction<Real(Real)>& f, const ValidatedOpenSet<Real>& ops, IntervalDomainType dom, Accuracy acc) {
     DoublePrecision pr;
     Interval<FloatDP> ivl = cast_exact(Interval<UpperBound<FloatDP>>(dom, pr));

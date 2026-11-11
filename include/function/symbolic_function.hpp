@@ -62,21 +62,31 @@ class ScalarUnivariateFormulaFunction
     Formula<Y> _formula;
 
   public:
+    /** @brief Construct a \c ScalarUnivariateFormulaFunction from f. */
     ScalarUnivariateFormulaFunction(const Formula<Y>& f) : _formula(f) {}
+    /** @brief Return the scalar formula. */
     Formula<Y> formula() const { return _formula; }
+    /** @brief Convert to formula< y >. */
     operator Formula<Y>() const { return _formula; }
 
+    /** @brief Return the domain. */
     RealDomain domain() const { return RealDomain(); }
+    /** @brief Return the number of scalar arguments. */
     SizeOne argument_size() const { return SizeOne(); }
+    /** @brief Return the number of result components. */
     SizeOne result_size() const { return SizeOne(); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     X operator()(const X& x) const { return Ariadne::evaluate(_formula, Vector<X>({x})); }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend ScalarUnivariateFormulaFunction<Y> derivative(const ScalarUnivariateFormulaFunction<Y>& f, IndexZero) {
         return ScalarUnivariateFormulaFunction<Y>(Ariadne::derivative(f._formula, 0));
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const ScalarUnivariateFormulaFunction<Y>& f) {
         return Formula<Y>::_write_univariate(os, f);
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<ScalarUnivariateFormulaFunction<Y>>& fr) {
         return os << "ScalarUnivariateFormulaFunction(" << fr.reference() << ")";
     }
@@ -91,23 +101,34 @@ class VectorUnivariateFormulaFunction {
     Vector<Formula<Y>> _formulae;
 
   public:
+    /** @brief Construct a \c VectorUnivariateFormulaFunction from f. */
     VectorUnivariateFormulaFunction(const List<Formula<Y>>& f) : _formulae(f) {}
+    /** @brief Construct a \c VectorUnivariateFormulaFunction from f. */
     VectorUnivariateFormulaFunction(const Vector<Formula<Y>>& f) : _formulae(f) {}
 
+    /** @brief Return the component formulae. */
     Vector<Formula<Y>> formulae() const { return _formulae; }
+    /** @brief Return the selected element or component. */
     ScalarUnivariateFormulaFunction<Y> operator[](SizeType i) const { return ScalarUnivariateFormulaFunction(this->_formulae[i]); }
 
+    /** @brief Return the domain. */
     RealDomain domain() const { return RealDomain(); }
+    /** @brief Return the number of result components. */
     SizeType result_size() const { return this->_formulae.size(); }
+    /** @brief Return the number of scalar arguments. */
     SizeOne argument_size() const { return SizeOne(); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     Vector<X> operator()(const X& x) const { return Ariadne::evaluate(this->_formulae, Vector<X>({x})); }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend VectorUnivariateFormulaFunction<Y> derivative(const VectorUnivariateFormulaFunction<Y>& f, IndexZero j) {
         return VectorUnivariateFormulaFunction<Y>(Vector<Formula<Y>>(f._formulae.size(), [&](SizeType i) { return derivative(f._formulae[i], j); }));
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const VectorUnivariateFormulaFunction<Y>& f) {
         return Formula<Y>::_write_univariate(os, f._formulae);
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<VectorUnivariateFormulaFunction<Y>>& fr) {
         return os << "VectorUnivariateFormulaFunction(" << fr.reference() << ")";
     }
@@ -123,21 +144,31 @@ class ScalarMultivariateFormulaFunction {
     Formula<Y> _formula;
 
   public:
+    /** @brief Construct a \c ScalarMultivariateFormulaFunction from as, f. */
     ScalarMultivariateFormulaFunction(SizeType as, const Formula<Y>& f) : _argument_size(as), _formula(f) {}
+    /** @brief Return the scalar formula. */
     Formula<Y> formula() const { return _formula; }
+    /** @brief Convert to formula< y >. */
     operator Formula<Y>() const { return _formula; }
 
+    /** @brief Return the domain. */
     EuclideanDomain domain() const { return EuclideanDomain(this->_argument_size); }
+    /** @brief Return the number of scalar arguments. */
     SizeType argument_size() const { return _argument_size; }
+    /** @brief Return the number of result components. */
     SizeOne result_size() const { return SizeOne(); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     X operator()(const Vector<X>& x) const { return Ariadne::evaluate(_formula, x); }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend ScalarMultivariateFormulaFunction<Y> derivative(const ScalarMultivariateFormulaFunction<Y>& f, SizeType j) {
         return ScalarMultivariateFormulaFunction<Y>(f._argument_size, Ariadne::derivative(f._formula, j));
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const ScalarMultivariateFormulaFunction<Y>& f) {
         return os << f._formula;
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<ScalarMultivariateFormulaFunction<Y>>& fr) {
         const ScalarMultivariateFormulaFunction<Y>& f = fr.reference();
         return os << "ScalarMultivariateFormulaFunction(" << f._argument_size << "," << f._formula << ")";
@@ -156,22 +187,33 @@ class VectorMultivariateFormulaFunction {
     Vector<Formula<Y>> _formulae;
 
   public:
+    /** @brief Construct a \c VectorMultivariateFormulaFunction from as, f. */
     VectorMultivariateFormulaFunction(SizeType as, const List<Formula<Y>>& f) : _argument_size(as), _formulae(f) {}
+    /** @brief Construct a \c VectorMultivariateFormulaFunction from as, f. */
     VectorMultivariateFormulaFunction(SizeType as, const Vector<Formula<Y>>& f) : _argument_size(as), _formulae(f) {}
+    /** @brief Return the component formulae. */
     Vector<Formula<Y>> formulae() const { return _formulae; }
 
+    /** @brief Return the selected element or component. */
     ScalarMultivariateFormulaFunction<Y> operator[](SizeType i) const { return ScalarMultivariateFormulaFunction(this->_argument_size, this->_formulae[i]); }
+    /** @brief Return the domain. */
     EuclideanDomain domain() const { return EuclideanDomain(this->_argument_size); }
+    /** @brief Return the number of result components. */
     SizeType result_size() const { return this->_formulae.size(); }
+    /** @brief Return the number of scalar arguments. */
     SizeType argument_size() const { return this->_argument_size; }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     Vector<X> operator()(const Vector<X>& x) const { return Ariadne::evaluate(this->_formulae, x); }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend VectorMultivariateFormulaFunction<Y> derivative(const VectorMultivariateFormulaFunction<Y>& f, SizeType j) {
         return VectorMultivariateFormulaFunction<Y>(f._argument_size, Vector<Formula<Y>>(f._formulae.size(), [&](SizeType i) { return derivative(f._formulae[i], j); }));
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const VectorMultivariateFormulaFunction<Y>& f) {
         return os << f._formulae;
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<VectorMultivariateFormulaFunction<Y>>& fr) {
         const VectorMultivariateFormulaFunction<Y>& f = fr.reference();
         return os << "VectorMultivariateFormulaFunction(" << f._argument_size << "," << f._formulae << ")";
@@ -186,8 +228,10 @@ typedef VectorFormulaFunction<EffectiveNumber> EffectiveVectorFormulaFunction;
 typedef Pair<Nat, EffectiveFormula> CoordinateFormulaPair;
 typedef List<CoordinateFormulaPair> CoordinateFormulaPairs;
 
+/** @brief Exception reporting not formula function. */
 class NotFormulaFunctionException : public std::runtime_error {
   public:
+    /** @brief Construct a \c NotFormulaFunctionException from str. */
     NotFormulaFunctionException(const String& str) : std::runtime_error(str) {}
 };
 
@@ -204,6 +248,7 @@ Bool is_affine_in(const VectorMultivariateFormulaFunction<Y>& f, const Set<Nat>&
 template<class Y>
 Bool is_additive_in(const VectorMultivariateFormulaFunction<Y>& f, const Set<Nat>& is) { return is_additive_in(f._formulae, is); }
 
+/** @brief Test affine dependence on the selected arguments. */
 template<class Y>
 Bool is_affine_in(const VectorMultivariateFunction<Y>& f, const Set<Nat>& is) {
     auto ff = dynamic_pointer_extract<const EffectiveVectorMultivariateFormulaFunction>(f.managed_pointer());
@@ -211,6 +256,7 @@ Bool is_affine_in(const VectorMultivariateFunction<Y>& f, const Set<Nat>& is) {
         ARIADNE_THROW(NotFormulaFunctionException, "is_affine_in(f,is)", "Affinity checking currently available only for formula functions.");
     return is_affine_in(ff->formulae(), is);
 }
+/** @brief Test additive dependence on the selected arguments. */
 template<class Y>
 Bool is_additive_in(const VectorMultivariateFunction<Y>& f, const Set<Nat>& is) {
     auto ff = dynamic_pointer_extract<const EffectiveVectorMultivariateFormulaFunction>(f.managed_pointer());
@@ -219,6 +265,7 @@ Bool is_additive_in(const VectorMultivariateFunction<Y>& f, const Set<Nat>& is) 
     return is_additive_in(ff->formulae(), is);
 }
 
+/** @brief Return the component independent of the noise variables. */
 inline EffectiveVectorMultivariateFunction noise_independent_component(const EffectiveVectorMultivariateFunction& function, SizeType num_inputs) {
     auto ff = dynamic_pointer_extract<const EffectiveVectorMultivariateFormulaFunction>(function.managed_pointer());
     if (ff == nullptr)
@@ -232,6 +279,7 @@ inline EffectiveVectorMultivariateFunction noise_independent_component(const Eff
     return EffectiveVectorMultivariateFormulaFunction(function.argument_size(), simplify(substitute(ff->formulae(), substitutions)));
 }
 
+/** @brief Return derivatives with respect to the input variables. */
 inline Vector<EffectiveVectorMultivariateFunction> input_derivatives(const EffectiveVectorMultivariateFunction& function, SizeType num_inputs) {
     Vector<EffectiveVectorMultivariateFunction> result(num_inputs);
 
@@ -269,31 +317,43 @@ class ConstantFunction {
     typedef typename SignatureTraits<SIG>::ArgumentSizeType ArgumentSizeType;
 
     // ConstantFunction(SizeType as, const Y& c) : _argument_size(as), _value(c) { }
+    /** @brief Construct a \c ConstantFunction from dom, c. */
     ConstantFunction(DomainType dom, const Y& c) : _domain(dom), _value(c) {}
+    /** @brief Convert to y. */
     operator Y() const { return _value; }
 
+    /** @brief Return the domain. */
     DomainType domain() const { return _domain; }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const { return _domain.dimension(); }
+    /** @brief Return the number of result components. */
     SizeOne result_size() const { return SizeOne(); }
+    /** @brief Return the stored value. */
     const Y& value() const { return _value; }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline X operator()(const ElementType<D, X>& x) const {
         return _make_constant(this->_value, x);
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend ConstantFunction<Y, ARGS...> derivative(const ConstantFunction<Y, ARGS...>& f, ElementIndexType<D>) {
         return ConstantFunction<Y, ARGS...>(f._domain, Y(0));
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const ConstantFunction<Y, ARGS...>& f) {
         return os << f._value;
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<ConstantFunction<Y, ARGS...>>& f) {
         return os << "ConstantFunction(" << f.reference().domain() << "," << f.reference().value() << ")";
     }
 
   private:
+    /** @brief Construct constant from the supplied arguments. */
     template<class X>
     inline static X _make_constant(Y y, const X& x) { return make_constant(y, x); }
+    /** @brief Construct constant from the supplied arguments. */
     template<class X>
     inline static X _make_constant(Y y, const Vector<X>& vx) { return make_constant(y, vx.zero_element()); }
 };
@@ -320,18 +380,26 @@ class CoordinateFunction {
     ArgumentIndexType _index;
 
   public:
+    /** @brief Construct a \c CoordinateFunction from dom, i. */
     CoordinateFunction(DomainType dom, ArgumentIndexType i) : _domain(dom), _index(i) {}
+    /** @brief Return the selected index. */
     ArgumentIndexType index() const { return _index; }
 
+    /** @brief Return the domain. */
     DomainType domain() const { return _domain; }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const { return _domain.dimension(); }
+    /** @brief Return the number of result components. */
     SizeOne result_size() const { return SizeOne(); }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline X operator()(const Vector<X>& x) const { return x[this->_index]; }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline X operator()(const Scalar<X>& x) const { return x; }
 
+    /** @brief Return the derivative with respect to the selected argument. */
     friend ConstantFunction<Y, ARGS...> derivative(const CoordinateFunction<P, ARGS...>& f, ArgumentIndexType j) {
         if (j == f._index) {
             return ConstantFunction<Y, ARGS...>(f.domain(), Y(1));
@@ -339,6 +407,7 @@ class CoordinateFunction {
             return ConstantFunction<Y, ARGS...>(f.domain(), Y(0));
         }
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const CoordinateFunction<P, ARGS...>& f) {
         if constexpr (Same<Tuple<ARGS...>, Tuple<RealScalar>>) {
             return os << "x";
@@ -346,6 +415,7 @@ class CoordinateFunction {
             return os << "x[" << f._index << "]";
         }
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<CoordinateFunction<P, ARGS...>>& f) {
         return os << "CoordinateFunction(" << f.reference().argument_size() << "," << f.reference().index() << ")";
     }
@@ -363,24 +433,32 @@ class UnaryFunction {
     typedef typename SignatureTraits<SIG>::ArgumentSizeType ArgumentSizeType;
     typedef typename SignatureTraits<SIG>::ArgumentIndexType ArgumentIndexType;
 
+    /** @brief Construct a \c UnaryFunction from op, arg. */
     UnaryFunction(const UnaryElementaryOperator& op, const ScalarFunction<P, ARGS...>& arg)
         : _op(op), _arg(arg) {}
+    /** @brief Return the domain. */
     DomainType domain() const { return this->_arg.domain(); }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const { return this->_arg.argument_size(); }
+    /** @brief Return the number of result components. */
     SizeOne result_size() const { return SizeOne(); }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline X operator()(const ElementType<D, X>& x) const {
         return this->_op(this->_arg(x));
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend ScalarFunction<P, ARGS...> derivative(const UnaryFunction<P, ARGS...>& f, ArgumentIndexType j) {
         return f._op.accept([&](auto op) -> ScalarFunction<P, ARGS...> {
             if constexpr(Same<decltype(op),Abs>) { ARIADNE_FAIL_MSG("Cannot differentiate a non-smooth absolute-value function."); }
             else { return op.derivative(f._arg,f._arg.derivative(j)); } });
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const UnaryFunction<P, ARGS...>& f) {
         return os << f._op << '(' << f._arg << ')';
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<UnaryFunction<P, ARGS...>>& f) {
         return os << "UnaryFunction(" << f.reference().argument_size() << "," << f.reference() << ")";
     }
@@ -390,23 +468,28 @@ class UnaryFunction {
     ScalarFunction<P, ARGS...> _arg;
 };
 
+/** @brief Return the square. */
 template<class P, class... ARGS>
 ScalarFunction<P, ARGS...> sqr(const ScalarFunction<P, ARGS...>& f) {
     return ScalarFunction<P, ARGS...>(new UnaryFunction<P, ARGS...>(OperatorCode::SQR, f));
 }
+/** @brief Return the square root. */
 template<class P, class... ARGS>
 ScalarFunction<P, ARGS...> sqrt(const ScalarFunction<P, ARGS...>& f) {
     return ScalarFunction<P, ARGS...>(new UnaryFunction<P, ARGS...>(OperatorCode::SQRT, f));
 }
+/** @brief Return the sine. */
 template<class P, class... ARGS>
 ScalarFunction<P, ARGS...> sin(const ScalarFunction<P, ARGS...>& f) {
     return ScalarFunction<P, ARGS...>(new UnaryFunction<P, ARGS...>(OperatorCode::SIN, f));
 }
+/** @brief Return the cosine. */
 template<class P, class... ARGS>
 ScalarFunction<P, ARGS...> cos(const ScalarFunction<P, ARGS...>& f) {
     return ScalarFunction<P, ARGS...>(new UnaryFunction<P, ARGS...>(OperatorCode::COS, f));
 }
 
+/** @brief Concrete function applying a binary operation to two operand functions. */
 template<class P, class... ARGS>
 class BinaryFunction {
     typedef Number<P> Y;
@@ -417,25 +500,32 @@ class BinaryFunction {
     typedef D DomainType;
     typedef typename SignatureTraits<SIG>::ArgumentSizeType ArgumentSizeType;
 
+    /** @brief Construct a \c BinaryFunction from op, arg1, arg2. */
     BinaryFunction(BinaryArithmeticOperator op, const ScalarFunction<P, ARGS...>& arg1, const ScalarFunction<P, ARGS...>& arg2)
         : BinaryFunction(BinaryElementaryOperator(op.code()), arg1, arg2) {}
+    /** @brief Construct a \c BinaryFunction from op, arg1, arg2. */
     BinaryFunction(BinaryElementaryOperator op, const ScalarFunction<P, ARGS...>& arg1, const ScalarFunction<P, ARGS...>& arg2)
         : _op(op), _arg1(arg1), _arg2(arg2) { ARIADNE_ASSERT_MSG(arg1.argument_size() == arg2.argument_size(), "op='" << op << "', arg1=" << arg1 << ", arg2=" << arg2); }
+    /** @brief Return the domain. */
     DomainType domain() const {
         return intersection(this->_arg1.domain(), this->_arg2.domain());
     }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const {
         return this->_arg1.argument_size();
     }
+    /** @brief Return the number of result components. */
     SizeOne result_size() const {
         return SizeOne();
     }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline X operator()(const ElementType<D, X>& x) const {
         return this->_op(this->_arg1(x), this->_arg2(x));
     }
 
+    /** @brief Return the derivative with respect to the selected argument. */
     friend ScalarFunction<P, ARGS...> derivative(const BinaryFunction<P, ARGS...>& f, ElementIndexType<D> j) {
         return f._op.accept([&](auto op) -> ScalarFunction<P, ARGS...> {
             if constexpr (Same<decltype(op), Max> || Same<decltype(op), Min>) {
@@ -445,6 +535,7 @@ class BinaryFunction {
             }
         });
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const BinaryFunction<P, ARGS...>& f) {
         if (f._op.code() == OperatorCode::ADD || f._op.code() == OperatorCode::SUB) {
             return os << '(' << f._arg1 << symbol(f._op.code()) << f._arg2 << ')';
@@ -452,6 +543,7 @@ class BinaryFunction {
             return os << f._arg1 << symbol(f._op.code()) << f._arg2;
         }
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<BinaryFunction<P, ARGS...>>& f) {
         return os << "BinaryFunction(" << f.reference().argument_size() << "," << f.reference() << ")";
     }
@@ -463,6 +555,7 @@ class BinaryFunction {
 };
 
 // \brief The power function \f$(x,n)\mapsto x^n\f$.
+/** @brief Concrete function applying an integer-graded operation to an operand function. */
 template<class P, class... ARGS>
 class GradedFunction {
     typedef Number<P> Y;
@@ -472,28 +565,36 @@ class GradedFunction {
   public:
     typedef D DomainType;
     typedef typename SignatureTraits<SIG>::ArgumentSizeType ArgumentSizeType;
+    /** @brief Construct a \c GradedFunction from op, arg1, arg2. */
     GradedFunction(GradedElementaryOperator op, const ScalarFunction<P, ARGS...>& arg1, const Int& arg2)
         : _op(op), _arg1(arg1), _arg2(arg2) {}
+    /** @brief Return the domain. */
     DomainType domain() const {
         return this->_arg1.domain();
     }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const {
         return this->_arg1.argument_size();
     }
+    /** @brief Return the number of result components. */
     SizeOne result_size() const {
         return SizeOne();
     }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline X operator()(const ElementType<D, X>& x) const {
         return this->_op(this->_arg1.evaluate(x), this->_arg2);
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend Function<P, SIG> derivative(const GradedFunction<P, ARGS...>& f, ElementIndexType<D> j) {
         return f._op.accept([&](auto op) { return op.derivative(f._arg1, f._arg1.derivative(j), f._arg2); });
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const GradedFunction<P, ARGS...>& f) {
         return os << f._op.code() << "(" << f._arg1 << "," << f._arg2 << ")";
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<GradedFunction<P, ARGS...>>& f) {
         return os << "GradedFunction(" << f.reference().argument_size() << "," << f.reference() << ")";
     }
@@ -513,9 +614,11 @@ using GradedMultivariateFunction = GradedFunction<P, RealVector>;
 
 //------------------------ Vector of Scalar functions  -----------------------------------//
 
+/** @brief Scalar-function base with a fixed argument dimension. */
 template<class P, class... ARGS>
 class NonResizableScalarFunction : public CheckedAssignable<ScalarFunction<P, ARGS...>> {
   public:
+    /** @brief Assign the supplied value and return this object. */
     NonResizableScalarFunction<P, ARGS...>& operator=(const ScalarFunction<P, ARGS...>& f) {
         ARIADNE_PRECONDITION_MSG(this->domain() == f.domain(), "this->domain()=" << this->domain() << ", f.domain()=" << f.domain() << "\n\n*this=" << *this << "\nf=" << f << "\n");
         this->ScalarFunction<P, ARGS...>::operator=(f);
@@ -523,6 +626,7 @@ class NonResizableScalarFunction : public CheckedAssignable<ScalarFunction<P, AR
     }
 };
 
+/** @brief Vector-valued function represented by scalar component functions. */
 template<class P, class... ARGS>
 class VectorOfScalarFunction {
     using SIG = RealVector(ARGS...);
@@ -534,15 +638,20 @@ class VectorOfScalarFunction {
     typedef typename SignatureTraits<SIG>::ArgumentSizeType ArgumentSizeType;
     typedef typename SignatureTraits<SIG>::ArgumentIndexType ArgumentIndexType;
 
+    /** @brief Construct a \c VectorOfScalarFunction from rs, as. */
     VectorOfScalarFunction(SizeType rs, SizeType as)
         : VectorOfScalarFunction(rs, ScalarFunction<P, ARGS...>(as)) {}
+    /** @brief Construct a \c VectorOfScalarFunction from rs, dom. */
     VectorOfScalarFunction(SizeType rs, DomainType dom)
         : VectorOfScalarFunction(rs, ScalarFunction<P, ARGS...>(dom)) {}
+    /** @brief Construct a \c VectorOfScalarFunction from rs, f. */
     VectorOfScalarFunction(SizeType rs, const ScalarFunction<P, ARGS...>& f)
         : _dom(f.domain()), _vec(rs, f) {}
+    /** @brief Construct a \c VectorOfScalarFunction from vsf. */
     VectorOfScalarFunction(const Vector<ScalarFunction<P, ARGS...>>& vsf)
         : _dom(vsf.zero_element().domain()), _vec(vsf) {}
 
+    /** @brief Replace the selected value. */
     Void set(SizeType i, ScalarFunction<P, ARGS...> f) {
         if (this->argument_size() == 0u) {
             this->_dom = f.domain();
@@ -550,27 +659,34 @@ class VectorOfScalarFunction {
         ARIADNE_ASSERT(f.argument_size() == this->argument_size());
         this->_vec[i] = f;
     }
+    /** @brief Return the requested element or stored value. */
     ScalarFunction<P, ARGS...> get(SizeType i) const {
         return this->_vec[i];
     }
 
+    /** @brief Return the number of result components. */
     SizeType result_size() const {
         return _vec.size();
     }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const {
         return _dom.dimension();
     }
+    /** @brief Return the domain. */
     DomainType domain() const {
         return _dom;
     }
 
+    /** @brief Return the selected element or component. */
     const ScalarFunction<P, ARGS...> operator[](SizeType i) const {
         return this->_vec[i];
     }
+    /** @brief Return the selected element or component. */
     NonResizableScalarFunction<P, ARGS...>& operator[](SizeType i) {
         return static_cast<NonResizableScalarFunction<P, ARGS...>&>(this->_vec[i]);
     }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline Vector<X> operator()(const ElementType<D, X>& x) const {
         Vector<X> r(this->_vec.size(), zero_element(x));
@@ -580,12 +696,14 @@ class VectorOfScalarFunction {
         return r;
     }
 
+    /** @brief Return the derivative with respect to the selected argument. */
     friend VectorOfScalarFunction<P, ARGS...> derivative(const VectorOfScalarFunction<P, ARGS...>& f, ArgumentIndexType k) {
         auto chrs = get_characteristics(derivative(f._vec.zero_element(), k));
         auto r = VectorOfScalarFunction<P, ARGS...>(Vector<ScalarFunction<P, ARGS...>>(f._vec.size(), [&](SizeType i) { return derivative(f._vec[i], k); }, chrs));
         return r;
     }
 
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const VectorOfScalarFunction<P, ARGS...>& f) {
         os << "[";
         for (SizeType i = 0; i != f._vec.size(); ++i) {
@@ -597,6 +715,7 @@ class VectorOfScalarFunction {
         return os << "]";
     }
 
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const Representation<VectorOfScalarFunction<P, ARGS...>>& fr) {
         VectorOfScalarFunction<P, ARGS...> f = fr.reference();
         // os << "VoSF[R" << this->argument_size() << "->R" << this->result_size() << "]";
@@ -620,6 +739,7 @@ using VectorOfScalarUnivariateFunction = VectorOfScalarFunction<P, RealScalar>;
 template<class P>
 using VectorOfScalarMultivariateFunction = VectorOfScalarFunction<P, RealVector>;
 
+/** @brief Scalar view of one component of a vector-valued function. */
 template<class P, class... ARGS>
 class FunctionElement {
     using SIG = RealScalar(ARGS...);
@@ -630,21 +750,28 @@ class FunctionElement {
     typedef typename SignatureTraits<SIG>::ArgumentSizeType ArgumentSizeType;
     typedef typename SignatureTraits<SIG>::ArgumentIndexType ArgumentIndexType;
 
+    /** @brief Construct a \c FunctionElement from vf, i. */
     FunctionElement(const VectorFunction<P, ARGS...>& vf, SizeType i)
         : _vf(vf), _i(i) { ARIADNE_PRECONDITION(i < vf.result_size()); }
 
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const { return _vf.argument_size(); }
+    /** @brief Return the number of result components. */
     SizeOne result_size() const { return SizeOne(); }
+    /** @brief Return the domain. */
     DomainType domain() const { return _vf.domain(); }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline X operator()(const ElementType<D, X>& x) const {
         return this->_vf.evaluate(x)[_i];
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const FunctionElement<P, ARGS...>& f) {
         return os << f._vf << "[" << f._i << "]";
     }
 
+    /** @brief Return the derivative with respect to the selected argument. */
     friend FunctionElement<P, ARGS...> derivative(const FunctionElement<P, ARGS...>& f, ArgumentIndexType j) {
         return FunctionElement<P, ARGS...>(f._vf.derivative(j), f._i);
     }
@@ -656,6 +783,7 @@ class FunctionElement {
 
 //------------------------ Results of functional operations  -----------------------------------//
 
+/** @brief Function lifted to a larger argument space. */
 template<class P, class D1, class D2, class D3, class C>
 class EmbeddedFunction {
     typedef CartesianProductType<D1, D2, D3> D;
@@ -672,21 +800,30 @@ class EmbeddedFunction {
     typedef typename SignatureTraits<SIG>::ArgumentSizeType ArgumentSizeType;
     typedef typename SignatureTraits<SIG>::ResultSizeType ResultSizeType;
 
+    /** @brief Construct a \c EmbeddedFunction from as1, f2, as3. */
     EmbeddedFunction(ElementSizeType<D1> as1, const Function<P, RES(ARG2)>& f2, ElementSizeType<D3> as3)
         : EmbeddedFunction(D1(as1), f2, D3(as3)) {}
+    /** @brief Construct a \c EmbeddedFunction from dom1, f2, dom3. */
     EmbeddedFunction(D1 dom1, const Function<P, RES(ARG2)>& f2, D3 dom3)
         : _dom1(dom1), _f2(f2), _dom3(dom3) {}
+    /** @brief Return the domain. */
     DomainType domain() const { return product(_dom1, _f2.domain(), _dom3); }
+    /** @brief Return the codomain. */
     const CodomainType codomain() const { return _f2.codomain(); }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const { return _dom1.dimension() + _f2.argument_size() + _dom3.dimension(); }
+    /** @brief Return the number of result components. */
     ResultSizeType result_size() const { return _f2.result_size(); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline ElementType<C, X> operator()(const Vector<X>& x) const {
         Vector<X> px = project(x, Range(_dom1.dimension(), _dom1.dimension() + _f2.argument_size()));
         return _f2.evaluate(px);
     }
+    /** @brief Return the selected element or component. */
     template<class I>
     inline decltype(auto) operator[](I i) const { return EmbeddedFunction<P, D1, D2, D3, RealDomain>(_dom1, _f2[i], _dom3); }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend EmbeddedFunction<P, D1, D2, D3, C> derivative(const EmbeddedFunction<P, D1, D2, D3, C>& f, ArgumentSizeType k) {
         ARIADNE_PRECONDITION(k < f.argument_size());
         const SizeType n1 = f._dom1.dimension();
@@ -697,6 +834,7 @@ class EmbeddedFunction {
         }
         return EmbeddedFunction<P, D1, D2, D3, C>(f._dom1, f._f2.derivative(k - n1), f._dom3);
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const EmbeddedFunction<P, D1, D2, D3, C>& f) {
         return os << "EmbeddedFunction( dom1=" << f._dom1 << ", f2=" << f._f2 << ", dom3=" << f._dom3 << " )";
     }
@@ -707,6 +845,7 @@ class EmbeddedFunction {
     D3 _dom3;
 };
 
+/** @brief Function represented as composition of outer and inner functions. */
 template<class P, class R, class T, class... AS>
 class ComposedFunction {
     using SIG = R(AS...);
@@ -723,18 +862,26 @@ class ComposedFunction {
     typedef typename SignatureTraits<SIG>::ArgumentIndexType ArgumentIndexType;
     typedef ElementIndexType<C> ResultIndexType;
 
+    /** @brief Construct a \c ComposedFunction from f, g. */
     ComposedFunction(const Function<P, R(T)>& f, const Function<P, T(AS...)>& g)
         : _f(f), _g(g) { ARIADNE_PRECONDITION(f.argument_size() == g.result_size()); }
+    /** @brief Return the domain. */
     DomainType domain() const { return _g.domain(); }
+    /** @brief Return the codomain. */
     const CodomainType codomain() const { return _f.codomain(); }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const { return _g.argument_size(); }
+    /** @brief Return the number of result components. */
     ResultSizeType result_size() const { return _f.result_size(); }
+    /** @brief Return the selected element or component. */
     ScalarFunction<P, AS...> operator[](ResultIndexType i) const { return compose(_f[i], _g); }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline ElementType<C, X> operator()(const ElementType<D, X>& x) const {
         return _f.evaluate(_g.evaluate(x));
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     Function<P, R(AS...)> derivative(ArgumentIndexType j) const {
         if constexpr (Same<R, RealScalar>) {
             if constexpr (Same<T, RealScalar>) {
@@ -763,9 +910,11 @@ class ComposedFunction {
             return r;
         }
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend Function<P, R(AS...)> derivative(const ComposedFunction<P, R, T, AS...>& f, ArgumentIndexType j) {
         return f.derivative(j);
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const ComposedFunction<P, R, T, AS...>& f) {
         return os << "ComposedFunction( f=" << f._f << ", g=" << f._g << " )";
     }
@@ -777,6 +926,7 @@ class ComposedFunction {
     Function<P, T(AS...)> _g;
 };
 
+/** @brief Vector function concatenating the results of its operand functions. */
 template<class P, class D, class C1, class C2>
 class JoinedFunction {
     typedef CartesianProductType<C1, C2> C;
@@ -795,23 +945,32 @@ class JoinedFunction {
     typedef typename SignatureTraits<SIG>::ResultSizeType ResultSizeType;
     typedef typename SignatureTraits<SIG>::ArgumentIndexType ArgumentIndexType;
 
+    /** @brief Construct a \c JoinedFunction from f1, f2. */
     JoinedFunction(Function<P, RES1(ARG)> f1, Function<P, RES2(ARG)> f2)
         : _f1(f1), _f2(f2) { ARIADNE_PRECONDITION(f1.argument_size() == f2.argument_size()); }
+    /** @brief Return the selected element or component. */
     ScalarFunction<P, ARG> operator[](SizeType i) const {
         return (i < _f1.result_size()) ? _f1[i] : _f2[i - _f1.result_size()];
     }
 
+    /** @brief Return the domain. */
     DomainType domain() const { return intersection(_f1.domain(), _f2.domain()); }
+    /** @brief Return the codomain. */
     const CodomainType codomain() const { return product(_f1.codomain(), _f2.codomain()); }
+    /** @brief Return the number of result components. */
     SizeType result_size() const { return _f1.result_size() + _f2.result_size(); }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const { return _f1.argument_size(); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline ElementType<C, X> operator()(const ElementType<D, X>& x) const {
         return join(_f1.evaluate(x), _f2.evaluate(x));
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend JoinedFunction<P, D, C1, C2> derivative(const JoinedFunction<P, D, C1, C2>& f, ArgumentIndexType j) {
         return JoinedFunction<P, D, C1, C2>(f._f1.derivative(j), f._f2.derivative(j));
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const JoinedFunction<P, D, C1, C2>& f) {
         return os << "JoinedFunction( f1=" << f._f1 << ", f2=" << f._f2 << " )";
     }
@@ -821,6 +980,7 @@ class JoinedFunction {
     Function<P, RES2(ARG)> _f2;
 };
 
+/** @brief Function combining operands acting on separate argument groups. */
 template<class P, class D1, class D2, class C1, class C2>
 class CombinedFunction {
     typedef CartesianProductType<D1, D2> D;
@@ -840,20 +1000,28 @@ class CombinedFunction {
     typedef typename SignatureTraits<SIG>::ResultSizeType ResultSizeType;
     typedef typename SignatureTraits<SIG>::ArgumentIndexType ArgumentIndexType;
 
+    /** @brief Construct a \c CombinedFunction from f1, f2. */
     CombinedFunction(FunctionType<P, D1, C1> f1, FunctionType<P, D2, C2> f2)
         : _f1(f1), _f2(f2) {}
+    /** @brief Return the domain. */
     DomainType domain() const { return product(_f1.domain(), _f2.domain()); }
+    /** @brief Return the codomain. */
     CodomainType codomain() const { return product(_f1.codomain(), _f2.codomain()); }
+    /** @brief Return the number of result components. */
     ResultSizeType result_size() const { return _f1.result_size() + _f2.result_size(); }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const { return _f1.argument_size() + _f2.argument_size(); }
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline ElementType<C, X> operator()(const ElementType<D, X>& x) const {
         return join(_f1.evaluate(project(x, range(0, _f1.argument_size()))),
                     _f2.evaluate(project(x, range(_f1.argument_size(), this->argument_size()))));
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     CombinedFunction<P, D1, D2, C1, C2> derivative(const CombinedFunction<P, D1, D2, C1, C2>&, ArgumentIndexType) {
         ARIADNE_NOT_IMPLEMENTED;
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const CombinedFunction<P, D1, D2, C1, C2>& f) {
         return os << "CombinedFunction( f1=" << f._f1 << ", f2=" << f._f2 << " )";
     }
@@ -863,6 +1031,7 @@ class CombinedFunction {
     FunctionType<P, D2, C2> _f2;
 };
 
+/** @brief Function selecting result coordinates of another function. */
 template<class P, class D>
 class ProjectedFunction {
     using ARG = ElementKind<D>;
@@ -873,18 +1042,24 @@ class ProjectedFunction {
     typedef typename SignatureTraits<SIG>::ArgumentSizeType ArgumentSizeType;
     typedef typename SignatureTraits<SIG>::ArgumentIndexType ArgumentIndexType;
 
+    /** @brief Construct a \c ProjectedFunction from f, prj. */
     ProjectedFunction(VectorFunction<P, D> f, Projection prj)
         : _f(f), _prj(prj) { ARIADNE_PRECONDITION(f.result_size() == prj.argument_size()); }
+    /** @brief Return the number of result components. */
     SizeType result_size() const { return _prj.result_size(); }
+    /** @brief Return the number of scalar arguments. */
     ArgumentSizeType argument_size() const { return _f.argument_size(); }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline Vector<X> operator()(const ElementType<D, X>& x) const {
         return _prj(_f(x));
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend ProjectedFunction<P, D> derivative(const ProjectedFunction<P, D>& f, ArgumentIndexType j) {
         return ProjectedFunction<P, D>(f._f.derivative(j), f._prj);
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const ProjectedFunction<P, D>& f) {
         return os << "ProjectedFunction( f=" << f._f << ", prj=" << f._prj << " )";
     }
@@ -895,6 +1070,7 @@ class ProjectedFunction {
 };
 
 // A Lie deriviative \f$\nabla g\cdot f\f$.
+/** @brief Function representing differentiation along a vector field. */
 template<class P>
 class LieDerivativeFunction {
   public:
@@ -905,10 +1081,14 @@ class LieDerivativeFunction {
         ARIADNE_ASSERT(f.result_size() == f.argument_size());
     }
 
+    /** @brief Return the number of result components. */
     SizeOne result_size() const { return _g.result_size(); }
+    /** @brief Return the number of scalar arguments. */
     SizeType argument_size() const { return _g.argument_size(); }
+    /** @brief Return the domain. */
     EuclideanDomain domain() const { return _g.domain(); }
 
+    /** @brief Apply the callable to the supplied arguments. */
     template<class X>
     inline X operator()(const Vector<X>& x) const {
         // const Vector<R> fx=_f.evaluate(x); r=0; for(SizeType i=0; i!=_dg.size(); ++i) { r+=fx[i]+_dg[i].evaluate(x); } }
@@ -919,9 +1099,11 @@ class LieDerivativeFunction {
         }
         return r;
     }
+    /** @brief Return the derivative with respect to the selected argument. */
     friend LieDerivativeFunction<P> derivative(const LieDerivativeFunction<P>&, SizeType) {
         ARIADNE_NOT_IMPLEMENTED;
     }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const LieDerivativeFunction<P>& f) {
         return os << "LieDerivativeFunction( g=" << f._g << ", f=" << f._f << " )";
     }

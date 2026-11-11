@@ -91,6 +91,7 @@ using ValidatedVectorMultivariateBoundsTaylorFunctionModelDP = VectorScaledFunct
 using ValidatedScalarMultivariateBoundsTaylorFunctionModelMP = ScalarScaledFunctionPatch<ValidatedBoundsTaylorModelMP>; //!< <p/> \ingroup FunctionModelSubModule
 using ValidatedVectorMultivariateBoundsTaylorFunctionModelMP = VectorScaledFunctionPatch<ValidatedBoundsTaylorModelMP>; //!< //!@}
 
+/** @brief Factory constructing compatible taylor function. */
 class TaylorFunctionFactory
     : public ScaledFunctionPatchFactory<TaylorModel<ValidatedTag, FloatDP>> {
     typedef TaylorModel<ValidatedTag, FloatDP> M;
@@ -99,12 +100,17 @@ class TaylorFunctionFactory
   public:
     typedef typename M::SweeperType SweeperType;
     using ScaledFunctionPatchFactory<M>::ScaledFunctionPatchFactory;
+    /** @brief Construct a \c TaylorFunctionFactory from sweeper. */
     explicit TaylorFunctionFactory(SweeperType sweeper) : ScaledFunctionPatchFactory<M>(sweeper) {}
+    /** @brief Return the configured term sweeper. */
     SweeperType sweeper() const { return this->properties(); }
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream& os, const TaylorFunctionFactory& factory) { return os << "TaylorFunctionFactory( sweeper=" << factory.sweeper() << " )"; }
 };
 
+/** @brief Construct taylor function factory from the supplied arguments. */
 FunctionModelFactoryInterface<ValidatedTag, DoublePrecision>* make_taylor_function_factory();
+/** @brief Construct taylor function factory from the supplied arguments. */
 FunctionModelFactoryInterface<ValidatedTag, DoublePrecision>* make_taylor_function_factory(const Sweeper<FloatDP>& sweeper);
 
 } // namespace Ariadne

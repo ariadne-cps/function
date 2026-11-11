@@ -37,6 +37,7 @@
 
 namespace Ariadne {
 
+/** @brief Return the stored values. */
 template<class X>
 decltype(auto) values(const Vector<X>& v) {
     // typedef typename std::remove_reference<decltype(a.zero_element().value())>::type C;
@@ -63,6 +64,7 @@ Vector<Bounds<FloatMP>> cast_singleton(Vector<Interval<UpperBound<FloatMP>>> con
 }
 */
 
+/** @brief Operations supported by algebra objects. */
 template<class F>
 struct AlgebraOperations<AffineModel<ApproximateTag, F>> {
     typedef typename F::PrecisionType PrecisionType;
@@ -70,6 +72,7 @@ struct AlgebraOperations<AffineModel<ApproximateTag, F>> {
     typedef typename AffineModelType::NumericType NumericType;
     typedef typename AffineModelType::CoefficientType CoefficientType;
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Neg, const AffineModelType& a) {
         SizeType n = a.argument_size();
         PrecisionType prec = a.precision();
@@ -82,6 +85,7 @@ struct AlgebraOperations<AffineModel<ApproximateTag, F>> {
         return r;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Add, const AffineModelType& a1, const AffineModelType& a2) {
         ARIADNE_PRECONDITION_MSG(a1.argument_size() == a2.argument_size(), "a1=" << a1 << " a2=" << a2);
         SizeType n = a1.argument_size();
@@ -95,6 +99,7 @@ struct AlgebraOperations<AffineModel<ApproximateTag, F>> {
         return r;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Mul, const AffineModelType& a1, const AffineModelType& a2) {
         ARIADNE_PRECONDITION_MSG(a1.argument_size() == a2.argument_size(), "a1=" << a1 << " a2=" << a2);
         SizeType n = a1.argument_size();
@@ -108,16 +113,19 @@ struct AlgebraOperations<AffineModel<ApproximateTag, F>> {
         return r;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Add, const NumericType& c, const AffineModelType& a) {
         AffineModelType r = a;
         r._c = c + a.value();
         return r;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Add, const AffineModelType& a, const NumericType& c) {
         return apply(Add(), c, a);
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Mul, const NumericType& c, const AffineModelType& a) {
         SizeType n = a.argument_size();
         PrecisionType prec = a.precision();
@@ -130,11 +138,13 @@ struct AlgebraOperations<AffineModel<ApproximateTag, F>> {
         return r;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Mul, const AffineModelType& a, const NumericType& c) {
         return apply(Mul(), c, a);
     }
 };
 
+/** @brief Return the norm. */
 template<class F>
 PositiveUpperBound<F> norm(const Covector<F>& g) {
     PositiveUpperBound<F> r = mag(make_from_characteristics<F>(g.array().element_characteristics()));
@@ -144,6 +154,7 @@ PositiveUpperBound<F> norm(const Covector<F>& g) {
     return r;
 }
 
+/** @brief Operations supported by algebra objects. */
 template<class F>
 struct AlgebraOperations<AffineModel<ValidatedTag, F>> {
     typedef typename F::PrecisionType PrecisionType;
@@ -152,6 +163,7 @@ struct AlgebraOperations<AffineModel<ValidatedTag, F>> {
     typedef typename AffineModelType::CoefficientType CoefficientType;
     typedef typename AffineModelType::ErrorType ErrorType;
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Neg, const AffineModelType& a) {
         SizeType n = a.argument_size();
         AffineModelType r(n, a.precision());
@@ -163,6 +175,7 @@ struct AlgebraOperations<AffineModel<ValidatedTag, F>> {
 
         return r;
     }
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Add, const AffineModelType& a1, const AffineModelType& a2) {
         ARIADNE_PRECONDITION_MSG(a1.argument_size() == a2.argument_size(), "a1=" << a1 << " a2=" << a2);
         SizeType n = a1.argument_size();
@@ -177,6 +190,7 @@ struct AlgebraOperations<AffineModel<ValidatedTag, F>> {
         return r;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Mul, const AffineModelType& a1, const AffineModelType& a2) {
         ARIADNE_PRECONDITION_MSG(a1.argument_size() == a2.argument_size(), "a1=" << a1 << " a2=" << a2);
         SizeType n = a1.argument_size();
@@ -194,16 +208,19 @@ struct AlgebraOperations<AffineModel<ValidatedTag, F>> {
         return r;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Add, const NumericType& c, const AffineModelType& a) {
         AffineModelType r = a;
         r.value() = add_err(a.value(), c, r.error());
         return r;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Add, const AffineModelType& a, const NumericType& c) {
         return apply(Add(), c, a);
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Mul, const NumericType& c, const AffineModelType& a) {
         SizeType n = a.argument_size();
         PrecisionType prec = a.precision();
@@ -217,6 +234,7 @@ struct AlgebraOperations<AffineModel<ValidatedTag, F>> {
         return r;
     }
 
+    /** @brief Apply the supplied operation to the operands. */
     static AffineModelType apply(Mul, const AffineModelType& a, const NumericType& c) {
         return apply(Mul(), c, a);
     }
@@ -265,12 +283,14 @@ AffineModel<ValidatedTag, F>::AffineModel(const TaylorModel<ValidatedTag, F>& ta
     F::set_rounding_mode(rnd);
 }
 
+/** @brief Construct an affine model from the supplied function or coefficients. */
 template<class P, class PR>
 AffineModel<P, RawFloatType<PR>> affine_model(const BoxDomainType& domain, const ScalarMultivariateFunction<P>& function, PR precision) {
     ValidatedScalarMultivariateTaylorFunctionModelDP tf(domain, function, AffineSweeper<RawFloat<PR>>(precision));
     return affine_model(tf.model());
 }
 
+/** @brief Test whether the first operand is less than the second. */
 inline decltype(auto) operator<(FloatMPApproximation x, const FloatDP y) { return x < FloatMPApproximation(y.get_d(), x.precision()); }
 
 // FIXME: Clean up construction of interval with precision PrecisionType<F>

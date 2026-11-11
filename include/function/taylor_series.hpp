@@ -47,6 +47,7 @@ class AnalyticFunction;
 template<class X>
 class TaylorSeries;
 
+/** @brief Univariate series with a bounded truncation degree. */
 template<>
 class TaylorSeries<FloatDPBounds> {
     IntervalDomainType _domain;
@@ -54,20 +55,29 @@ class TaylorSeries<FloatDPBounds> {
     FloatDPError _error;
 
   public:
+    /** @brief Construct a \c TaylorSeries from dom, deg. */
     TaylorSeries(const IntervalDomainType& dom, DegreeType deg) : _domain(dom), _expansion(deg + 1u, FloatDP(dp)), _error(0u, dp) {}
 
+    /** @brief Construct a \c TaylorSeries from domain, centre, degree, function. */
     TaylorSeries(const IntervalDomainType& domain, const FloatDP& centre, DegreeType degree,
                  const AnalyticFunction& function);
 
+    /** @brief Construct a \c TaylorSeries from unary_operator, domain, centre, degree. */
     template<class OP>
     TaylorSeries(OP unary_operator, const IntervalDomainType& domain, const FloatDP& centre, DegreeType degree);
 
+    /** @brief Return the polynomial or expansion degree. */
     DegreeType degree() const { return static_cast<DegreeType>(_expansion.size() - 1u); }
+    /** @brief Return the selected element or component. */
     const FloatDP& operator[](DegreeType i) const { return _expansion[i]; }
+    /** @brief Return the coefficient expansion. */
     Array<FloatDP> expansion() const { return _expansion; }
+    /** @brief Return the error bound. */
     FloatDPError error() const { return _error; }
+    /** @brief Remove terms according to the configured sweeping policy. */
     Void sweep(FloatDP threshold);
 
+    /** @brief Write the value to the output stream. */
     friend OutputStream& operator<<(OutputStream&, const TaylorSeries<FloatDPBounds>&);
 };
 
@@ -94,6 +104,7 @@ inline Void TaylorSeries<FloatDPBounds>::sweep(FloatDP threshold) {
     }
 }
 
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const TaylorSeries<FloatDPBounds>& ts) {
     return os << "TS(" << ts._expansion << "+/-" << ts._error << ")";
 }

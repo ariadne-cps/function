@@ -54,6 +54,7 @@ namespace Ariadne {
 
 namespace ScaledFunctionPatchDetail {
 
+/** @brief Convert all box coordinates to the requested interval representation. */
 template<class PR>
 auto convert_box(const BoxDomainType& bx, PR pr) {
     if constexpr (Same<PR, DoublePrecision>) {
@@ -70,19 +71,26 @@ auto convert_box(const BoxDomainType& bx, PR pr) {
 
 } // namespace ScaledFunctionPatchDetail
 
+/** @brief Test containment of the supplied value. */
 inline decltype(auto) contains(const IntervalDomainType& bx, const Scalar<FloatMPBounds>& x) { return contains(convert_interval(bx, x.precision()), x); }
+/** @brief Test containment of the supplied value. */
 inline decltype(auto) contains(const IntervalDomainType& bx, const Scalar<FloatMPApproximation>& x) { return contains(convert_interval(bx, x.precision()), x); }
+/** @brief Test containment of the supplied value. */
 template<class F>
 inline decltype(auto) contains(const IntervalDomainType& bx, const UpperInterval<F>& x) {
     return subset(x, convert_interval(bx, x.upper_bound().precision()));
 }
+/** @brief Test containment of the supplied value. */
 inline decltype(auto) contains(const BoxDomainType& bx, const Vector<FloatMPBounds>& x) { return contains(ScaledFunctionPatchDetail::convert_box(bx, x.zero_element().precision()), x); }
+/** @brief Test containment of the supplied value. */
 inline decltype(auto) contains(const BoxDomainType& bx, const Vector<FloatMPApproximation>& x) { return contains(ScaledFunctionPatchDetail::convert_box(bx, x.zero_element().precision()), x); }
+/** @brief Test containment of the supplied value. */
 template<class F>
 inline decltype(auto) contains(const BoxDomainType& bx, const Vector<UpperInterval<F>>& x) {
     return subset(Box<UpperInterval<F>>(x), ScaledFunctionPatchDetail::convert_box(bx, x.zero_element().upper_bound().precision()));
 }
 
+/** @brief Set the scaling. */
 template<class M>
 Void _set_scaling(ScaledFunctionPatch<M>& x, const IntervalDomainType& ivl, SizeType j) {
     // A scaling of [-1,+1] into [a,b] has the form s->rx+c where c is centre and r radius of ivl
@@ -98,6 +106,7 @@ Void _set_scaling(ScaledFunctionPatch<M>& x, const IntervalDomainType& ivl, Size
     x.set_error(e);
 }
 
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const Representation<FloatDP>& flt_repr) {
     const FloatDP& flt = *flt_repr.pointer;
     std::streamsize precision = os.precision();
@@ -110,20 +119,24 @@ inline OutputStream& operator<<(OutputStream& os, const Representation<FloatDP>&
     return os;
 }
 
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const Representation<FloatMP>& flt_repr) {
     return os << *flt_repr.pointer;
 }
 
+/** @brief Write the value to the output stream. */
 template<class PR>
 inline OutputStream& operator<<(OutputStream& os, const Representation<PositiveFloatUpperBound<PR>>& flt_repr) {
     return os << reinterpret_cast<const Representation<RawFloat<PR>>&>(flt_repr);
 }
 
+/** @brief Write the value to the output stream. */
 template<class PR>
 inline OutputStream& operator<<(OutputStream& os, const Representation<FloatError<PR>>& flt_repr) {
     return os << reinterpret_cast<const Representation<RawFloat<PR>>&>(flt_repr);
 }
 
+/** @brief Write the value to the output stream. */
 template<class PR>
 inline OutputStream& operator<<(OutputStream& os, const Representation<IntervalDomainType>& ivl_repr) {
     const IntervalDomainType& ivl = *ivl_repr.pointer;
@@ -137,6 +150,7 @@ inline OutputStream& operator<<(OutputStream& os, const Representation<IntervalD
     return os;
 }
 
+/** @brief Write the value to the output stream. */
 template<class PR>
 inline OutputStream& operator<<(OutputStream& os, const Representation<Expansion<MultiIndex, RawFloat<PR>>>& exp_repr) {
     const Expansion<MultiIndex, RawFloat<PR>>& exp = *exp_repr.pointer;
@@ -157,11 +171,13 @@ inline OutputStream& operator<<(OutputStream& os, const Representation<Expansion
     return os;
 }
 
+/** @brief Write the value to the output stream. */
 template<class PR>
 inline OutputStream& operator<<(OutputStream& os, const Representation<Expansion<MultiIndex, FloatApproximation<PR>>>& exp_repr) {
     return os << reinterpret_cast<const Expansion<MultiIndex, RawFloat<PR>>&>(exp_repr);
 }
 
+/** @brief Write the value to the output stream. */
 template<class X>
 inline OutputStream& operator<<(OutputStream& os, const Representation<Vector<X>>& vec_repr) {
     const Vector<X>& vec = *vec_repr.pointer;
@@ -176,6 +192,7 @@ inline OutputStream& operator<<(OutputStream& os, const Representation<Vector<X>
     return os;
 }
 
+/** @brief Write the value to the output stream. */
 inline OutputStream& operator<<(OutputStream& os, const Representation<BoxDomainType>& box_repr) {
     const BoxDomainType& vec = *box_repr.pointer;
     os << "(";
@@ -189,6 +206,7 @@ inline OutputStream& operator<<(OutputStream& os, const Representation<BoxDomain
     return os;
 }
 
+/** @brief Write the value to the output stream. */
 template<class F>
 inline OutputStream& operator<<(OutputStream& os, const Representation<Sweeper<F>>& swp_repr) {
     const Sweeper<F>& swp = *swp_repr.pointer;
@@ -202,6 +220,7 @@ inline OutputStream& operator<<(OutputStream& os, const Representation<Sweeper<F
     return os;
 }
 
+/** @brief Write the value to the output stream. */
 template<class T>
 inline OutputStream& operator<<(OutputStream& os, const Representation<List<T>>& lst_repr) {
     const List<T>& lst = *lst_repr.pointer;
@@ -342,13 +361,19 @@ Void ScaledFunctionPatch<M>::restrict(const BoxDomainType& dom) {
     (*this) = restriction(*this, dom);
 }
 
+/** @brief Test equality of the operands. */
 inline Bool operator==(FloatDPBounds x1, Int n2) { return x1.upper_raw() == FloatDP(n2, dp) && x1.lower_raw() == FloatDP(n2, dp); }
+/** @brief Test equality of the operands. */
 inline Bool operator==(FloatDPApproximation x1, Int n2) { return x1.raw() == FloatDP(n2, dp); }
 
+/** @brief Test inequality of the operands. */
 inline Bool operator!=(FloatDPBounds x1, Int n2) { return x1.upper_raw() != FloatDP(n2, dp) || x1.lower_raw() != FloatDP(n2, dp); }
+/** @brief Test inequality of the operands. */
 inline Bool operator!=(FloatDPApproximation x1, Int n2) { return x1.raw() != FloatDP(n2, dp); }
 
+/** @brief Test whether the first operand is greater than the second. */
 inline Bool operator>(FloatDPBounds x1, Int n2) { return x1.lower_raw() > FloatDP(n2, dp); }
+/** @brief Test whether the first operand is greater than the second. */
 inline Bool operator>(FloatDPApproximation x1, Int n2) { return x1.raw() > FloatDP(n2, dp); }
 
 template<class M>
@@ -444,6 +469,7 @@ template<class M> auto ScaledFunctionPatch<M>::gradient(const Vector<NumericType
 }
 */
 
+/** @brief Write the polynomial using the supplied argument names. */
 template<class M>
 OutputStream& write_polynomial(OutputStream& os, const ScaledFunctionPatch<M>& fp) {
     typedef typename ScaledFunctionPatch<M>::CoefficientType CoefficientType;
@@ -508,6 +534,7 @@ template<class M> OutputStream& operator<<(OutputStream& os, const ModelRepresen
 }
 */
 
+/** @brief Write the value to the output stream. */
 template<class M>
 OutputStream& operator<<(OutputStream& os, const ModelRepresentation<ScaledFunctionPatch<M>>& frepr) {
     typedef typename M::PropertiesType Prp;
@@ -519,6 +546,7 @@ OutputStream& operator<<(OutputStream& os, const ModelRepresentation<ScaledFunct
     return os;
 }
 
+/** @brief Write the value to the output stream. */
 template<class M>
 OutputStream& operator<<(OutputStream& os, const PolynomialRepresentation<ScaledFunctionPatch<M>>& frepr) {
     typedef typename M::RawFloatType F;
@@ -604,6 +632,7 @@ VectorScaledFunctionPatch<M>::VectorScaledFunctionPatch(const BoxDomainType& d,
       }()) {
 }
 
+/** @brief Return the common scaling or representation of the operands. */
 template<class C, class F>
 decltype(auto) common(const C& c, const F& f) {
     ARIADNE_PRECONDITION(c.size() > 0);
@@ -854,6 +883,7 @@ Void VectorScaledFunctionPatch<M>::clobber() {
     }
 }
 
+/** @brief Apply the callable to the supplied arguments. */
 template<class M>
 auto VectorScaledFunctionPatch<M>::operator()(const Vector<FloatApproximation<PR>>& x) const
     -> Vector<ArithmeticType<CoefficientType, FloatApproximation<PR>>> {
@@ -869,6 +899,7 @@ auto VectorScaledFunctionPatch<M>::operator()(const Vector<FloatApproximation<PR
     return r;
 }
 
+/** @brief Apply the callable to the supplied arguments. */
 template<class M>
 auto VectorScaledFunctionPatch<M>::operator()(const Vector<FloatBounds<PR>>& x) const
     -> Vector<ArithmeticType<CoefficientType, FloatBounds<PR>>> {
