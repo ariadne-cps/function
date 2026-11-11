@@ -31,6 +31,7 @@
 
 #include "function/formula.decl.hpp"
 #include "function/function_interface.hpp"
+#include "geometry/box.hpp"
 
 // Adaptors for classes to conform to the Function interface.
 

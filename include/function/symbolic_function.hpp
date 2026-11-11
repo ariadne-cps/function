@@ -37,6 +37,7 @@
 #include "function/formula.hpp"
 #include "function/formula.tpl.hpp"
 #include "function/function_interface.hpp"
+#include "function/function.hpp"
 #include "function/function_mixin.hpp"
 #include "function/function_wrapper.hpp"
 #include "function/projection.hpp"
