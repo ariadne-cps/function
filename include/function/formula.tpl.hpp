@@ -29,6 +29,7 @@
 #ifndef ARIADNE_FORMULA_TPL_HPP
 #define ARIADNE_FORMULA_TPL_HPP
 
+#include "function/formula.hpp"
 #include "function/operation_node.hpp"
 
 namespace Ariadne {
