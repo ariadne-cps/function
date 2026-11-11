@@ -30,49 +30,60 @@
 #define ARIADNE_TAYLOR_FUNCTION_HPP
 
 #include <iosfwd>
-#include "utility/container.hpp"
-#include "utility/exceptions.hpp"
-#include "numeric/numeric.hpp"
-#include "algebra/vector.hpp"
-#include "function/taylor_model.hpp"
 
+#include "algebra/vector.hpp"
 #include "function/function_interface.hpp"
 #include "function/function_mixin.hpp"
 #include "function/function_model.hpp"
 #include "function/scaled_function_patch.hpp"
 #include "function/taylor_function.decl.hpp"
+#include "function/taylor_model.hpp"
+#include "numeric/numeric.hpp"
+#include "utility/container.hpp"
+#include "utility/exceptions.hpp"
 
 namespace Ariadne {
 
-template<class P, class F> class TaylorModel;
+template<class P, class F>
+class TaylorModel;
 class TaylorFunctionFactory;
 
 //! \ingroup FunctionModelSubModule
 //! \name Template shorthands and type synonyms for Taylor function models
 //!@{
 //! \ingroup FunctionModelSubModule
-template<class P, class F> using ScalarMultivariateTaylorFunctionModel = ScalarScaledFunctionPatch<TaylorModel<P,F>>; //!< <p/> \ingroup FunctionModelSubModule
-template<class P, class F> using VectorMultivariateTaylorFunctionModel = VectorScaledFunctionPatch<TaylorModel<P,F>>; //!< <p/> \ingroup FunctionModelSubModule
-template<class F> using ValidatedScalarMultivariateTaylorFunctionModel = ScalarScaledFunctionPatch<ValidatedTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
-template<class F> using ValidatedVectorMultivariateTaylorFunctionModel = VectorScaledFunctionPatch<ValidatedTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
-template<class F> using ApproximateScalarMultivariateTaylorFunctionModel = ScalarScaledFunctionPatch<ApproximateTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
-template<class F> using ApproximateVectorMultivariateTaylorFunctionModel = VectorScaledFunctionPatch<ApproximateTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class P, class F>
+using ScalarMultivariateTaylorFunctionModel = ScalarScaledFunctionPatch<TaylorModel<P, F>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class P, class F>
+using VectorMultivariateTaylorFunctionModel = VectorScaledFunctionPatch<TaylorModel<P, F>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class F>
+using ValidatedScalarMultivariateTaylorFunctionModel = ScalarScaledFunctionPatch<ValidatedTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class F>
+using ValidatedVectorMultivariateTaylorFunctionModel = VectorScaledFunctionPatch<ValidatedTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class F>
+using ApproximateScalarMultivariateTaylorFunctionModel = ScalarScaledFunctionPatch<ApproximateTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class F>
+using ApproximateVectorMultivariateTaylorFunctionModel = VectorScaledFunctionPatch<ApproximateTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
 
-using ValidatedScalarMultivariateTaylorFunctionModelDP = ScalarScaledFunctionPatch<ValidatedTaylorModelDP>; //!< <p/> \ingroup FunctionModelSubModule
-using ValidatedVectorMultivariateTaylorFunctionModelDP = VectorScaledFunctionPatch<ValidatedTaylorModelDP>; //!< <p/> \ingroup FunctionModelSubModule
+using ValidatedScalarMultivariateTaylorFunctionModelDP = ScalarScaledFunctionPatch<ValidatedTaylorModelDP>;     //!< <p/> \ingroup FunctionModelSubModule
+using ValidatedVectorMultivariateTaylorFunctionModelDP = VectorScaledFunctionPatch<ValidatedTaylorModelDP>;     //!< <p/> \ingroup FunctionModelSubModule
 using ApproximateScalarMultivariateTaylorFunctionModelDP = ScalarScaledFunctionPatch<ApproximateTaylorModelDP>; //!< <p/> \ingroup FunctionModelSubModule
 using ApproximateVectorMultivariateTaylorFunctionModelDP = VectorScaledFunctionPatch<ApproximateTaylorModelDP>; //!< <p/> \ingroup FunctionModelSubModule
 
-using ValidatedScalarMultivariateTaylorFunctionModelMP = ScalarScaledFunctionPatch<ValidatedTaylorModelMP>; //!< <p/> \ingroup FunctionModelSubModule
-using ValidatedVectorMultivariateTaylorFunctionModelMP = VectorScaledFunctionPatch<ValidatedTaylorModelMP>; //!< <p/> \ingroup FunctionModelSubModule
+using ValidatedScalarMultivariateTaylorFunctionModelMP = ScalarScaledFunctionPatch<ValidatedTaylorModelMP>;     //!< <p/> \ingroup FunctionModelSubModule
+using ValidatedVectorMultivariateTaylorFunctionModelMP = VectorScaledFunctionPatch<ValidatedTaylorModelMP>;     //!< <p/> \ingroup FunctionModelSubModule
 using ApproximateScalarMultivariateTaylorFunctionModelMP = ScalarScaledFunctionPatch<ApproximateTaylorModelMP>; //!< <p/> \ingroup FunctionModelSubModule
 using ApproximateVectorMultivariateTaylorFunctionModelMP = VectorScaledFunctionPatch<ApproximateTaylorModelMP>; //!< <p/> \ingroup FunctionModelSubModule
 
 //! \ingroup FunctionModelSubModule
-template<class P, class F> using ScalarMultivariateBoundsTaylorFunctionModel = ScalarScaledFunctionPatch<TaylorModel<P,Bounds<F>>>; //!< <p/> \ingroup FunctionModelSubModule
-template<class P, class F> using VectorMultivariateBoundsTaylorFunctionModel = VectorScaledFunctionPatch<TaylorModel<P,Bounds<F>>>; //!< <p/> \ingroup FunctionModelSubModule
-template<class F> using ValidatedScalarMultivariateBoundsTaylorFunctionModel = ScalarScaledFunctionPatch<ValidatedBoundsTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
-template<class F> using ValidatedVectorMultivariateBoundsTaylorFunctionModel = VectorScaledFunctionPatch<ValidatedBoundsTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class P, class F>
+using ScalarMultivariateBoundsTaylorFunctionModel = ScalarScaledFunctionPatch<TaylorModel<P, Bounds<F>>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class P, class F>
+using VectorMultivariateBoundsTaylorFunctionModel = VectorScaledFunctionPatch<TaylorModel<P, Bounds<F>>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class F>
+using ValidatedScalarMultivariateBoundsTaylorFunctionModel = ScalarScaledFunctionPatch<ValidatedBoundsTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
+template<class F>
+using ValidatedVectorMultivariateBoundsTaylorFunctionModel = VectorScaledFunctionPatch<ValidatedBoundsTaylorModel<F>>; //!< <p/> \ingroup FunctionModelSubModule
 
 using ValidatedScalarMultivariateBoundsTaylorFunctionModelDP = ScalarScaledFunctionPatch<ValidatedBoundsTaylorModelDP>; //!< <p/> \ingroup FunctionModelSubModule
 using ValidatedVectorMultivariateBoundsTaylorFunctionModelDP = VectorScaledFunctionPatch<ValidatedBoundsTaylorModelDP>; //!< <p/> \ingroup FunctionModelSubModule
@@ -81,20 +92,20 @@ using ValidatedScalarMultivariateBoundsTaylorFunctionModelMP = ScalarScaledFunct
 using ValidatedVectorMultivariateBoundsTaylorFunctionModelMP = VectorScaledFunctionPatch<ValidatedBoundsTaylorModelMP>; //!< //!@}
 
 class TaylorFunctionFactory
-    : public ScaledFunctionPatchFactory<TaylorModel<ValidatedTag,FloatDP>>
-{
-    typedef TaylorModel<ValidatedTag,FloatDP> M;
+    : public ScaledFunctionPatchFactory<TaylorModel<ValidatedTag, FloatDP>> {
+    typedef TaylorModel<ValidatedTag, FloatDP> M;
     typedef BoxDomainType D;
+
   public:
     typedef typename M::SweeperType SweeperType;
     using ScaledFunctionPatchFactory<M>::ScaledFunctionPatchFactory;
-    explicit TaylorFunctionFactory(SweeperType sweeper) : ScaledFunctionPatchFactory<M>(sweeper) { }
+    explicit TaylorFunctionFactory(SweeperType sweeper) : ScaledFunctionPatchFactory<M>(sweeper) {}
     SweeperType sweeper() const { return this->properties(); }
-    friend OutputStream& operator<<(OutputStream& os, TaylorFunctionFactory const& factory) { return os << "TaylorFunctionFactory( sweeper=" << factory.sweeper() << " )"; }
+    friend OutputStream& operator<<(OutputStream& os, const TaylorFunctionFactory& factory) { return os << "TaylorFunctionFactory( sweeper=" << factory.sweeper() << " )"; }
 };
 
-FunctionModelFactoryInterface<ValidatedTag,DoublePrecision>* make_taylor_function_factory();
-FunctionModelFactoryInterface<ValidatedTag,DoublePrecision>* make_taylor_function_factory(Sweeper<FloatDP> const& sweeper);
+FunctionModelFactoryInterface<ValidatedTag, DoublePrecision>* make_taylor_function_factory();
+FunctionModelFactoryInterface<ValidatedTag, DoublePrecision>* make_taylor_function_factory(const Sweeper<FloatDP>& sweeper);
 
 } // namespace Ariadne
 

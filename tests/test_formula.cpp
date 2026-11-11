@@ -24,275 +24,276 @@
 
 #include <cassert>
 #include <fstream>
-#include <sstream>
-#include <string>
 #include <iomanip>
+#include <sstream>
 #include <stdexcept>
-#include "numeric/numeric.hpp"
+#include <string>
+
 #include "algebra/vector.hpp"
 #include "function/formula.hpp"
 #include "function/formula.tpl.hpp"
+#include "function/function.hpp"
+#include "numeric/numeric.hpp"
 
 #include "ariadne-testing.hpp"
-
-#include "function/function.hpp"
 
 using namespace std;
 using namespace Ariadne;
 
-class TestFormula : public Ariadne::Testing::ContextFixture
-{
+class TestFormula : public Ariadne::Testing::ContextFixture {
     EffectiveFormula two, x, y;
 
   public:
     TestFormula(Ariadne::Testing::Context& context)
-      : ContextFixture(context), two(EffectiveFormula::constant(2.0_x)),
-        x(EffectiveFormula::coordinate(0)),
-        y(EffectiveFormula::coordinate(1)) { }
+        : ContextFixture(context), two(EffectiveFormula::constant(2.0_x)),
+          x(EffectiveFormula::coordinate(0)),
+          y(EffectiveFormula::coordinate(1)) {}
+
   public:
     Void test_construct() {
-        EffectiveFormula f1(sqrt(pow(x,2)+pow(y,2))/two);
+        EffectiveFormula f1(sqrt(pow(x, 2) + pow(y, 2)) / two);
         ARIADNE_TESTING_INSPECT("f1", f1);
 
-        Vector<EffectiveFormula> f2({sqrt(pow(x,2)+pow(y,2)), atan(y/x)});
+        Vector<EffectiveFormula> f2({sqrt(pow(x, 2) + pow(y, 2)), atan(y / x)});
         ARIADNE_TESTING_INSPECT("f2", f2);
 
         EffectiveFormula default_formula;
         ARIADNE_TESTING_PROVE(is_constant(default_formula));
-        ARIADNE_TESTING_PROVE(same(two.val(),EffectiveNumber(2)));
-        ARIADNE_TESTING_PROVE(is_constant(x.create_zero(),EffectiveNumber(0)));
-        ARIADNE_TESTING_PROVE(is_constant(x.create_constant(EffectiveNumber(3)),EffectiveNumber(3)));
+        ARIADNE_TESTING_PROVE(same(two.val(), EffectiveNumber(2)));
+        ARIADNE_TESTING_PROVE(is_constant(x.create_zero(), EffectiveNumber(0)));
+        ARIADNE_TESTING_PROVE(is_constant(x.create_constant(EffectiveNumber(3)), EffectiveNumber(3)));
         DoublePrecision pr;
-        ValidatedFormula validated_x=ValidatedFormula::coordinate(0);
-        FloatDPBounds bounds(1,pr);
-        ValidatedFormula add_bounds=validated_x+bounds;
-        ValidatedFormula sub_dyadic=validated_x-Dyadic(1);
-        ValidatedFormula mul_integer=validated_x*2;
-        ValidatedFormula div_dyadic=validated_x/Dyadic(2);
+        ValidatedFormula validated_x = ValidatedFormula::coordinate(0);
+        FloatDPBounds bounds(1, pr);
+        ValidatedFormula add_bounds = validated_x + bounds;
+        ValidatedFormula sub_dyadic = validated_x - Dyadic(1);
+        ValidatedFormula mul_integer = validated_x * 2;
+        ValidatedFormula div_dyadic = validated_x / Dyadic(2);
         ARIADNE_TESTING_EXPECT_EQUAL(add_bounds.code(), Add::code());
         ARIADNE_TESTING_EXPECT_EQUAL(sub_dyadic.code(), Add::code());
         ARIADNE_TESTING_EXPECT_EQUAL(mul_integer.code(), Mul::code());
         ARIADNE_TESTING_EXPECT_EQUAL(div_dyadic.code(), Mul::code());
-        EffectiveFormula right_scalar=AlgebraOperations<EffectiveFormula,EffectiveNumber>::apply(
-            BinaryElementaryOperator(Add::code()),x,EffectiveNumber(2));
-        EffectiveFormula left_scalar=AlgebraOperations<EffectiveFormula,EffectiveNumber>::apply(
-            BinaryElementaryOperator(Add::code()),EffectiveNumber(2),x);
-        ARIADNE_TESTING_PROVE(identical(right_scalar,x+two));
-        ARIADNE_TESTING_PROVE(identical(left_scalar,two+x));
+        EffectiveFormula right_scalar = AlgebraOperations<EffectiveFormula, EffectiveNumber>::apply(
+            BinaryElementaryOperator(Add::code()), x, EffectiveNumber(2));
+        EffectiveFormula left_scalar = AlgebraOperations<EffectiveFormula, EffectiveNumber>::apply(
+            BinaryElementaryOperator(Add::code()), EffectiveNumber(2), x);
+        ARIADNE_TESTING_PROVE(identical(right_scalar, x + two));
+        ARIADNE_TESTING_PROVE(identical(left_scalar, two + x));
         ARIADNE_TESTING_EXPECT_EQUAL(default_formula.code(), Cnst::code());
         ARIADNE_TESTING_EXPECT_EQUAL(x.kind(), OperatorKind::VARIABLE);
         ARIADNE_TESTING_EXPECT_EQUAL(Nat(x.ind()), 0u);
 
-        EffectiveFormula unary=neg(x);
-        ARIADNE_TESTING_PROVE(identical(unary.arg(),x));
+        EffectiveFormula unary = neg(x);
+        ARIADNE_TESTING_PROVE(identical(unary.arg(), x));
 
-        EffectiveFormula graded=pow(x,3);
-        ARIADNE_TESTING_PROVE(identical(graded.arg(),x));
+        EffectiveFormula graded = pow(x, 3);
+        ARIADNE_TESTING_PROVE(identical(graded.arg(), x));
         ARIADNE_TESTING_EXPECT_EQUAL(graded.num(), 3);
 
-        EffectiveFormula scalar=EffectiveFormula::scalar(
-            BinaryElementaryOperator(Mul::code()),EffectiveNumber(2),x);
-        ARIADNE_TESTING_PROVE(identical(scalar.arg(),x));
-        ARIADNE_TESTING_PROVE(same(scalar.cnst(),EffectiveNumber(2)));
+        EffectiveFormula scalar = EffectiveFormula::scalar(
+            BinaryElementaryOperator(Mul::code()), EffectiveNumber(2), x);
+        ARIADNE_TESTING_PROVE(identical(scalar.arg(), x));
+        ARIADNE_TESTING_PROVE(same(scalar.cnst(), EffectiveNumber(2)));
         ScalarFormulaNode<EffectiveNumber> scalar_node(
-            BinaryElementaryOperator(Mul::code()),EffectiveNumber(2),x);
+            BinaryElementaryOperator(Mul::code()), EffectiveNumber(2), x);
         ARIADNE_TESTING_EXPECT_EQUAL(scalar_node.op().code(), Mul::code());
-        ARIADNE_TESTING_PROVE(same(scalar_node.cnst(),EffectiveNumber(2)));
-        ARIADNE_TESTING_PROVE(identical(scalar_node.arg(),x));
+        ARIADNE_TESTING_PROVE(same(scalar_node.cnst(), EffectiveNumber(2)));
+        ARIADNE_TESTING_PROVE(identical(scalar_node.arg(), x));
 
-        EffectiveFormula binary=x+y;
-        ARIADNE_TESTING_PROVE(identical(binary.arg1(),x));
-        ARIADNE_TESTING_PROVE(identical(binary.arg2(),y));
+        EffectiveFormula binary = x + y;
+        ARIADNE_TESTING_PROVE(identical(binary.arg1(), x));
+        ARIADNE_TESTING_PROVE(identical(binary.arg2(), y));
 
-        Vector<EffectiveFormula> coordinates=EffectiveFormula::coordinates(2);
-        Vector<EffectiveFormula> identity=EffectiveFormula::identity(2);
-        ARIADNE_TESTING_PROVE(identical(coordinates,identity));
+        Vector<EffectiveFormula> coordinates = EffectiveFormula::coordinates(2);
+        Vector<EffectiveFormula> identity = EffectiveFormula::identity(2);
+        ARIADNE_TESTING_PROVE(identical(coordinates, identity));
 
         std::ostringstream multivariate_stream;
-        EffectiveFormula::_write_multivariate(multivariate_stream,Vector<EffectiveFormula>({x,y}));
+        EffectiveFormula::_write_multivariate(multivariate_stream, Vector<EffectiveFormula>({x, y}));
         ARIADNE_TESTING_EXPECT_EQUAL(multivariate_stream.str(), "[x[0],x[1]]");
 
         std::ostringstream univariate_stream;
-        EffectiveFormula::_write_univariate(univariate_stream,Vector<EffectiveFormula>({x,x+two}));
+        EffectiveFormula::_write_univariate(univariate_stream, Vector<EffectiveFormula>({x, x + two}));
         ARIADNE_TESTING_EXPECT_EQUAL(univariate_stream.str(), "[x,x+2.]");
     }
 
     Void test_identical() {
-        ARIADNE_TESTING_PROVE(identical(x,x));
-        ARIADNE_TESTING_PROVE(identical(ExactFormula::constant(2.0_x),ExactFormula::constant(2.0_x)));
-        ARIADNE_TESTING_PROVE(identical(EffectiveFormula::constant(2.0_x),EffectiveFormula::constant(2.0_x)));
-        ARIADNE_TESTING_PROVE(not identical(x*y,y*x));
-        ARIADNE_TESTING_PROVE(not identical(x+y,y+x));
-        ARIADNE_TESTING_PROVE(identical(cos(x),cos(x)));
-        ARIADNE_TESTING_PROVE(identical(pow(x,2),pow(x,2)));
-        ARIADNE_TESTING_PROVE(not identical(pow(x,2),pow(x,3)));
-        ARIADNE_TESTING_PROVE(not identical(pow(x,2),pow(y,2)));
-        ARIADNE_TESTING_PROVE(not identical(sin(x),cos(x)));
-        ARIADNE_TESTING_PROVE(not identical(sin(x),sin(y)));
-        ARIADNE_TESTING_PROVE(not identical(x+y,x-y));
-        ARIADNE_TESTING_PROVE(not identical(x+y,x+x));
-        ARIADNE_TESTING_PROVE(not identical(x,two));
-        ARIADNE_TESTING_PROVE(not identical(two,x));
-        ARIADNE_TESTING_PROVE(not identical(sin(x),x));
-        ARIADNE_TESTING_PROVE(not identical(x+y,x));
-        ARIADNE_TESTING_PROVE(not identical(pow(x,2),x));
+        ARIADNE_TESTING_PROVE(identical(x, x));
+        ARIADNE_TESTING_PROVE(identical(ExactFormula::constant(2.0_x), ExactFormula::constant(2.0_x)));
+        ARIADNE_TESTING_PROVE(identical(EffectiveFormula::constant(2.0_x), EffectiveFormula::constant(2.0_x)));
+        ARIADNE_TESTING_PROVE(not identical(x * y, y * x));
+        ARIADNE_TESTING_PROVE(not identical(x + y, y + x));
+        ARIADNE_TESTING_PROVE(identical(cos(x), cos(x)));
+        ARIADNE_TESTING_PROVE(identical(pow(x, 2), pow(x, 2)));
+        ARIADNE_TESTING_PROVE(not identical(pow(x, 2), pow(x, 3)));
+        ARIADNE_TESTING_PROVE(not identical(pow(x, 2), pow(y, 2)));
+        ARIADNE_TESTING_PROVE(not identical(sin(x), cos(x)));
+        ARIADNE_TESTING_PROVE(not identical(sin(x), sin(y)));
+        ARIADNE_TESTING_PROVE(not identical(x + y, x - y));
+        ARIADNE_TESTING_PROVE(not identical(x + y, x + x));
+        ARIADNE_TESTING_PROVE(not identical(x, two));
+        ARIADNE_TESTING_PROVE(not identical(two, x));
+        ARIADNE_TESTING_PROVE(not identical(sin(x), x));
+        ARIADNE_TESTING_PROVE(not identical(x + y, x));
+        ARIADNE_TESTING_PROVE(not identical(pow(x, 2), x));
 
-        EffectiveFormula scalar_add=EffectiveFormula::scalar(
-            BinaryElementaryOperator(Add::code()),EffectiveNumber(2),x);
-        EffectiveFormula scalar_add_same=EffectiveFormula::scalar(
-            BinaryElementaryOperator(Add::code()),EffectiveNumber(2),x);
-        EffectiveFormula scalar_add_constant=EffectiveFormula::scalar(
-            BinaryElementaryOperator(Add::code()),EffectiveNumber(3),x);
-        EffectiveFormula scalar_add_argument=EffectiveFormula::scalar(
-            BinaryElementaryOperator(Add::code()),EffectiveNumber(2),y);
-        EffectiveFormula scalar_mul=EffectiveFormula::scalar(
-            BinaryElementaryOperator(Mul::code()),EffectiveNumber(2),x);
-        ARIADNE_TESTING_PROVE(identical(scalar_add,scalar_add_same));
-        ARIADNE_TESTING_PROVE(not identical(scalar_add,scalar_add_constant));
-        ARIADNE_TESTING_PROVE(not identical(scalar_add,scalar_add_argument));
-        ARIADNE_TESTING_PROVE(not identical(scalar_add,scalar_mul));
-        ARIADNE_TESTING_PROVE(not identical(scalar_add,x));
+        EffectiveFormula scalar_add = EffectiveFormula::scalar(
+            BinaryElementaryOperator(Add::code()), EffectiveNumber(2), x);
+        EffectiveFormula scalar_add_same = EffectiveFormula::scalar(
+            BinaryElementaryOperator(Add::code()), EffectiveNumber(2), x);
+        EffectiveFormula scalar_add_constant = EffectiveFormula::scalar(
+            BinaryElementaryOperator(Add::code()), EffectiveNumber(3), x);
+        EffectiveFormula scalar_add_argument = EffectiveFormula::scalar(
+            BinaryElementaryOperator(Add::code()), EffectiveNumber(2), y);
+        EffectiveFormula scalar_mul = EffectiveFormula::scalar(
+            BinaryElementaryOperator(Mul::code()), EffectiveNumber(2), x);
+        ARIADNE_TESTING_PROVE(identical(scalar_add, scalar_add_same));
+        ARIADNE_TESTING_PROVE(not identical(scalar_add, scalar_add_constant));
+        ARIADNE_TESTING_PROVE(not identical(scalar_add, scalar_add_argument));
+        ARIADNE_TESTING_PROVE(not identical(scalar_add, scalar_mul));
+        ARIADNE_TESTING_PROVE(not identical(scalar_add, x));
 
-        Vector<EffectiveFormula> same_a({x,y});
-        Vector<EffectiveFormula> same_b({x,y});
-        Vector<EffectiveFormula> different_value({x,x});
+        Vector<EffectiveFormula> same_a({x, y});
+        Vector<EffectiveFormula> same_b({x, y});
+        Vector<EffectiveFormula> different_value({x, x});
         Vector<EffectiveFormula> different_size({x});
-        ARIADNE_TESTING_PROVE(identical(same_a,same_b));
-        ARIADNE_TESTING_PROVE(not identical(same_a,different_value));
-        ARIADNE_TESTING_PROVE(not identical(same_a,different_size));
+        ARIADNE_TESTING_PROVE(identical(same_a, same_b));
+        ARIADNE_TESTING_PROVE(not identical(same_a, different_value));
+        ARIADNE_TESTING_PROVE(not identical(same_a, different_size));
     }
 
     Void test_substitute() {
-        EffectiveFormula f(x+cos(y));
-        EffectiveFormula s(pow(x,2));
-        EffectiveFormula substituted = substitute(f,1,s);
+        EffectiveFormula f(x + cos(y));
+        EffectiveFormula s(pow(x, 2));
+        EffectiveFormula substituted = substitute(f, 1, s);
         ARIADNE_TESTING_INSPECT("substituted", substituted);
-        ARIADNE_TESTING_PROVE(identical(substituted,x+cos(pow(x,2))));
-        ARIADNE_TESTING_PROVE(identical(substitute(x,0,two),two));
-        ARIADNE_TESTING_PROVE(identical(substitute(x,1,two),x));
+        ARIADNE_TESTING_PROVE(identical(substituted, x + cos(pow(x, 2))));
+        ARIADNE_TESTING_PROVE(identical(substitute(x, 0, two), two));
+        ARIADNE_TESTING_PROVE(identical(substitute(x, 1, two), x));
 
-        Vector<EffectiveFormula> f_v({sqrt(pow(x,2)+pow(y,2)), atan(y/x)});
-        List<Pair<Nat,EffectiveFormula>> s_v({{0,x+2},{1,y-1}});
-        Vector<EffectiveFormula> substituted_v = substitute(f_v,s_v);
+        Vector<EffectiveFormula> f_v({sqrt(pow(x, 2) + pow(y, 2)), atan(y / x)});
+        List<Pair<Nat, EffectiveFormula>> s_v({
+            {0, x + 2},
+            {1, y - 1}
+        });
+        Vector<EffectiveFormula> substituted_v = substitute(f_v, s_v);
         ARIADNE_TESTING_INSPECT("substituted_v", substituted_v);
-        ARIADNE_TESTING_EXPECT_BINARY_PREDICATE(identical, substituted_v[0], sqrt(pow(x+2,2)+pow(y-1,2)));
-        ARIADNE_TESTING_EXPECT_BINARY_PREDICATE(identical, substituted_v[1], atan((y-1)/(x+2)));
+        ARIADNE_TESTING_EXPECT_BINARY_PREDICATE(identical, substituted_v[0], sqrt(pow(x + 2, 2) + pow(y - 1, 2)));
+        ARIADNE_TESTING_EXPECT_BINARY_PREDICATE(identical, substituted_v[1], atan((y - 1) / (x + 2)));
     }
 
     Void test_simplify() {
         EffectiveFormula z(EffectiveFormula::constant(0));
-        ARIADNE_TESTING_EXPECT_BINARY_PREDICATE(identical, simplify(sub(neg(z),z)), z);
+        ARIADNE_TESTING_EXPECT_BINARY_PREDICATE(identical, simplify(sub(neg(z), z)), z);
         EffectiveFormula u(EffectiveFormula::coordinate(2));
-        ARIADNE_TESTING_EXPECT_BINARY_PREDICATE(identical, simplify(derivative(-u*x*y+2*x,x.ind())), -u*y+2);
-        Vector<EffectiveFormula> simplified_vector=simplify(Vector<EffectiveFormula>({x+z,y*z+z}));
-        ARIADNE_TESTING_PROVE(identical(simplified_vector,Vector<EffectiveFormula>({x,z})));
+        ARIADNE_TESTING_EXPECT_BINARY_PREDICATE(identical, simplify(derivative(-u * x * y + 2 * x, x.ind())), -u * y + 2);
+        Vector<EffectiveFormula> simplified_vector = simplify(Vector<EffectiveFormula>({x + z, y * z + z}));
+        ARIADNE_TESTING_PROVE(identical(simplified_vector, Vector<EffectiveFormula>({x, z})));
     }
 
     Void test_scalar_nodes() {
         // The scalar node stores its left operand separately from the formula tree.
         auto scalar = [](BinaryElementaryOperator op, EffectiveNumber c, EffectiveFormula f) {
-            return EffectiveFormula::scalar(op,c,f);
+            return EffectiveFormula::scalar(op, c, f);
         };
-        EffectiveFormula scaled=scalar(Mul(),EffectiveNumber(2),x);
+        EffectiveFormula scaled = scalar(Mul(), EffectiveNumber(2), x);
         std::ostringstream stream;
         stream << scaled;
         ARIADNE_TESTING_EXPECT_EQUAL(stream.str(), "(2*x[0])");
-        ARIADNE_TESTING_PROVE(identical(simplify(scaled),two*x));
-        ARIADNE_TESTING_PROVE(identical(simplify(derivative(scaled,0)),two));
-        ARIADNE_TESTING_PROVE(is_constant(simplify(derivative(scaled,1)),EffectiveNumber(0)));
-        Vector<EffectiveNumber> values({EffectiveNumber(2),EffectiveNumber(3)});
+        ARIADNE_TESTING_PROVE(identical(simplify(scaled), two * x));
+        ARIADNE_TESTING_PROVE(identical(simplify(derivative(scaled, 0)), two));
+        ARIADNE_TESTING_PROVE(is_constant(simplify(derivative(scaled, 1)), EffectiveNumber(0)));
+        Vector<EffectiveNumber> values({EffectiveNumber(2), EffectiveNumber(3)});
 
-        ARIADNE_TESTING_PROVE(same(evaluate(substitute(scaled,0,y),values),EffectiveNumber(6)));
-        EffectiveFormula difference=scalar(Sub(),EffectiveNumber(5),x);
-        ARIADNE_TESTING_PROVE(same(evaluate(substitute(difference,0,y),values),EffectiveNumber(2)));
-        ARIADNE_TESTING_PROVE(is_constant_in(scaled,{1}));
-        ARIADNE_TESTING_PROVE(not is_constant_in(scaled,{0}));
-        ARIADNE_TESTING_PROVE(is_affine_in(scaled,{0}));
-        ARIADNE_TESTING_PROVE(not is_affine_in(scalar(Mul(),EffectiveNumber(2),sqr(x)),{0}));
-        ARIADNE_TESTING_PROVE(identical(simplify(scalar(Add(),EffectiveNumber(0),x)),x));
-        ARIADNE_TESTING_PROVE(identical(simplify(scalar(Sub(),EffectiveNumber(0),x)),neg(x)));
-        ARIADNE_TESTING_PROVE(is_constant(simplify(scalar(Div(),EffectiveNumber(0),x)),EffectiveNumber(0)));
-        ARIADNE_TESTING_PROVE(identical(simplify(scalar(Max(),EffectiveNumber(2),x)),max(two,x)));
-        ARIADNE_TESTING_PROVE(identical(simplify(scalar(Min(),EffectiveNumber(2),x)),min(two,x)));
+        ARIADNE_TESTING_PROVE(same(evaluate(substitute(scaled, 0, y), values), EffectiveNumber(6)));
+        EffectiveFormula difference = scalar(Sub(), EffectiveNumber(5), x);
+        ARIADNE_TESTING_PROVE(same(evaluate(substitute(difference, 0, y), values), EffectiveNumber(2)));
+        ARIADNE_TESTING_PROVE(is_constant_in(scaled, {1}));
+        ARIADNE_TESTING_PROVE(not is_constant_in(scaled, {0}));
+        ARIADNE_TESTING_PROVE(is_affine_in(scaled, {0}));
+        ARIADNE_TESTING_PROVE(not is_affine_in(scalar(Mul(), EffectiveNumber(2), sqr(x)), {0}));
+        ARIADNE_TESTING_PROVE(identical(simplify(scalar(Add(), EffectiveNumber(0), x)), x));
+        ARIADNE_TESTING_PROVE(identical(simplify(scalar(Sub(), EffectiveNumber(0), x)), neg(x)));
+        ARIADNE_TESTING_PROVE(is_constant(simplify(scalar(Div(), EffectiveNumber(0), x)), EffectiveNumber(0)));
+        ARIADNE_TESTING_PROVE(identical(simplify(scalar(Max(), EffectiveNumber(2), x)), max(two, x)));
+        ARIADNE_TESTING_PROVE(identical(simplify(scalar(Min(), EffectiveNumber(2), x)), min(two, x)));
     }
 
     Void test_evaluate() {
-        Vector<EffectiveNumber> values({EffectiveNumber(2),EffectiveNumber(3)});
+        Vector<EffectiveNumber> values({EffectiveNumber(2), EffectiveNumber(3)});
         // Directly evaluated operation trees retain the same numeric semantics
         // as formulas: variables, nested unary/binary nodes, scalars and powers.
-        OperationNode<Var,Nat> variable(0u);
-        OperationNode<Neg,decltype(variable)> negative(Neg(),variable);
-        OperationNode<Add,decltype(negative),decltype(variable)> cancellation(Add(),negative,variable);
-        OperationNode<Mul,EffectiveNumber,EffectiveFormula> scaled_node(Mul(),EffectiveNumber(3),x);
-        OperationNode<Pow,EffectiveFormula,Int> cubed(Pow(),x,3);
-        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(variable,values),EffectiveNumber(2)));
-        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(negative,values),EffectiveNumber(-2)));
-        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(cancellation,values),EffectiveNumber(0)));
-        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(scaled_node,values),EffectiveNumber(6)));
-        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(cubed,values),EffectiveNumber(8)));
+        OperationNode<Var, Nat> variable(0u);
+        OperationNode<Neg, decltype(variable)> negative(Neg(), variable);
+        OperationNode<Add, decltype(negative), decltype(variable)> cancellation(Add(), negative, variable);
+        OperationNode<Mul, EffectiveNumber, EffectiveFormula> scaled_node(Mul(), EffectiveNumber(3), x);
+        OperationNode<Pow, EffectiveFormula, Int> cubed(Pow(), x, 3);
+        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(variable, values), EffectiveNumber(2)));
+        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(negative, values), EffectiveNumber(-2)));
+        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(cancellation, values), EffectiveNumber(0)));
+        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(scaled_node, values), EffectiveNumber(6)));
+        ARIADNE_TESTING_PROVE(same(FormulaDetail::evaluate(cubed, values), EffectiveNumber(8)));
 
-        ARIADNE_TESTING_PROVE(same(direct_evaluate(two,values),EffectiveNumber(2)));
-        EffectiveFormula scalar=EffectiveFormula::scalar(
-            BinaryElementaryOperator(Mul::code()),EffectiveNumber(2),x);
-        ARIADNE_TESTING_PROVE(same(cached_evaluate(scalar,values),EffectiveNumber(4)));
-        Vector<EffectiveNumber> evaluated=evaluate(Vector<EffectiveFormula>({x+y,two}),values);
-        ARIADNE_TESTING_PROVE(same(evaluated[0],EffectiveNumber(5)));
-        ARIADNE_TESTING_PROVE(same(evaluated[1],EffectiveNumber(2)));
+        ARIADNE_TESTING_PROVE(same(direct_evaluate(two, values), EffectiveNumber(2)));
+        EffectiveFormula scalar = EffectiveFormula::scalar(
+            BinaryElementaryOperator(Mul::code()), EffectiveNumber(2), x);
+        ARIADNE_TESTING_PROVE(same(cached_evaluate(scalar, values), EffectiveNumber(4)));
+        Vector<EffectiveNumber> evaluated = evaluate(Vector<EffectiveFormula>({x + y, two}), values);
+        ARIADNE_TESTING_PROVE(same(evaluated[0], EffectiveNumber(5)));
+        ARIADNE_TESTING_PROVE(same(evaluated[1], EffectiveNumber(2)));
         Vector<EffectiveFormula> formulae({two});
         Vector<EffectiveNumber> empty_values;
-        ARIADNE_TESTING_PROVE(same(evaluate(formulae,empty_values)[0u],EffectiveNumber(2)));
+        ARIADNE_TESTING_PROVE(same(evaluate(formulae, empty_values)[0u], EffectiveNumber(2)));
         ARIADNE_TESTING_EXPECT_EQUAL(simplify(Vector<EffectiveFormula>{}).size(), 0u);
     }
 
     Void test_is_constant_in() {
-        ARIADNE_TESTING_PROVE(is_constant_in(x,{1}));
-        ARIADNE_TESTING_PROVE(not is_constant_in(x,{0}));
-        ARIADNE_TESTING_PROVE(is_constant_in(x*y,{2,3}));
-        ARIADNE_TESTING_PROVE(not is_constant_in(cos(x),{0}));
-        ARIADNE_TESTING_PROVE(is_constant_in(pow(x,2),{1}));
-        ARIADNE_TESTING_PROVE(is_constant_in(two,{0,1}));
-        ARIADNE_TESTING_PROVE(not is_constant_in(3*y,{0,1}));
+        ARIADNE_TESTING_PROVE(is_constant_in(x, {1}));
+        ARIADNE_TESTING_PROVE(not is_constant_in(x, {0}));
+        ARIADNE_TESTING_PROVE(is_constant_in(x * y, {2, 3}));
+        ARIADNE_TESTING_PROVE(not is_constant_in(cos(x), {0}));
+        ARIADNE_TESTING_PROVE(is_constant_in(pow(x, 2), {1}));
+        ARIADNE_TESTING_PROVE(is_constant_in(two, {0, 1}));
+        ARIADNE_TESTING_PROVE(not is_constant_in(3 * y, {0, 1}));
     }
 
     Void test_is_affine_in() {
-        ARIADNE_TESTING_PROVE(is_affine_in(x+y,{0}));
-        ARIADNE_TESTING_PROVE(is_affine_in(x+y,{0,1}));
-        ARIADNE_TESTING_PROVE(is_affine_in(x+y,{0,1,2}));
-        ARIADNE_TESTING_PROVE(is_affine_in(x*y+y,{0}));
-        ARIADNE_TESTING_PROVE(is_affine_in(x*y+y,{1}));
-        ARIADNE_TESTING_PROVE(not is_affine_in(x*y+y,{0,1}));
-        ARIADNE_TESTING_PROVE(is_affine_in(two,{0,1}));
-        ARIADNE_TESTING_PROVE(is_affine_in(pow(x,2),{1}));
-        ARIADNE_TESTING_PROVE(not is_affine_in(pow(x,2),{0}));
-        ARIADNE_TESTING_PROVE(not is_affine_in(x/y,{1}));
-        ARIADNE_TESTING_PROVE(is_affine_in(x/y,{0}));
-        ARIADNE_TESTING_PROVE(not is_affine_in(sin(x),{0}));
-        ARIADNE_TESTING_PROVE(is_affine_in(y*sin(x),{1}));
-        ARIADNE_TESTING_PROVE(is_affine_in(Vector<EffectiveFormula>({y*2+x,x+y}),{0,1}));
-        ARIADNE_TESTING_PROVE(not is_affine_in(Vector<EffectiveFormula>({x*x,y}),{0}));
+        ARIADNE_TESTING_PROVE(is_affine_in(x + y, {0}));
+        ARIADNE_TESTING_PROVE(is_affine_in(x + y, {0, 1}));
+        ARIADNE_TESTING_PROVE(is_affine_in(x + y, {0, 1, 2}));
+        ARIADNE_TESTING_PROVE(is_affine_in(x * y + y, {0}));
+        ARIADNE_TESTING_PROVE(is_affine_in(x * y + y, {1}));
+        ARIADNE_TESTING_PROVE(not is_affine_in(x * y + y, {0, 1}));
+        ARIADNE_TESTING_PROVE(is_affine_in(two, {0, 1}));
+        ARIADNE_TESTING_PROVE(is_affine_in(pow(x, 2), {1}));
+        ARIADNE_TESTING_PROVE(not is_affine_in(pow(x, 2), {0}));
+        ARIADNE_TESTING_PROVE(not is_affine_in(x / y, {1}));
+        ARIADNE_TESTING_PROVE(is_affine_in(x / y, {0}));
+        ARIADNE_TESTING_PROVE(not is_affine_in(sin(x), {0}));
+        ARIADNE_TESTING_PROVE(is_affine_in(y * sin(x), {1}));
+        ARIADNE_TESTING_PROVE(is_affine_in(Vector<EffectiveFormula>({y * 2 + x, x + y}), {0, 1}));
+        ARIADNE_TESTING_PROVE(not is_affine_in(Vector<EffectiveFormula>({x * x, y}), {0}));
     }
 
     Void test_is_additive_in() {
         EffectiveFormula u1(EffectiveFormula::coordinate(2));
         EffectiveFormula u2(EffectiveFormula::coordinate(3));
-        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x+u1,y+u2}),{2,3}));
-        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x+u2,y+u1}),{2,3}));
-        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x+u1,y}),{2}));
-        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x,y+u1}),{2}));
-        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x,y+2*u1}),{2}));
-        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x+u1,y+2*u2}),{2,3}));
-        ARIADNE_TESTING_PROVE(not is_additive_in(Vector<EffectiveFormula>({x+u1,y+u1}),{2}));
-        ARIADNE_TESTING_PROVE(not is_additive_in(Vector<EffectiveFormula>({x*u1,y+u2}),{2,3}));
-        ARIADNE_TESTING_PROVE(not is_additive_in(Vector<EffectiveFormula>({x+u1,y+sqr(u2)}),{2,3}));
+        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x + u1, y + u2}), {2, 3}));
+        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x + u2, y + u1}), {2, 3}));
+        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x + u1, y}), {2}));
+        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x, y + u1}), {2}));
+        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x, y + 2 * u1}), {2}));
+        ARIADNE_TESTING_PROVE(is_additive_in(Vector<EffectiveFormula>({x + u1, y + 2 * u2}), {2, 3}));
+        ARIADNE_TESTING_PROVE(not is_additive_in(Vector<EffectiveFormula>({x + u1, y + u1}), {2}));
+        ARIADNE_TESTING_PROVE(not is_additive_in(Vector<EffectiveFormula>({x * u1, y + u2}), {2, 3}));
+        ARIADNE_TESTING_PROVE(not is_additive_in(Vector<EffectiveFormula>({x + u1, y + sqr(u2)}), {2, 3}));
     }
 
   public:
 };
 
-
-
 class TestFormulaExtra : public Ariadne::Testing::ContextFixture {
-public:
+  public:
     using ContextFixture::ContextFixture;
     void test_formula_algebraic_classification();
     void test_formula_simplification_identities();
@@ -301,100 +302,150 @@ public:
 };
 
 Void TestFormulaExtra::test_formula_algebraic_classification() {
-    using F=EffectiveFormula;
-    auto x=F::coordinate(0u),y=F::coordinate(1u);F c(EffectiveNumber(2));
+    using F = EffectiveFormula;
+    auto x = F::coordinate(0u), y = F::coordinate(1u);
+    F c(EffectiveNumber(2));
     Set<Nat> variables{0u};
-    for(const auto& op:List<UnaryElementaryOperator>{Atan(),Acos(),Asin(),Cos(),Sin(),Tan(),Tanh(),Abs(),Sqr(),Log(),Sqrt(),Exp(),Rec()}) {
-        ARIADNE_TESTING_PROVE(!is_affine_in(F::unary(op,x),variables));
-        ARIADNE_TESTING_PROVE(is_affine_in(F::unary(op,y),variables));
-        ARIADNE_TESTING_PROVE(!is_constant(F::unary(op,c)));
+    for (const auto& op: List<UnaryElementaryOperator>{Atan(), Acos(), Asin(), Cos(), Sin(), Tan(), Tanh(), Abs(), Sqr(), Log(), Sqrt(), Exp(), Rec()}) {
+        ARIADNE_TESTING_PROVE(!is_affine_in(F::unary(op, x), variables));
+        ARIADNE_TESTING_PROVE(is_affine_in(F::unary(op, y), variables));
+        ARIADNE_TESTING_PROVE(!is_constant(F::unary(op, c)));
     }
-    for(const auto& op:List<UnaryElementaryOperator>{Hlf(),Pos(),Neg()}) {
-        ARIADNE_TESTING_PROVE(is_affine_in(F::unary(op,x),variables));
-        ARIADNE_TESTING_PROVE(!is_affine_in(F::unary(op,sqr(x)),variables));
+    for (const auto& op: List<UnaryElementaryOperator>{Hlf(), Pos(), Neg()}) {
+        ARIADNE_TESTING_PROVE(is_affine_in(F::unary(op, x), variables));
+        ARIADNE_TESTING_PROVE(!is_affine_in(F::unary(op, sqr(x)), variables));
     }
-    ARIADNE_TESTING_PROVE(is_affine_in(F::unary(Nul(),sqr(x)),variables));
-    for(const auto& op:List<BinaryElementaryOperator>{Add(),Sub()}) {
-        ARIADNE_TESTING_PROVE(is_affine_in(F::binary(op,x,y),variables));
-        ARIADNE_TESTING_PROVE(!is_affine_in(F::binary(op,x,sqr(x)),variables));
-        ARIADNE_TESTING_PROVE(!is_affine_in(F::binary(op,sqr(x),x),variables));
+    ARIADNE_TESTING_PROVE(is_affine_in(F::unary(Nul(), sqr(x)), variables));
+    for (const auto& op: List<BinaryElementaryOperator>{Add(), Sub()}) {
+        ARIADNE_TESTING_PROVE(is_affine_in(F::binary(op, x, y), variables));
+        ARIADNE_TESTING_PROVE(!is_affine_in(F::binary(op, x, sqr(x)), variables));
+        ARIADNE_TESTING_PROVE(!is_affine_in(F::binary(op, sqr(x), x), variables));
     }
-    ARIADNE_TESTING_PROVE(is_affine_in(x*c,variables));
-    ARIADNE_TESTING_PROVE(is_affine_in(c*x,variables));
-    ARIADNE_TESTING_PROVE(!is_affine_in(x*x,variables));
-    ARIADNE_TESTING_PROVE(!is_affine_in(sqr(x)*x,variables));
-    ARIADNE_TESTING_PROVE(is_affine_in(x/c,variables));
-    ARIADNE_TESTING_PROVE(!is_affine_in(c/x,variables));
-    ARIADNE_TESTING_PROVE(!is_affine_in(sqr(x)/c,variables));
-    for(const auto& op:List<BinaryElementaryOperator>{Max(),Min()}) {
-        ARIADNE_TESTING_PROVE(is_affine_in(F::binary(op,c,y),variables));
-        ARIADNE_TESTING_PROVE(!is_affine_in(F::binary(op,x,c),variables));
-        ARIADNE_TESTING_PROVE(!is_affine_in(F::binary(op,c,x),variables));
+    ARIADNE_TESTING_PROVE(is_affine_in(x * c, variables));
+    ARIADNE_TESTING_PROVE(is_affine_in(c * x, variables));
+    ARIADNE_TESTING_PROVE(!is_affine_in(x * x, variables));
+    ARIADNE_TESTING_PROVE(!is_affine_in(sqr(x) * x, variables));
+    ARIADNE_TESTING_PROVE(is_affine_in(x / c, variables));
+    ARIADNE_TESTING_PROVE(!is_affine_in(c / x, variables));
+    ARIADNE_TESTING_PROVE(!is_affine_in(sqr(x) / c, variables));
+    for (const auto& op: List<BinaryElementaryOperator>{Max(), Min()}) {
+        ARIADNE_TESTING_PROVE(is_affine_in(F::binary(op, c, y), variables));
+        ARIADNE_TESTING_PROVE(!is_affine_in(F::binary(op, x, c), variables));
+        ARIADNE_TESTING_PROVE(!is_affine_in(F::binary(op, c, x), variables));
     }
-    ARIADNE_TESTING_PROVE(is_affine_in(pow(x,0),variables));
-    ARIADNE_TESTING_PROVE(is_affine_in(pow(x,1),variables));
-    ARIADNE_TESTING_PROVE(!is_affine_in(pow(x,2),variables));
-    ARIADNE_TESTING_PROVE(!is_affine_in(pow(sqr(x),1),variables));
-    ARIADNE_TESTING_PROVE(is_affine_in(pow(y,2),variables));
-    ARIADNE_TESTING_PROVE(is_constant_in(pow(x,0),variables));
-    ARIADNE_TESTING_PROVE(!is_constant_in(pow(x,1),variables));
-    ARIADNE_TESTING_PROVE(is_constant_in(pow(y,2),variables));
-    ARIADNE_TESTING_PROVE(!is_constant(pow(c,2)));
-    ARIADNE_TESTING_PROVE(!is_constant(F::scalar(Mul(),EffectiveNumber(2),x)));
-    ARIADNE_TESTING_PROVE(!identical(pow(x,2),pow(y,2)));
-    ARIADNE_TESTING_PROVE(!identical(pow(x,2),pow(x,3)));
+    ARIADNE_TESTING_PROVE(is_affine_in(pow(x, 0), variables));
+    ARIADNE_TESTING_PROVE(is_affine_in(pow(x, 1), variables));
+    ARIADNE_TESTING_PROVE(!is_affine_in(pow(x, 2), variables));
+    ARIADNE_TESTING_PROVE(!is_affine_in(pow(sqr(x), 1), variables));
+    ARIADNE_TESTING_PROVE(is_affine_in(pow(y, 2), variables));
+    ARIADNE_TESTING_PROVE(is_constant_in(pow(x, 0), variables));
+    ARIADNE_TESTING_PROVE(!is_constant_in(pow(x, 1), variables));
+    ARIADNE_TESTING_PROVE(is_constant_in(pow(y, 2), variables));
+    ARIADNE_TESTING_PROVE(!is_constant(pow(c, 2)));
+    ARIADNE_TESTING_PROVE(!is_constant(F::scalar(Mul(), EffectiveNumber(2), x)));
+    ARIADNE_TESTING_PROVE(!identical(pow(x, 2), pow(y, 2)));
+    ARIADNE_TESTING_PROVE(!identical(pow(x, 2), pow(x, 3)));
 }
 Void TestFormulaExtra::test_formula_simplification_identities() {
-    using F=EffectiveFormula;
-    auto x=F::coordinate(0u),y=F::coordinate(1u);F z(EffectiveNumber(0)),one(EffectiveNumber(1));
-    List<Pair<F,F>> identities{{x-z,x},{x-x,z},{z-x,-x},{x-y,x-y},
-        {z*x,z},{x*z,z},{one*x,x},{x*one,x},{x*y,x*y},
-        {z/x,z},{x/one,x},{one/x,rec(x)},{x/x,one},{x/y,x/y},
-        {F::unary(Pos(),x),x},{neg(neg(x)),x},{rec(rec(x)),x},{rec(sqr(x)),rec(sqr(x))},
-        {neg(sqr(x)),neg(sqr(x))},{F::unary(Neg(),F(EffectiveNumber(2))),F(EffectiveNumber(-2))},
-        {pow(x,-1),rec(x)},{pow(x,0),one},{pow(x,1),x},{pow(x,2),sqr(x)},{pow(x,3),pow(x,3)}};
-    for(const auto& example:identities) { ARIADNE_TESTING_PROVE(identical(simplify(example.first),example.second)); }
+    using F = EffectiveFormula;
+    auto x = F::coordinate(0u), y = F::coordinate(1u);
+    F z(EffectiveNumber(0)), one(EffectiveNumber(1));
+    List<Pair<F, F>> identities{
+        {x - z, x},
+        {x - x, z},
+        {z - x, -x},
+        {x - y, x - y},
+        {z * x, z},
+        {x * z, z},
+        {one * x, x},
+        {x * one, x},
+        {x * y, x * y},
+        {z / x, z},
+        {x / one, x},
+        {one / x, rec(x)},
+        {x / x, one},
+        {x / y, x / y},
+        {F::unary(Pos(), x), x},
+        {neg(neg(x)), x},
+        {rec(rec(x)), x},
+        {rec(sqr(x)), rec(sqr(x))},
+        {neg(sqr(x)), neg(sqr(x))},
+        {F::unary(Neg(), F(EffectiveNumber(2))), F(EffectiveNumber(-2))},
+        {pow(x, -1), rec(x)},
+        {pow(x, 0), one},
+        {pow(x, 1), x},
+        {pow(x, 2), sqr(x)},
+        {pow(x, 3), pow(x, 3)}
+    };
+    for (const auto& example: identities) {
+        ARIADNE_TESTING_PROVE(identical(simplify(example.first), example.second));
+    }
 }
 Void TestFormulaExtra::test_formula_derivatives_and_cache() {
-    using F=EffectiveFormula;using X=FloatDPApproximation;
-    auto x=F::coordinate(0u),y=F::coordinate(1u);Vector<X> point({2,4},dp);
-    ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(x/y,0u),point), X(0.25_x,dp));
-    ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(x/y,1u),point), X(-0.125_x,dp));
-    ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(pow(x,3),0u),point), X(12,dp));
-    ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(x,1u),point), X(0,dp));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(derivative(abs(x),0u));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(derivative(min(x,y),0u));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(derivative(max(x,y),0u));
-    auto shared=pow(x,3)+y;Map<const Void*,X> cache;
-    ARIADNE_TESTING_EXPECT_SAME(cached_evaluate(shared,point,cache), X(12,dp));
-    auto cached_size=cache.size();
-    ARIADNE_TESTING_EXPECT_SAME(cached_evaluate(shared,point,cache), X(12,dp));
+    using F = EffectiveFormula;
+    using X = FloatDPApproximation;
+    auto x = F::coordinate(0u), y = F::coordinate(1u);
+    Vector<X> point({2, 4}, dp);
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(x / y, 0u), point), X(0.25_x, dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(x / y, 1u), point), X(-0.125_x, dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(pow(x, 3), 0u), point), X(12, dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(derivative(x, 1u), point), X(0, dp));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(derivative(abs(x), 0u));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(derivative(min(x, y), 0u));
+    ARIADNE_TESTING_EXPECT_EXCEPTION(derivative(max(x, y), 0u));
+    auto shared = pow(x, 3) + y;
+    Map<const Void*, X> cache;
+    ARIADNE_TESTING_EXPECT_SAME(cached_evaluate(shared, point, cache), X(12, dp));
+    auto cached_size = cache.size();
+    ARIADNE_TESTING_EXPECT_SAME(cached_evaluate(shared, point, cache), X(12, dp));
     ARIADNE_TESTING_EXPECT_EQUAL(cache.size(), cached_size);
-    Vector<ApproximateNumber> generic_point{ApproximateNumber(2),ApproximateNumber(4)};
-    auto evaluated=evaluate(Vector<F>{shared,shared},generic_point);
-    ARIADNE_TESTING_EXPECT_SAME(X(evaluated[0u],dp), X(12,dp));
-    F indexed(Index(1u));ARIADNE_TESTING_PROVE(identical(indexed,y));
-    ARIADNE_TESTING_EXPECT_SAME(evaluate(3+x,point), X(5,dp));
-    ARIADNE_TESTING_EXPECT_SAME(evaluate(3-x,point), X(1,dp));
-    ARIADNE_TESTING_PROVE(same(make_constant(EffectiveNumber(3),Real(0)),Real(3)));
-    auto real_formula=make_constant(EffectiveNumber(3),Formula<Real>::zero());
-    ARIADNE_TESTING_PROVE(is_constant(real_formula,Real(3)));
+    Vector<ApproximateNumber> generic_point{ApproximateNumber(2), ApproximateNumber(4)};
+    auto evaluated = evaluate(Vector<F>{shared, shared}, generic_point);
+    ARIADNE_TESTING_EXPECT_SAME(X(evaluated[0u], dp), X(12, dp));
+    F indexed(Index(1u));
+    ARIADNE_TESTING_PROVE(identical(indexed, y));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(3 + x, point), X(5, dp));
+    ARIADNE_TESTING_EXPECT_SAME(evaluate(3 - x, point), X(1, dp));
+    ARIADNE_TESTING_PROVE(same(make_constant(EffectiveNumber(3), Real(0)), Real(3)));
+    auto real_formula = make_constant(EffectiveNumber(3), Formula<Real>::zero());
+    ARIADNE_TESTING_PROVE(is_constant(real_formula, Real(3)));
 }
 Void TestFormulaExtra::test_formula_parentheses() {
-    using F=EffectiveFormula;auto x=F::coordinate(0u),y=F::coordinate(1u);
-    List<Pair<F,String>> cases{
-        {F::unary(Neg(),F(EffectiveNumber(2))),"-2"},{F::unary(Pos(),x),"+x[0]"},{min(x,y),"min(x[0],x[1])"},
-        {-(x+y),"-(x[0]+x[1])"},{-x,"-x[0]"},
-        {x-(x+y),"x[0]-(x[0]+x[1])"},{x-(x-y),"x[0]-(x[0]-x[1])"},{x-y,"x[0]-x[1]"},
-        {(x+y)*x,"(x[0]+x[1])*x[0]"},{(x-y)*x,"(x[0]-x[1])*x[0]"},{(x/y)*x,"(x[0]/x[1])*x[0]"},
-        {x*(x+y),"x[0]*(x[0]+x[1])"},{x*(x-y),"x[0]*(x[0]-x[1])"},{x*y,"x[0]*x[1]"},
-        {(x+y)/x,"(x[0]+x[1])/x[0]"},{(x-y)/x,"(x[0]-x[1])/x[0]"},
-        {x/(x+y),"x[0]/(x[0]+x[1])"},{x/(x-y),"x[0]/(x[0]-x[1])"},
-        {x/(x*y),"x[0]/(x[0]*x[1])"},{x/(x/y),"x[0]/(x[0]/x[1])"},{x/y,"x[0]/x[1]"}};
-    for(const auto& example:cases) { std::ostringstream text;text<<example.first;ARIADNE_TESTING_EXPECT_EQUAL(text.str(), example.second); }
-    std::ostringstream text;F::_write_univariate(text,Vector<F>{});
+    using F = EffectiveFormula;
+    auto x = F::coordinate(0u), y = F::coordinate(1u);
+    List<Pair<F, String>> cases{
+        {F::unary(Neg(), F(EffectiveNumber(2))), "-2"},
+        {F::unary(Pos(), x), "+x[0]"},
+        {min(x, y), "min(x[0],x[1])"},
+        {-(x + y), "-(x[0]+x[1])"},
+        {-x, "-x[0]"},
+        {x - (x + y), "x[0]-(x[0]+x[1])"},
+        {x - (x - y), "x[0]-(x[0]-x[1])"},
+        {x - y, "x[0]-x[1]"},
+        {(x + y) * x, "(x[0]+x[1])*x[0]"},
+        {(x - y) * x, "(x[0]-x[1])*x[0]"},
+        {(x / y) * x, "(x[0]/x[1])*x[0]"},
+        {x * (x + y), "x[0]*(x[0]+x[1])"},
+        {x * (x - y), "x[0]*(x[0]-x[1])"},
+        {x * y, "x[0]*x[1]"},
+        {(x + y) / x, "(x[0]+x[1])/x[0]"},
+        {(x - y) / x, "(x[0]-x[1])/x[0]"},
+        {x / (x + y), "x[0]/(x[0]+x[1])"},
+        {x / (x - y), "x[0]/(x[0]-x[1])"},
+        {x / (x * y), "x[0]/(x[0]*x[1])"},
+        {x / (x / y), "x[0]/(x[0]/x[1])"},
+        {x / y, "x[0]/x[1]"}
+    };
+    for (const auto& example: cases) {
+        std::ostringstream text;
+        text << example.first;
+        ARIADNE_TESTING_EXPECT_EQUAL(text.str(), example.second);
+    }
+    std::ostringstream text;
+    F::_write_univariate(text, Vector<F>{});
     ARIADNE_TESTING_EXPECT_EQUAL(text.str(), String("[]"));
-    text.str("");F::_write_multivariate(text,Vector<F>{});
+    text.str("");
+    F::_write_multivariate(text, Vector<F>{});
     ARIADNE_TESTING_EXPECT_EQUAL(text.str(), String("[]"));
 }
 

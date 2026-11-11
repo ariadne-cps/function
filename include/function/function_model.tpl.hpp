@@ -30,21 +30,18 @@
 #include <iosfwd>
 #include <iostream>
 
-#include "function/function_model.hpp"
-
-#include "function/function_interface.hpp"
-#include "function/function_mixin.hpp"
-#include "function/function.hpp"
-
-#include "numeric/operators.hpp"
-#include "numeric/numeric.hpp"
-#include "algebra/vector.hpp"
 #include "algebra/matrix.hpp"
 #include "algebra/operations.hpp"
+#include "algebra/vector.hpp"
 #include "function/domain.hpp"
+#include "function/function.hpp"
+#include "function/function_interface.hpp"
+#include "function/function_mixin.hpp"
+#include "function/function_model.hpp"
+#include "numeric/numeric.hpp"
+#include "numeric/operators.hpp"
 
 namespace Ariadne {
-
 
 /*
 template<class P, class PR, class PRE> ScalarMultivariateFunctionModel<P,PR,PRE> FunctionModelFactory<P,PR,PRE>::create_constant(const DomainType& domain, const CanonicalNumericType<P,PR,PRE>& value) const {
@@ -55,7 +52,6 @@ template<class P, class PR, class PRE> VectorMultivariateFunctionModel<P,PR,PRE>
 template<class P, class PR, class PRE> VectorMultivariateFunctionModel<P,PR,PRE> FunctionModelFactory<P,PR,PRE>::create_constants(const DomainType& domain, const Vector<CanonicalNumericType<P,PR,PRE>>& values) const {
     return VectorMultivariateFunctionModel<P,PR,PRE>(this->_ptr->_create(domain,EffectiveVectorMultivariateFunction::zeros(values.size(),domain.size())))+values; };
 */
-
 
 /*
 template<class P, class PR, class PRE> ScalarMultivariateFunctionModel<P,PR,PRE> FunctionModelFactoryInterface<P,PR,PRE>::create(const DomainType& domain, const ScalarMultivariateFunctionInterface<P>& function) const {
@@ -87,7 +83,5 @@ template<class P, class PR, class PRE> VectorMultivariateFunctionModel<P,PR,PRE>
 template<class P, class PR, class PRE> CanonicalNumericType<P,PR,PRE> FunctionModelFactoryInterface<P,PR,PRE>::create_number(const Number<P>& number) const {
     return this->_create(number); }
 */
-
-
 
 } // namespace Ariadne

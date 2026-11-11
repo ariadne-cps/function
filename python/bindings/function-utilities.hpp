@@ -4,7 +4,6 @@
  *  Ariadne-layer Python binding utilities.
  ****************************************************************************/
 
-
 /*
  *  This file is part of Ariadne Function.
  *
@@ -29,9 +28,9 @@
 #ifndef ARIADNE_PYTHON_ARIADNE_UTILITIES_HPP
 #define ARIADNE_PYTHON_ARIADNE_UTILITIES_HPP
 
-#include "algebra-utilities.hpp"
-
 #include "function/declarations.hpp"
 #include "geometry/declarations.hpp"
+
+#include "algebra-utilities.hpp"
 
 #endif /* ARIADNE_PYTHON_ARIADNE_UTILITIES_HPP */

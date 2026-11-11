@@ -29,13 +29,11 @@
 #ifndef ARIADNE_FUNCTIONAL_HPP
 #define ARIADNE_FUNCTIONAL_HPP
 
-#include "numeric/numeric.hpp"
-
 #include "algebra/differential.hpp"
-
-#include "function/affine.hpp"
 #include "algebra/polynomial.hpp"
+#include "function/affine.hpp"
 #include "function/function.hpp"
 #include "function/function_model.hpp"
+#include "numeric/numeric.hpp"
 
 #endif

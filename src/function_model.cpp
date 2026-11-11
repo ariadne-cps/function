@@ -23,18 +23,15 @@
  */
 
 #include "function/function_model.hpp"
+
+#include "algebra/algebra.hpp"
+#include "function/formula.hpp"
 #include "function/function_model.tpl.hpp"
 #include "function/taylor_model.hpp"
 
-#include "algebra/algebra.hpp"
-
-#include "function/formula.hpp"
-
 namespace Ariadne {
 
-template class FunctionModelFactoryInterface<ValidatedTag,DoublePrecision,DoublePrecision>;
-template class FunctionModelFactoryInterface<ValidatedTag,MultiplePrecision,MultiplePrecision>;
-
-
+template class FunctionModelFactoryInterface<ValidatedTag, DoublePrecision, DoublePrecision>;
+template class FunctionModelFactoryInterface<ValidatedTag, MultiplePrecision, MultiplePrecision>;
 
 } // namespace Ariadne

@@ -23,7 +23,6 @@
  */
 
 #include "procedure.hpp"
-#include "procedure.tpl.hpp"
 
 #include <chrono>
 
@@ -31,16 +30,17 @@
 #include "algebra/fixed_univariate_differential.hpp"
 #include "algebra/graded.hpp"
 #include "function/function.hpp"
+#include "procedure.tpl.hpp"
 
 namespace Ariadne {
 
 namespace {
 
 inline double procedure_elapsed_seconds(
-    std::chrono::steady_clock::time_point const& start)
-{
+    const std::chrono::steady_clock::time_point& start) {
     return std::chrono::duration<double>(
-        std::chrono::steady_clock::now()-start).count();
+               std::chrono::steady_clock::now() - start)
+        .count();
 }
 
 } // namespace
@@ -59,72 +59,66 @@ template Void _execute(List<FloatDPBounds>& v, const List<ProcedureInstruction>&
 
 template Void _execute(List<Graded<Differential<FloatDPBounds>>>& v, const List<ProcedureInstruction>& p, const List<ValidatedNumber>& c, const Vector<Graded<Differential<FloatDPBounds>>>& x);
 
-template Void _execute<FloatDPApproximation, ApproximateNumber>(List<FloatDPApproximation>&, List<ProcedureInstruction> const&, List<ApproximateNumber> const&, Vector<FloatDPApproximation> const&);
+template Void _execute<FloatDPApproximation, ApproximateNumber>(List<FloatDPApproximation>&, const List<ProcedureInstruction>&, const List<ApproximateNumber>&, const Vector<FloatDPApproximation>&);
 
-template Covector<FloatDPApproximation> gradient(Procedure<ApproximateNumber> const& f, Vector<FloatDPApproximation> const& x);
-template Covector<FloatDPBounds> gradient(Procedure<ValidatedNumber> const& f, Vector<FloatDPBounds> const& x);
+template Covector<FloatDPApproximation> gradient(const Procedure<ApproximateNumber>& f, const Vector<FloatDPApproximation>& x);
+template Covector<FloatDPBounds> gradient(const Procedure<ValidatedNumber>& f, const Vector<FloatDPBounds>& x);
 
-template FloatDPApproximation hessian(Procedure<ApproximateNumber> const& f, Vector<FloatDPApproximation> const& x, Vector<FloatDPApproximation> const& s);
-template FloatDPBounds hessian(Procedure<ValidatedNumber> const& f, Vector<FloatDPBounds> const& x, Vector<FloatDPBounds> const& s);
+template FloatDPApproximation hessian(const Procedure<ApproximateNumber>& f, const Vector<FloatDPApproximation>& x, const Vector<FloatDPApproximation>& s);
+template FloatDPBounds hessian(const Procedure<ValidatedNumber>& f, const Vector<FloatDPBounds>& x, const Vector<FloatDPBounds>& s);
 
-
-
-inline
-Void restrict(UpperIntervalType& r, const UpperIntervalType& x) {
-    r.set_lower_bound(max(r.lower_bound(),x.lower_bound()));
-    r.set_upper_bound(min(r.upper_bound(),x.upper_bound()));
+inline Void restrict(UpperIntervalType& r, const UpperIntervalType& x) {
+    r.set_lower_bound(max(r.lower_bound(), x.lower_bound()));
+    r.set_upper_bound(min(r.upper_bound(), x.upper_bound()));
 }
 
-Void simple_hull_reduce(UpperBoxType& dom, const ValidatedProcedure& f, ExactIntervalType codom)
-{
-    const List<ProcedureInstruction>& p=f._instructions;
-    const List<ValidatedNumber>& c=f._constants;
+Void simple_hull_reduce(UpperBoxType& dom, const ValidatedProcedure& f, ExactIntervalType codom) {
+    const List<ProcedureInstruction>& p = f._instructions;
+    const List<ValidatedNumber>& c = f._constants;
     List<UpperIntervalType> t(p.size());
-    _execute(t,p,c,cast_vector(dom));
-    restrict(t.back(),codom);
-    _backpropagate(cast_vector(dom),t,p,c);
+    _execute(t, p, c, cast_vector(dom));
+    restrict(t.back(), codom);
+    _backpropagate(cast_vector(dom), t, p, c);
 }
 
 Void simple_hull_reduce(
     UpperBoxType& dom,
     const ValidatedProcedure& f,
     ExactIntervalType codom,
-    ProcedureHullReductionStatistics& statistics)
-{
-    const List<ProcedureInstruction>& p=f._instructions;
-    const List<ValidatedNumber>& c=f._constants;
+    ProcedureHullReductionStatistics& statistics) {
+    const List<ProcedureInstruction>& p = f._instructions;
+    const List<ValidatedNumber>& c = f._constants;
 
-    auto phase_start=std::chrono::steady_clock::now();
+    auto phase_start = std::chrono::steady_clock::now();
     List<UpperIntervalType> t(p.size());
-    statistics.temporary_allocation_seconds+=
+    statistics.temporary_allocation_seconds +=
         procedure_elapsed_seconds(phase_start);
 
-    phase_start=std::chrono::steady_clock::now();
-    _execute(t,p,c,cast_vector(dom));
-    statistics.forward_execution_seconds+=
+    phase_start = std::chrono::steady_clock::now();
+    _execute(t, p, c, cast_vector(dom));
+    statistics.forward_execution_seconds +=
         procedure_elapsed_seconds(phase_start);
 
-    restrict(t.back(),codom);
+    restrict(t.back(), codom);
 
-    phase_start=std::chrono::steady_clock::now();
-    _backpropagate(cast_vector(dom),t,p,c);
-    statistics.backward_propagation_seconds+=
+    phase_start = std::chrono::steady_clock::now();
+    _backpropagate(cast_vector(dom), t, p, c);
+    statistics.backward_propagation_seconds +=
         procedure_elapsed_seconds(phase_start);
 }
 
-Void simple_hull_reduce(UpperBoxType& dom, const Vector<ValidatedProcedure>& f, ExactBoxType codom)
-{
-    const List<ProcedureInstruction>& p=f._instructions;
-    const List<ValidatedNumber>& c=f._constants;
+Void simple_hull_reduce(UpperBoxType& dom, const Vector<ValidatedProcedure>& f, ExactBoxType codom) {
+    const List<ProcedureInstruction>& p = f._instructions;
+    const List<ValidatedNumber>& c = f._constants;
     List<UpperIntervalType> t(p.size());
 
-    ARIADNE_PRECONDITION(codom.size()==f._results.size());
+    ARIADNE_PRECONDITION(codom.size() == f._results.size());
 
-    _execute(t,p,c,cast_vector(dom));
-    for(SizeType i=0; i!=codom.size(); ++i) {
-        restrict(t[f._results[i]],codom[i]);
+    _execute(t, p, c, cast_vector(dom));
+    for (SizeType i = 0; i != codom.size(); ++i) {
+        restrict(t[f._results[i]], codom[i]);
     }
-    _backpropagate(cast_vector(dom),t,p,c);
+    _backpropagate(cast_vector(dom), t, p, c);
 }
 
 } // namespace Ariadne

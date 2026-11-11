@@ -37,100 +37,139 @@
 
 namespace Ariadne {
 
-
 class UnitInterval;
 class UnitBox;
 
-template<class... T> struct DomainTraits;
-template<> struct DomainTraits<RealScalar> : public ScalarTraits {
+template<class... T>
+struct DomainTraits;
+template<>
+struct DomainTraits<RealScalar> : public ScalarTraits {
     typedef RealDomain EntireSetType;
     typedef UnitInterval UnitSetType;
     typedef RealDomain EntireDomainType;
     typedef FloatDPExactInterval BoundedDomainType;
     typedef FloatDPUpperInterval BoundedRangeType;
-    template<class FLT> using ConcreteRangeType = Interval<UpperBound<FLT>>;
+    template<class FLT>
+    using ConcreteRangeType = Interval<UpperBound<FLT>>;
 };
-template<> struct DomainTraits<RealVector> : public VectorTraits {
+template<>
+struct DomainTraits<RealVector> : public VectorTraits {
     typedef EuclideanDomain EntireSetType;
     typedef UnitBox UnitSetType;
     typedef EuclideanDomain EntireDomainType;
     typedef FloatDPExactBox BoundedDomainType;
     typedef FloatDPUpperBox BoundedRangeType;
-    template<class FLT> using ConcreteRangeType = Box<Interval<UpperBound<FLT>>>;
+    template<class FLT>
+    using ConcreteRangeType = Box<Interval<UpperBound<FLT>>>;
 };
-template<class... ARGS> using EntireDomainType = typename DomainTraits<ARGS...>::EntireDomainType;
-template<class... ARGS> using BoundedDomainType = typename DomainTraits<ARGS...>::BoundedDomainType;
+template<class... ARGS>
+using EntireDomainType = typename DomainTraits<ARGS...>::EntireDomainType;
+template<class... ARGS>
+using BoundedDomainType = typename DomainTraits<ARGS...>::BoundedDomainType;
 
-template<class S> struct ElementTraits;
-template<class S> using ElementKind = typename ElementTraits<S>::Kind;
-template<class S, class X> using ElementType = typename ValueTraits<ElementKind<S>>::template Type<X>;
-template<class S> using ElementSizeType = typename ValueTraits<ElementKind<S>>::SizeType;
-template<class S> using ElementIndexType = typename ValueTraits<ElementKind<S>>::IndexType;
+template<class S>
+struct ElementTraits;
+template<class S>
+using ElementKind = typename ElementTraits<S>::Kind;
+template<class S, class X>
+using ElementType = typename ValueTraits<ElementKind<S>>::template Type<X>;
+template<class S>
+using ElementSizeType = typename ValueTraits<ElementKind<S>>::SizeType;
+template<class S>
+using ElementIndexType = typename ValueTraits<ElementKind<S>>::IndexType;
 
-
-template<class SIG> struct SignatureTraits;
-template<class RES, class ARG> struct SignatureTraits<RES(ARG)> {
+template<class SIG>
+struct SignatureTraits;
+template<class RES, class ARG>
+struct SignatureTraits<RES(ARG)> {
     typedef ARG ArgumentKind;
     typedef RES ResultKind;
 
-    template<class X> using Argument = typename ValueTraits<ARG>::template Type<X>;
-    template<class X> using Result = typename ValueTraits<RES>::template Type<X>;
+    template<class X>
+    using Argument = typename ValueTraits<ARG>::template Type<X>;
+    template<class X>
+    using Result = typename ValueTraits<RES>::template Type<X>;
 
     typedef typename ValueTraits<ARG>::SizeType ArgumentSizeType;
     typedef typename ValueTraits<ARG>::IndexType ArgumentIndexType;
     typedef typename ValueTraits<RES>::SizeType ResultSizeType;
     typedef typename ValueTraits<RES>::IndexType ResultIndexType;
 
-        typedef typename DomainTraits<ARG>::EntireDomainType DomainType;
+    typedef typename DomainTraits<ARG>::EntireDomainType DomainType;
     typedef typename DomainTraits<ARG>::EntireDomainType EntireDomainType;
     typedef typename DomainTraits<ARG>::BoundedDomainType BoundedDomainType;
-        typedef typename DomainTraits<RES>::EntireDomainType CodomainType;
+    typedef typename DomainTraits<RES>::EntireDomainType CodomainType;
     typedef typename DomainTraits<RES>::EntireDomainType EntireCodomainType;
     typedef typename DomainTraits<RES>::BoundedDomainType BoundedCodomainType;
 
     typedef typename DomainTraits<RES>::BoundedRangeType BoundedRangeType;
-    template<class FLT> using ConcreteRangeType = typename DomainTraits<RES>::template ConcreteRangeType<FLT>;
+    template<class FLT>
+    using ConcreteRangeType = typename DomainTraits<RES>::template ConcreteRangeType<FLT>;
 };
 
-template<template<class>class LIN> struct CartesianProductBoxTypedef;
-template<> struct CartesianProductBoxTypedef<Scalar> { template<class IVL> using Type = IVL; };
-template<> struct CartesianProductBoxTypedef<Vector> { template<class IVL> using Type = Box<IVL>; };
-template<template<class>class LIN, class IVL> using CartesianProductBoxType = typename CartesianProductBoxTypedef<LIN>::template Type<IVL>;
+template<template<class> class LIN>
+struct CartesianProductBoxTypedef;
+template<>
+struct CartesianProductBoxTypedef<Scalar> {
+    template<class IVL>
+    using Type = IVL;
+};
+template<>
+struct CartesianProductBoxTypedef<Vector> {
+    template<class IVL>
+    using Type = Box<IVL>;
+};
+template<template<class> class LIN, class IVL>
+using CartesianProductBoxType = typename CartesianProductBoxTypedef<LIN>::template Type<IVL>;
 
-template<class P, class PR, class PRE=PR> struct FunctionModelTraits;
+template<class P, class PR, class PRE = PR>
+struct FunctionModelTraits;
 
-template<class F> class UnknownError;
+template<class F>
+class UnknownError;
 
-template<class PR, class PRE> struct FunctionModelTraits<ValidatedTag,PR,PRE> {
-    typedef RawFloat<PR> F; typedef RawFloat<PRE> FE;
-    typedef F ValueType; typedef Error<FE> ErrorType;
+template<class PR, class PRE>
+struct FunctionModelTraits<ValidatedTag, PR, PRE> {
+    typedef RawFloat<PR> F;
+    typedef RawFloat<PRE> FE;
+    typedef F ValueType;
+    typedef Error<FE> ErrorType;
     typedef PositiveUpperBound<F> NormType;
     typedef Interval<UpperBound<F>> RangeType;
     typedef Bounds<F> NumericType;
     typedef ValidatedNumber GenericNumericType;
     typedef F RawFloatType;
 };
-template<class PR> struct FunctionModelTraits<ApproximateTag,PR> {
+template<class PR>
+struct FunctionModelTraits<ApproximateTag, PR> {
     typedef RawFloat<PR> F;
-    typedef Approximation<F> ValueType; typedef UnknownError<F> ErrorType;
+    typedef Approximation<F> ValueType;
+    typedef UnknownError<F> ErrorType;
     typedef PositiveApproximation<F> NormType;
     typedef Interval<Approximation<F>> RangeType;
-    typedef Approximation<F> NumericType; typedef ApproximateNumber GenericNumericType;
+    typedef Approximation<F> NumericType;
+    typedef ApproximateNumber GenericNumericType;
     typedef F RawFloatType;
 };
 
-template<class P, class PR, class PRE=PR> using CanonicalNumericType = typename FunctionModelTraits<P,PR,PRE>::NumericType;
-template<class P, class PR> using CanonicalCoefficientType = typename FunctionModelTraits<P,PR>::CoefficientType;
-template<class P, class PRE> using CanonicalErrorType = typename FunctionModelTraits<P,PRE,PRE>::ErrorType;
+template<class P, class PR, class PRE = PR>
+using CanonicalNumericType = typename FunctionModelTraits<P, PR, PRE>::NumericType;
+template<class P, class PR>
+using CanonicalCoefficientType = typename FunctionModelTraits<P, PR>::CoefficientType;
+template<class P, class PRE>
+using CanonicalErrorType = typename FunctionModelTraits<P, PRE, PRE>::ErrorType;
 
-template<class P> using CanonicalNumeric64Type = typename FunctionModelTraits<P,DoublePrecision>::NumericType;
-template<class P> using CanonicalCoefficient64Type = typename FunctionModelTraits<P,DoublePrecision>::CoefficientType;
-template<class P> using CanonicalError64Type = typename FunctionModelTraits<P,DoublePrecision,DoublePrecision>::ErrorType;
+template<class P>
+using CanonicalNumeric64Type = typename FunctionModelTraits<P, DoublePrecision>::NumericType;
+template<class P>
+using CanonicalCoefficient64Type = typename FunctionModelTraits<P, DoublePrecision>::CoefficientType;
+template<class P>
+using CanonicalError64Type = typename FunctionModelTraits<P, DoublePrecision, DoublePrecision>::ErrorType;
 
-template<class X> using PrecisionType = typename X::PrecisionType;
-template<class X> using ErrorPrecisionType = typename X::ErrorPrecisionType;
-
-
+template<class X>
+using PrecisionType = typename X::PrecisionType;
+template<class X>
+using ErrorPrecisionType = typename X::ErrorPrecisionType;
 
 } // namespace Ariadne
 

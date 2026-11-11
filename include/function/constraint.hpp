@@ -29,8 +29,8 @@
 #ifndef ARIADNE_CONSTRAINT_HPP
 #define ARIADNE_CONSTRAINT_HPP
 
-#include "numeric/numeric.hpp"
 #include "function/function.hpp"
+#include "numeric/numeric.hpp"
 #include "utility/metaprogramming.hpp"
 
 namespace Ariadne {
@@ -43,45 +43,52 @@ namespace Ariadne {
 template<class F, class R>
 class Constraint {
   public:
-    typedef F FunctionType; //!< <p/>
-    typedef R BoundType; //!< <p/>
-    typedef R UpperBoundType; //!< <p/>
+    typedef F FunctionType;                 //!< <p/>
+    typedef R BoundType;                    //!< <p/>
+    typedef R UpperBoundType;               //!< <p/>
     typedef NegationType<R> LowerBoundType; //!< <p/>
-//    typedef typename IntervalOfType<Real>::Type IntervalBoundsType;
+                                            //    typedef typename IntervalOfType<Real>::Type IntervalBoundsType;
+
   public:
     //! <p/>
-    Constraint(LowerBoundType const& l, FunctionType const& f, UpperBoundType const& u)
-        : _function(f), _lower_bound(l), _upper_bound(u) { ARIADNE_ASSERT_MSG(decide(l<=u),"f="<<f<<"\nl="<<l<<", u="<<u); }
+    Constraint(const LowerBoundType& l, const FunctionType& f, const UpperBoundType& u)
+        : _function(f), _lower_bound(l), _upper_bound(u) { ARIADNE_ASSERT_MSG(decide(l <= u), "f=" << f << "\nl=" << l << ", u=" << u); }
 
     //! <p/>
-    Constraint(FunctionType const& f, BoundType const& x)
-        : _function(f), _lower_bound(x), _upper_bound(x) { }
+    Constraint(const FunctionType& f, const BoundType& x)
+        : _function(f), _lower_bound(x), _upper_bound(x) {}
 
-    template< ConvertibleTo<F> FF, ConvertibleTo<R> RR>
-    Constraint(const Constraint<FF,RR>& c)
-        : _function(static_cast<F>(c.function())), _lower_bound(c.lower_bound()), _upper_bound(c.upper_bound()) { }
+    template<ConvertibleTo<F> FF, ConvertibleTo<R> RR>
+    Constraint(const Constraint<FF, RR>& c)
+        : _function(static_cast<F>(c.function())), _lower_bound(c.lower_bound()), _upper_bound(c.upper_bound()) {}
 
-    template< ConvertibleTo<F> FF, class RR> requires Constructible<R,RR,DoublePrecision>
+    template<ConvertibleTo<F> FF, class RR>
+        requires Constructible<R, RR, DoublePrecision>
     Constraint(const RR& l, const FF& f, const RR& u)
-        : _function(static_cast<F>(f)), _lower_bound(l,dp), _upper_bound(u,dp) { }
+        : _function(static_cast<F>(f)), _lower_bound(l, dp), _upper_bound(u, dp) {}
 
-    template< ConvertibleTo<F> FF, class RR> requires Constructible<R,RR,DoublePrecision>
-    Constraint(const Constraint<FF,RR>& c)
-        : _function(static_cast<F>(c.function())), _lower_bound(c.lower_bound(),dp), _upper_bound(c.upper_bound(),dp) { }
+    template<ConvertibleTo<F> FF, class RR>
+        requires Constructible<R, RR, DoublePrecision>
+    Constraint(const Constraint<FF, RR>& c)
+        : _function(static_cast<F>(c.function())), _lower_bound(c.lower_bound(), dp), _upper_bound(c.upper_bound(), dp) {}
 
     Void set_function(const FunctionType& f) { this->_function = f; }
     FunctionType& function() { return this->_function; }
     //! <p/>
-    FunctionType const& function() const { return this->_function; }
+    const FunctionType& function() const { return this->_function; }
     //! <p/>
     SizeType argument_size() const { return this->_function.argument_size(); }
     //! <p/>
-    LowerBoundType const& lower_bound() const { return this->_lower_bound; }
+    const LowerBoundType& lower_bound() const { return this->_lower_bound; }
     //! <p/>
-    UpperBoundType const& upper_bound() const { return this->_upper_bound; }
+    const UpperBoundType& upper_bound() const { return this->_upper_bound; }
 
     // FIXME: This function should not be used as it breaks type safety
-    const Interval<FloatDP> bounds() const { DoublePrecision pr; return cast_exact(Interval<FloatDPUpperBound>({_lower_bound,pr},{_upper_bound,pr})); }
+    const Interval<FloatDP> bounds() const {
+        DoublePrecision pr;
+        return cast_exact(Interval<FloatDPUpperBound>({_lower_bound, pr}, {_upper_bound, pr}));
+    }
+
   private:
     F _function;
     R _lower_bound;
@@ -91,35 +98,36 @@ class Constraint {
 //!@{
 //! \relates Constraint
 //! \name Type synonyms
-using RealConstraint = Constraint<RealScalarMultivariateFunction,Real>; //!< <p/>
-using EffectiveConstraint = Constraint<EffectiveScalarMultivariateFunction,EffectiveNumber>; //!< <p/>
-using ValidatedConstraint = Constraint<ValidatedScalarMultivariateFunction,ValidatedNumber>; //!< <p/>
-using ApproximateConstraint = Constraint<ApproximateScalarMultivariateFunction,ApproximateNumber>; //!< <p/>
-using ValidatedExactConstraint = Constraint<ValidatedScalarMultivariateFunction,ExactNumber>; //!< <p/>
+using RealConstraint = Constraint<RealScalarMultivariateFunction, Real>;                            //!< <p/>
+using EffectiveConstraint = Constraint<EffectiveScalarMultivariateFunction, EffectiveNumber>;       //!< <p/>
+using ValidatedConstraint = Constraint<ValidatedScalarMultivariateFunction, ValidatedNumber>;       //!< <p/>
+using ApproximateConstraint = Constraint<ApproximateScalarMultivariateFunction, ApproximateNumber>; //!< <p/>
+using ValidatedExactConstraint = Constraint<ValidatedScalarMultivariateFunction, ExactNumber>;      //!< <p/>
 //!@}
 
-template<class X, class R> OutputStream& operator<<(OutputStream& os, const Constraint<X,R>& c) {
+template<class X, class R>
+OutputStream& operator<<(OutputStream& os, const Constraint<X, R>& c) {
     return os << c.lower_bound() << "<=" << c.function() << "<=" << c.upper_bound();
 }
 
 inline EffectiveConstraint operator<=(const EffectiveNumber& c, const EffectiveScalarMultivariateFunction& f) {
-    return EffectiveConstraint(c,f,infinity);
+    return EffectiveConstraint(c, f, infinity);
 }
 
 inline EffectiveConstraint operator>=(const EffectiveNumber& c, const EffectiveScalarMultivariateFunction& f) {
-    return EffectiveConstraint(-infinity,f,c);
+    return EffectiveConstraint(-infinity, f, c);
 }
 
 inline EffectiveConstraint operator<=(const EffectiveScalarMultivariateFunction& f, const EffectiveNumber& c) {
-    return EffectiveConstraint(-infinity,f,c);
+    return EffectiveConstraint(-infinity, f, c);
 }
 
 inline EffectiveConstraint operator>=(const EffectiveScalarMultivariateFunction& f, const EffectiveNumber& c) {
-    return EffectiveConstraint(c,f,infinity);
+    return EffectiveConstraint(c, f, infinity);
 }
 
 inline EffectiveConstraint operator==(const EffectiveScalarMultivariateFunction& f, const EffectiveNumber& c) {
-    return EffectiveConstraint(f,c);
+    return EffectiveConstraint(f, c);
 }
 
 inline EffectiveConstraint operator<=(const EffectiveScalarMultivariateFunction& f, double c) {
@@ -135,57 +143,52 @@ inline EffectiveConstraint operator==(const EffectiveScalarMultivariateFunction&
 }
 
 inline EffectiveConstraint operator<=(const EffectiveConstraint& nc, const EffectiveNumber& c) {
-    ARIADNE_ASSERT(decide(nc.upper_bound()==infty));
-    return EffectiveConstraint(nc.lower_bound(),nc.function(),c);
+    ARIADNE_ASSERT(decide(nc.upper_bound() == infty));
+    return EffectiveConstraint(nc.lower_bound(), nc.function(), c);
 }
 
-
 inline ValidatedExactConstraint operator<=(const ExactNumber& c, const ValidatedScalarMultivariateFunction& f) {
-    return ValidatedExactConstraint(c,f,ExactNumber(+infty));
+    return ValidatedExactConstraint(c, f, ExactNumber(+infty));
 }
 
 inline ValidatedExactConstraint operator<=(const ValidatedScalarMultivariateFunction& f, const ExactNumber& c) {
-    return ValidatedExactConstraint(-infty,f,c);
+    return ValidatedExactConstraint(-infty, f, c);
 }
 
 inline ValidatedExactConstraint operator>=(const ValidatedScalarMultivariateFunction& f, const ExactNumber& c) {
-    return ValidatedExactConstraint(c,f,+infty);
+    return ValidatedExactConstraint(c, f, +infty);
 }
 
 inline ValidatedExactConstraint operator==(const ValidatedScalarMultivariateFunction& f, const ExactNumber& c) {
-    return ValidatedExactConstraint(c,f,c);
+    return ValidatedExactConstraint(c, f, c);
 }
 
 inline ValidatedExactConstraint operator<=(const ValidatedExactConstraint& nc, const ExactNumber& c) {
-    ARIADNE_ASSERT(nc.upper_bound()==infty);
-    return ValidatedExactConstraint(nc.lower_bound(),nc.function(),c);
+    ARIADNE_ASSERT(nc.upper_bound() == infty);
+    return ValidatedExactConstraint(nc.lower_bound(), nc.function(), c);
 }
 
-
 inline ValidatedExactConstraint operator<=(const ValidatedScalarMultivariateFunction& f1, const ValidatedScalarMultivariateFunction& f2) {
-    return (f1-f2) <= ExactNumber(0);
+    return (f1 - f2) <= ExactNumber(0);
 }
 
 inline ValidatedExactConstraint operator>=(const ValidatedScalarMultivariateFunction& f1, const ValidatedScalarMultivariateFunction& f2) {
-    return (f1-f2) >= ExactNumber(0);
+    return (f1 - f2) >= ExactNumber(0);
 }
 
-
 inline ValidatedConstraint operator<=(const ValidatedNumber& c, const ValidatedScalarMultivariateFunction& f) {
-    return ValidatedConstraint(c,f,ExactNumber(+infty));
+    return ValidatedConstraint(c, f, ExactNumber(+infty));
 }
 
 inline ValidatedConstraint operator<=(const ValidatedScalarMultivariateFunction& f, const ValidatedNumber& c) {
-    return ValidatedConstraint(ExactNumber(-infty),f,c);
+    return ValidatedConstraint(ExactNumber(-infty), f, c);
 }
 
 inline ValidatedConstraint operator<=(const ValidatedConstraint& nc, const ValidatedNumber& c) {
-    ARIADNE_ASSERT(decide(nc.upper_bound()==infty));
-   return ValidatedConstraint(nc.lower_bound(),nc.function(),c);
+    ARIADNE_ASSERT(decide(nc.upper_bound() == infty));
+    return ValidatedConstraint(nc.lower_bound(), nc.function(), c);
 }
 
-
-
-} //namespace Ariadne
+} // namespace Ariadne
 
 #endif

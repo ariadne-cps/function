@@ -21,361 +21,414 @@
  *  along with Ariadne Function. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <array>
+#include <memory>
+#include <sstream>
+
 #include "function/function.hpp"
 #include "function/taylor_function.hpp"
+
 #include "ariadne-testing.hpp"
-#include <sstream>
-#include <memory>
-#include <array>
 using namespace Ariadne;
-using ScalarModel=ScalarMultivariateFunctionModel<ValidatedTag,DoublePrecision>;
-using VectorModel=VectorMultivariateFunctionModel<ValidatedTag,DoublePrecision>;
-using ScalarTaylor=ValidatedScalarMultivariateTaylorFunctionModelDP;
-using VectorTaylor=ValidatedVectorMultivariateTaylorFunctionModelDP;
+using ScalarModel = ScalarMultivariateFunctionModel<ValidatedTag, DoublePrecision>;
+using VectorModel = VectorMultivariateFunctionModel<ValidatedTag, DoublePrecision>;
+using ScalarTaylor = ValidatedScalarMultivariateTaylorFunctionModelDP;
+using VectorTaylor = ValidatedVectorMultivariateTaylorFunctionModelDP;
 
 class TestFunctionModels : public Ariadne::Testing::ContextFixture {
-public:
+  public:
     using ContextFixture::ContextFixture;
-Void test_generic_vector_derivative() {
-    BoxDomainType domain{{2,6},{-2,2}};
-    TaylorFunctionFactory backend(ThresholdSweeper<FloatDP>(dp,1e-12));
-    auto x=backend.create_coordinate(domain,0u),y=backend.create_coordinate(domain,1u);
-    VectorModel model=VectorTaylor{2*x+y,x-y};
-    Vector<FloatDPBounds> point({3,1},dp);
-    VectorModel differentiated(model.reference()._concrete_derivative(0u));
-    ARIADNE_TESTING_EXPECT_EQUAL(differentiated(point), Vector<FloatDPBounds>({2,1},dp));
-}
-Void test_generic_scalar_composition() {
-    BoxDomainType domain{{2,6},{-2,2}};
-    TaylorFunctionFactory backend(ThresholdSweeper<FloatDP>(dp,1e-12));
-    ScalarModel model=backend.create_coordinate(domain,0u);
-    auto t=ValidatedScalarUnivariateFunction::coordinate();
-    ValidatedVectorUnivariateFunction curve{t+1,2*t};
-    Vector<FloatDPBounds> point({3,1},dp);
-    ScalarModel scalar(model.reference()._compose(t+1));
-    VectorModel vector(model.reference()._compose(curve));
-    ARIADNE_TESTING_PROVE(definitely(scalar(point)==FloatDPBounds(4,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(vector(point), Vector<FloatDPBounds>({4,6},dp));
-    ScalarModel unchecked_scalar(model.reference()._unchecked_compose(t+1));
-    VectorModel unchecked_vector(model.reference()._unchecked_compose(curve));
-    ARIADNE_TESTING_PROVE(definitely(unchecked_scalar(point)==FloatDPBounds(4,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(unchecked_vector(point), Vector<FloatDPBounds>({4,6},dp));
-}
-Void test_erased_factory_projection() {
-    FunctionModelFactory<ValidatedTag,DoublePrecision> backend(new TaylorFunctionFactory(ThresholdSweeper<FloatDP>(dp,1e-12)));
-    BoxDomainType domain{{2,6},{-2,2}};
-    auto projected=backend.create_projection(domain,Range(1u,2u));
-    ARIADNE_TESTING_EXPECT_EQUAL(projected(Vector<FloatDPBounds>({3,1},dp)), Vector<FloatDPBounds>({FloatDPBounds(1,dp)}));
-}
-
-Void test_concrete_scaled_calculus() {
-    BoxDomainType domain{{2,6},{-2,2}};
-    Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
-    auto x=ScalarTaylor::coordinate(domain,0u,sweeper),y=ScalarTaylor::coordinate(domain,1u,sweeper);
-    auto f=2*x+y;VectorTaylor vector{f,x-y};const VectorTaylor& cv=vector;
-    Vector<FloatDPBounds> point({3,1},dp),reduced{FloatDPBounds(3,dp)};
-    Vector<ValidatedNumber> generic_point{3,1};
-    ARIADNE_TESTING_PROVE(definitely(f.create_constant(FloatDPBounds(5,dp))(point)==FloatDPBounds(5,dp)));
-    ARIADNE_TESTING_PROVE(definitely(f.create_constant(ValidatedNumber(5))(point)==FloatDPBounds(5,dp)));
-    ARIADNE_TESTING_PROVE(definitely(partial_evaluate(f,1u,FloatDPBounds(1,dp))(reduced)==FloatDPBounds(7,dp)));
-    ARIADNE_TESTING_PROVE(definitely(partial_evaluate(f,1u,ValidatedNumber(1))(reduced)==FloatDPBounds(7,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(partial_evaluate(vector,1u,FloatDPBounds(1,dp))(reduced), Vector<FloatDPBounds>({7,2},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(partial_evaluate(vector,1u,ValidatedNumber(1))(reduced), Vector<FloatDPBounds>({7,2},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(derivative(vector,0u)(point), Vector<FloatDPBounds>({2,1},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(antiderivative(vector,0u,FloatDPBounds(2,dp))(point), Vector<FloatDPBounds>({6,1.5_x},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(antiderivative(vector,0u,ValidatedNumber(2))(point), Vector<FloatDPBounds>({6,1.5_x},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(unchecked_evaluate(vector,point), Vector<FloatDPBounds>({7,2},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(unchecked_evaluate(vector,generic_point), Vector<FloatDPBounds>({7,2},dp));
-    ARIADNE_TESTING_PROVE(definitely(evaluate(f,generic_point)==FloatDPBounds(7,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(cv.values(), Vector<FloatDP>({8,4},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(cv.expansions().size(), 2u);
-    ARIADNE_TESTING_EXPECT_EQUAL(cv.errors()[0u].raw(), FloatDP(0,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(cv.get(1u)(point), cv[1u](point));
-    BoxDomainType prefix{{-1,1}},suffix{{0,1}};
-    Vector<FloatDPBounds> enlarged({0,3,1,0.5_x},dp);
-    ARIADNE_TESTING_PROVE(definitely(embed(prefix,f,suffix)(enlarged)==FloatDPBounds(7,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(embed(prefix,vector,suffix)(enlarged), Vector<FloatDPBounds>({7,2},dp));
-    auto projected=ScalarTaylor::projection(domain,Range(1u,2u),sweeper);
-    ARIADNE_TESTING_EXPECT_EQUAL(projected(point), Vector<FloatDPBounds>{FloatDPBounds(1,dp)});
-    VectorTaylor empty(0u,domain,sweeper);
-    ARIADNE_TESTING_EXPECT_EQUAL(empty.values().size(), 0u);
-    ARIADNE_TESTING_EXPECT_EQUAL(empty.expansions().size(), 0u);
-    ARIADNE_TESTING_EXPECT_EQUAL(derivative(empty,0u)(point).size(), 0u);
-    ARIADNE_TESTING_EXPECT_EQUAL(antiderivative(empty,0u,FloatDPBounds(2,dp))(point).size(), 0u);
-    std::ostringstream text;text<<representation(f)<<representation(vector)<<representation(empty);
-    auto constant=ScalarTaylor::constant(BoxDomainType(0u),FloatDPBounds(3,dp),sweeper);
-    text<<representation(constant);
-    ARIADNE_TESTING_PROVE(text.str().find("ScaledFunctionPatch")!=String::npos);
-    ARIADNE_TESTING_PROVE(text.str().find("VectorScaledFunctionPatch")!=String::npos);
-}
-Void test_scaled_enclosure_comparisons() {
-    BoxDomainType domain{{2,6},{-2,2}},small{{3,5},{-1,1}},other{{4,6},{-1,1}};
-    Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
-    auto broad=ScalarTaylor::constant(domain,FloatDPBounds(1,3,dp),sweeper);
-    auto exact=ScalarTaylor::constant(domain,FloatDPBounds(2,dp),sweeper);
-    auto far=ScalarTaylor::constant(domain,FloatDPBounds(7,dp),sweeper);
-    Vector<FloatDPBounds> point({4,0},dp);
-    ARIADNE_TESTING_PROVE(refines(exact,broad));
-    ARIADNE_TESTING_PROVE(!refines(broad,exact));
-    ARIADNE_TESTING_PROVE(inconsistent(exact,far));
-    ARIADNE_TESTING_PROVE(!inconsistent(exact,broad));
-    ARIADNE_TESTING_PROVE(refines(exact,restriction(broad,small)));
-    ARIADNE_TESTING_PROVE(!refines(restriction(exact,small),broad));
-    ARIADNE_TESTING_PROVE(inconsistent(restriction(exact,small),restriction(far,other)));
-    ARIADNE_TESTING_PROVE(definitely(refinement(exact,broad)(point)==FloatDPBounds(2,dp)));
-    VectorTaylor ve{exact,exact},vb{broad,broad},vf{exact,far};
-    ARIADNE_TESTING_PROVE(refines(ve,vb));ARIADNE_TESTING_PROVE(!refines(vb,ve));
-    ARIADNE_TESTING_PROVE(inconsistent(ve,vf));ARIADNE_TESTING_PROVE(!inconsistent(ve,vb));
-    ARIADNE_TESTING_EXPECT_EQUAL(refinement(ve,vb)(point), Vector<FloatDPBounds>({2,2},dp));
-    ValidatedNumber scalar(5);
-    ARIADNE_TESTING_PROVE(definitely(max(exact,scalar)(point)==FloatDPBounds(5,dp)));
-    ARIADNE_TESTING_PROVE(definitely(min(exact,scalar)(point)==FloatDPBounds(2,dp)));
-    ARIADNE_TESTING_PROVE(definitely(max(scalar,exact)(point)==FloatDPBounds(5,dp)));
-    ARIADNE_TESTING_PROVE(definitely(min(scalar,exact)(point)==FloatDPBounds(2,dp)));
-    using Operations=AlgebraOperations<ScalarTaylor>;
-    ARIADNE_TESTING_PROVE(definitely(Operations::apply(BinaryElementaryOperator(Sub()),FloatDPBounds(5,dp),exact)(point)==FloatDPBounds(3,dp)));
-}
-Void test_model_handles_and_factories() {
-    BoxDomainType domain{{2,6},{-2,2}},small{{3,5},{-1,1}};
-    Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
-    TaylorFunctionFactory concrete(sweeper);
-    FunctionModelFactory<ValidatedTag,DoublePrecision> backend(new TaylorFunctionFactory(sweeper));
-    auto x=concrete.create_coordinate(domain,0u),y=concrete.create_coordinate(domain,1u);
-    ScalarModel scalar=2*x+y;
-    VectorModel vector=VectorTaylor{2*x+y,x-y};const VectorModel& cv=vector;
-    Vector<FloatDPBounds> point({3,1},dp),reduced{FloatDPBounds(3,dp)};
-    Vector<ValidatedNumber> generic_point{3,1};
-    ARIADNE_TESTING_PROVE(definitely(unchecked_evaluate(scalar,point)==FloatDPBounds(7,dp)));
-    ARIADNE_TESTING_PROVE(definitely(unchecked_evaluate(scalar,generic_point)==ValidatedNumber(7)));
-    ARIADNE_TESTING_EXPECT_EQUAL(unchecked_evaluate(vector,point), Vector<FloatDPBounds>({7,2},dp));
-    ARIADNE_TESTING_PROVE(definitely(partial_evaluate(scalar,1u,FloatDPBounds(1,dp))(reduced)==FloatDPBounds(7,dp)));
-    ARIADNE_TESTING_PROVE(definitely(partial_evaluate(scalar,1u,ValidatedNumber(1))(reduced)==FloatDPBounds(7,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(vector.values(), Vector<FloatDP>({8,4},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(vector.errors()[1u].raw(), FloatDP(0,dp));
-    ARIADNE_TESTING_PROVE(decide(norm(vector).raw()>=FloatDP(7,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(cv[Range(1u,2u)](point), Vector<FloatDPBounds>{FloatDPBounds(2,dp)});
-    auto projected=backend.create_projection(domain,Range(0u,2u));
-    ARIADNE_TESTING_EXPECT_EQUAL(projected(point), point);
-    ARIADNE_TESTING_PROVE(definitely(backend.create_coordinate(domain,1u)(point)==FloatDPBounds(1,dp)));
-    ARIADNE_TESTING_PROVE(definitely(backend.create_zero(domain)(point)==FloatDPBounds(0,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(backend.create_zeros(0u,domain)(point).size(), 0u);
-    ARIADNE_TESTING_EXPECT_EQUAL(backend.create_constants(domain,Vector<ValidatedNumber>{2,3})(point), Vector<FloatDPBounds>({2,3},dp));
-    auto creator=factory(scalar);
-    ARIADNE_TESTING_PROVE(definitely(creator.create_constant(ValidatedNumber(5))(point)==FloatDPBounds(5,dp)));
-    ARIADNE_TESTING_PROVE(definitely(creator.create_zero()(point)==FloatDPBounds(0,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(creator.create_zeros(0u)(point).size(), 0u);
-    ARIADNE_TESTING_EXPECT_EQUAL(creator.create_identity()(point), point);
-    auto restricted=restriction(vector,small);auto restricted_scalar=restriction(scalar,small);
-    Vector<FloatDPBounds> centre({4,0},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(restricted(centre), Vector<FloatDPBounds>({8,4},dp));
-    ARIADNE_TESTING_PROVE(definitely(restricted_scalar(centre)==FloatDPBounds(8,dp)));
-    ARIADNE_TESTING_EXPECT_EQUAL(antiderivative(vector,0u,FloatDPBounds(2,dp))(point), Vector<FloatDPBounds>({6,1.5_x},dp));
-    ARIADNE_TESTING_PROVE(definitely(antiderivative(scalar,0u,FloatDPBounds(2,dp))(point)==FloatDPBounds(6,dp)));
-    ScalarModel copy=scalar;copy.clobber();
-    ARIADNE_TESTING_EXPECT_EQUAL(copy.error().raw(), FloatDP(0,dp));
-    VectorModel clone(vector.reference()._concrete_clone());clone.clobber();
-    ARIADNE_TESTING_EXPECT_EQUAL(clone(point), vector(point));
-    std::ostringstream text;text<<backend<<scalar.reference()<<vector.reference();
-    ARIADNE_TESTING_PROVE(!text.str().empty());
-}
-
-Void test_model_factory_interfaces() {
-    using FactoryInterface=FunctionModelFactoryInterface<ValidatedTag,DoublePrecision>;
-    const BoxDomainType domain{{-1,1},{-1,1}};
-    const Vector<FloatDPBounds> point({0.25_x,0.5_x},dp);
-    const auto x=ValidatedScalarMultivariateFunction::coordinate(2u,0u);
-    const auto y=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
-    const ValidatedVectorMultivariateFunction identity{x,y};
-    const Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
-    std::array<std::unique_ptr<FactoryInterface>,2> factories{
-        std::unique_ptr<FactoryInterface>(make_taylor_function_factory()),
-        std::unique_ptr<FactoryInterface>(make_taylor_function_factory(sweeper))};
-    for(const auto& ptr:factories) {
-        const auto& backend=*ptr;
-        ARIADNE_TESTING_EXPECT_SAME(backend.create(ValidatedNumber(3)), FloatDPBounds(3,dp));
-        ARIADNE_TESTING_EXPECT_SAME(backend.create_number(ValidatedNumber(3)), FloatDPBounds(3,dp));
-        ARIADNE_TESTING_EXPECT_SAME(backend.create(domain,(x+y).reference())(point), FloatDPBounds(0.75_x,dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(backend.create(domain,identity.reference())(point), point);
-        ARIADNE_TESTING_EXPECT_SAME(backend.create_zero(domain)(point), FloatDPBounds(0,dp));
-        ARIADNE_TESTING_EXPECT_SAME(backend.create_constant(domain,ValidatedNumber(4))(point), FloatDPBounds(4,dp));
-        ARIADNE_TESTING_EXPECT_SAME(backend.create_constant(domain,FloatDPBounds(5,dp))(point), FloatDPBounds(5,dp));
-        ARIADNE_TESTING_EXPECT_SAME(backend.create_coordinate(domain,1u)(point), point[1u]);
-        ARIADNE_TESTING_EXPECT_EQUAL(backend.create_zeros(2u,domain)(point), Vector<FloatDPBounds>({0,0},dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(backend.create_constants(domain,Vector<ValidatedNumber>{2,3})(point), Vector<FloatDPBounds>({2,3},dp));
-        ARIADNE_TESTING_EXPECT_EQUAL(backend.create_projection(domain,Range(1u,2u))(point), Vector<FloatDPBounds>{point[1u]});
-        ARIADNE_TESTING_EXPECT_EQUAL(backend.create_identity(domain)(point), point);
-        const Vector<FloatDPBounds> parameter{point[0u]};
-        ARIADNE_TESTING_EXPECT_SAME(backend.create_identity(IntervalDomainType(-1,1))(parameter), point[0u]);
-        std::unique_ptr<FactoryInterface> copied(backend._copy());
-        ARIADNE_TESTING_EXPECT_EQUAL(copied->create_identity(domain)(point), point);
+    Void test_generic_vector_derivative() {
+        BoxDomainType domain{
+            { 2, 6},
+            {-2, 2}
+        };
+        TaylorFunctionFactory backend(ThresholdSweeper<FloatDP>(dp, 1e-12));
+        auto x = backend.create_coordinate(domain, 0u), y = backend.create_coordinate(domain, 1u);
+        VectorModel model = VectorTaylor{2 * x + y, x - y};
+        Vector<FloatDPBounds> point({3, 1}, dp);
+        VectorModel differentiated(model.reference()._concrete_derivative(0u));
+        ARIADNE_TESTING_EXPECT_EQUAL(differentiated(point), Vector<FloatDPBounds>({2, 1}, dp));
     }
-    std::array<FunctionPatchFactory<ValidatedTag>,2> patch_factories{
-        FunctionPatchFactory<ValidatedTag>(make_taylor_function_patch_factory()),
-        FunctionPatchFactory<ValidatedTag>(make_taylor_function_patch_factory(sweeper))};
-    for(const auto& backend:patch_factories) {
-        ARIADNE_TESTING_EXPECT_SAME(backend.create_coordinate(domain,1u)(point), point[1u]);
+    Void test_generic_scalar_composition() {
+        BoxDomainType domain{
+            { 2, 6},
+            {-2, 2}
+        };
+        TaylorFunctionFactory backend(ThresholdSweeper<FloatDP>(dp, 1e-12));
+        ScalarModel model = backend.create_coordinate(domain, 0u);
+        auto t = ValidatedScalarUnivariateFunction::coordinate();
+        ValidatedVectorUnivariateFunction curve{t + 1, 2 * t};
+        Vector<FloatDPBounds> point({3, 1}, dp);
+        ScalarModel scalar(model.reference()._compose(t + 1));
+        VectorModel vector(model.reference()._compose(curve));
+        ARIADNE_TESTING_PROVE(definitely(scalar(point) == FloatDPBounds(4, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(vector(point), Vector<FloatDPBounds>({4, 6}, dp));
+        ScalarModel unchecked_scalar(model.reference()._unchecked_compose(t + 1));
+        VectorModel unchecked_vector(model.reference()._unchecked_compose(curve));
+        ARIADNE_TESTING_PROVE(definitely(unchecked_scalar(point) == FloatDPBounds(4, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(unchecked_vector(point), Vector<FloatDPBounds>({4, 6}, dp));
     }
-    FunctionModelFactory<ValidatedTag,DoublePrecision> backend(make_taylor_function_factory(sweeper));
-    auto creator=factory(backend.create_coordinate(domain,0u));
-    const FloatDPBounds coefficient(7,dp);
-    ARIADNE_TESTING_PROVE(&creator.create(coefficient)==&coefficient);
-}
+    Void test_erased_factory_projection() {
+        FunctionModelFactory<ValidatedTag, DoublePrecision> backend(new TaylorFunctionFactory(ThresholdSweeper<FloatDP>(dp, 1e-12)));
+        BoxDomainType domain{
+            { 2, 6},
+            {-2, 2}
+        };
+        auto projected = backend.create_projection(domain, Range(1u, 2u));
+        ARIADNE_TESTING_EXPECT_EQUAL(projected(Vector<FloatDPBounds>({3, 1}, dp)), Vector<FloatDPBounds>({FloatDPBounds(1, dp)}));
+    }
 
-Void test_scalar_model_interface_delegation() {
-    const BoxDomainType domain{{2,6},{-2,2}},prefix{{-1,1}},suffix{{0,1}};
-    const Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
-    const auto x=ScalarTaylor::coordinate(domain,0u,sweeper),y=ScalarTaylor::coordinate(domain,1u,sweeper);
-    const ScalarModel model=2*x+y;
-    const auto& interface=model.reference();
-    const ElementaryAlgebraInterface<FloatDPBounds>& canonical=interface;
-    const ElementaryAlgebraInterface<ValidatedNumber>& generic=interface;
-    const auto from_algebra=[](auto* algebra) {
-        return ScalarModel(dynamic_cast<ScalarModel::Interface*>(algebra));
-    };
-    const Vector<FloatDPBounds> point({3,1},dp),reduced{FloatDPBounds(3,dp)},enlarged({0,3,1,0.5_x},dp);
-    ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._create_copy())(point), FloatDPBounds(7,dp));
-    ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._create_zero())(point), FloatDPBounds(0,dp));
-    ARIADNE_TESTING_EXPECT_SAME(from_algebra(generic._create_constant(ValidatedNumber(5)))(point), FloatDPBounds(5,dp));
-    ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._create_constant(FloatDPBounds(6,dp)))(point), FloatDPBounds(6,dp));
-    ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._apply(BinaryElementaryOperator(Add()),FloatDPBounds(5,dp)))(point), FloatDPBounds(12,dp));
-    ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._rapply(BinaryElementaryOperator(Sub()),FloatDPBounds(5,dp)))(point), FloatDPBounds(-2,dp));
-    ARIADNE_TESTING_EXPECT_SAME(from_algebra(generic._apply(BinaryElementaryOperator(Add()),ValidatedNumber(5)))(point), FloatDPBounds(12,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._errors().get(dp).raw(), FloatDP(0,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._error().get(dp).raw(), FloatDP(0,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._norm().get(dp).raw(), FloatDP(14,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._concrete_norm().raw(), FloatDP(14,dp));
-    const ScalarModel primitive(interface._antiderivative(0u));
-    ARIADNE_TESTING_EXPECT_SAME(derivative(primitive,0u)(point), FloatDPBounds(7,dp));
-    ARIADNE_TESTING_EXPECT_SAME(ScalarModel(interface._concrete_antiderivative(0u,FloatDPBounds(2,dp)))(point), FloatDPBounds(6,dp));
-    const MultiplePrecision mp(128u);
-    ARIADNE_TESTING_EXPECT_SAME(interface._unchecked_evaluate(Vector<FloatMPBounds>({3,1},mp)), FloatMPBounds(7,mp));
-    ARIADNE_TESTING_EXPECT_SAME(interface._concrete_unchecked_evaluate(point), FloatDPBounds(7,dp));
-    ARIADNE_TESTING_EXPECT_SAME(from_algebra(interface._partial_evaluate(1u,ValidatedNumber(1)))(reduced), FloatDPBounds(7,dp));
-    ARIADNE_TESTING_EXPECT_SAME(ScalarModel(interface._embed(prefix,suffix))(enlarged), FloatDPBounds(7,dp));
-    const ScalarModel broad=ScalarTaylor::constant(domain,FloatDPBounds(1,3,dp),sweeper);
-    const ScalarModel exact=ScalarTaylor::constant(domain,FloatDPBounds(2,dp),sweeper);
-    const ScalarModel far=ScalarTaylor::constant(domain,FloatDPBounds(7,dp),sweeper);
-    ARIADNE_TESTING_PROVE(exact.reference()._refines(broad.reference()));
-    ARIADNE_TESTING_PROVE(decide(exact.reference()._concrete_refines(broad.reference())));
-    ARIADNE_TESTING_PROVE(decide(exact.reference()._concrete_inconsistent(far.reference())));
-    ARIADNE_TESTING_EXPECT_SAME(ScalarModel(exact.reference()._concrete_refinement(broad.reference()))(point), FloatDPBounds(2,dp));
-    ScalarTaylor uncertain=2*x+y;uncertain.set_error(FloatDPError(0.125_x,dp));
-    ScalarModel cleared=uncertain;cleared.reference()._clobber();
-    ARIADNE_TESTING_EXPECT_EQUAL(cleared.error().raw(), FloatDP(0,dp));
-    ARIADNE_TESTING_EXPECT_SAME(cleared(point), FloatDPBounds(7,dp));
-}
+    Void test_concrete_scaled_calculus() {
+        BoxDomainType domain{
+            { 2, 6},
+            {-2, 2}
+        };
+        Sweeper<FloatDP> sweeper = ThresholdSweeper<FloatDP>(dp, 1e-12);
+        auto x = ScalarTaylor::coordinate(domain, 0u, sweeper), y = ScalarTaylor::coordinate(domain, 1u, sweeper);
+        auto f = 2 * x + y;
+        VectorTaylor vector{f, x - y};
+        const VectorTaylor& cv = vector;
+        Vector<FloatDPBounds> point({3, 1}, dp), reduced{FloatDPBounds(3, dp)};
+        Vector<ValidatedNumber> generic_point{3, 1};
+        ARIADNE_TESTING_PROVE(definitely(f.create_constant(FloatDPBounds(5, dp))(point) == FloatDPBounds(5, dp)));
+        ARIADNE_TESTING_PROVE(definitely(f.create_constant(ValidatedNumber(5))(point) == FloatDPBounds(5, dp)));
+        ARIADNE_TESTING_PROVE(definitely(partial_evaluate(f, 1u, FloatDPBounds(1, dp))(reduced) == FloatDPBounds(7, dp)));
+        ARIADNE_TESTING_PROVE(definitely(partial_evaluate(f, 1u, ValidatedNumber(1))(reduced) == FloatDPBounds(7, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(partial_evaluate(vector, 1u, FloatDPBounds(1, dp))(reduced), Vector<FloatDPBounds>({7, 2}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(partial_evaluate(vector, 1u, ValidatedNumber(1))(reduced), Vector<FloatDPBounds>({7, 2}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(derivative(vector, 0u)(point), Vector<FloatDPBounds>({2, 1}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(antiderivative(vector, 0u, FloatDPBounds(2, dp))(point), Vector<FloatDPBounds>({6, 1.5_x}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(antiderivative(vector, 0u, ValidatedNumber(2))(point), Vector<FloatDPBounds>({6, 1.5_x}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(unchecked_evaluate(vector, point), Vector<FloatDPBounds>({7, 2}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(unchecked_evaluate(vector, generic_point), Vector<FloatDPBounds>({7, 2}, dp));
+        ARIADNE_TESTING_PROVE(definitely(evaluate(f, generic_point) == FloatDPBounds(7, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(cv.values(), Vector<FloatDP>({8, 4}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(cv.expansions().size(), 2u);
+        ARIADNE_TESTING_EXPECT_EQUAL(cv.errors()[0u].raw(), FloatDP(0, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(cv.get(1u)(point), cv[1u](point));
+        BoxDomainType prefix{
+            {-1, 1}
+        },
+            suffix{{0, 1}};
+        Vector<FloatDPBounds> enlarged({0, 3, 1, 0.5_x}, dp);
+        ARIADNE_TESTING_PROVE(definitely(embed(prefix, f, suffix)(enlarged) == FloatDPBounds(7, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(embed(prefix, vector, suffix)(enlarged), Vector<FloatDPBounds>({7, 2}, dp));
+        auto projected = ScalarTaylor::projection(domain, Range(1u, 2u), sweeper);
+        ARIADNE_TESTING_EXPECT_EQUAL(projected(point), Vector<FloatDPBounds>{FloatDPBounds(1, dp)});
+        VectorTaylor empty(0u, domain, sweeper);
+        ARIADNE_TESTING_EXPECT_EQUAL(empty.values().size(), 0u);
+        ARIADNE_TESTING_EXPECT_EQUAL(empty.expansions().size(), 0u);
+        ARIADNE_TESTING_EXPECT_EQUAL(derivative(empty, 0u)(point).size(), 0u);
+        ARIADNE_TESTING_EXPECT_EQUAL(antiderivative(empty, 0u, FloatDPBounds(2, dp))(point).size(), 0u);
+        std::ostringstream text;
+        text << representation(f) << representation(vector) << representation(empty);
+        auto constant = ScalarTaylor::constant(BoxDomainType(0u), FloatDPBounds(3, dp), sweeper);
+        text << representation(constant);
+        ARIADNE_TESTING_PROVE(text.str().find("ScaledFunctionPatch") != String::npos);
+        ARIADNE_TESTING_PROVE(text.str().find("VectorScaledFunctionPatch") != String::npos);
+    }
+    Void test_scaled_enclosure_comparisons() {
+        BoxDomainType domain{
+            { 2, 6},
+            {-2, 2}
+        },
+            small{{3, 5}, {-1, 1}}, other{{4, 6}, {-1, 1}};
+        Sweeper<FloatDP> sweeper = ThresholdSweeper<FloatDP>(dp, 1e-12);
+        auto broad = ScalarTaylor::constant(domain, FloatDPBounds(1, 3, dp), sweeper);
+        auto exact = ScalarTaylor::constant(domain, FloatDPBounds(2, dp), sweeper);
+        auto far = ScalarTaylor::constant(domain, FloatDPBounds(7, dp), sweeper);
+        Vector<FloatDPBounds> point({4, 0}, dp);
+        ARIADNE_TESTING_PROVE(refines(exact, broad));
+        ARIADNE_TESTING_PROVE(!refines(broad, exact));
+        ARIADNE_TESTING_PROVE(inconsistent(exact, far));
+        ARIADNE_TESTING_PROVE(!inconsistent(exact, broad));
+        ARIADNE_TESTING_PROVE(refines(exact, restriction(broad, small)));
+        ARIADNE_TESTING_PROVE(!refines(restriction(exact, small), broad));
+        ARIADNE_TESTING_PROVE(inconsistent(restriction(exact, small), restriction(far, other)));
+        ARIADNE_TESTING_PROVE(definitely(refinement(exact, broad)(point) == FloatDPBounds(2, dp)));
+        VectorTaylor ve{exact, exact}, vb{broad, broad}, vf{exact, far};
+        ARIADNE_TESTING_PROVE(refines(ve, vb));
+        ARIADNE_TESTING_PROVE(!refines(vb, ve));
+        ARIADNE_TESTING_PROVE(inconsistent(ve, vf));
+        ARIADNE_TESTING_PROVE(!inconsistent(ve, vb));
+        ARIADNE_TESTING_EXPECT_EQUAL(refinement(ve, vb)(point), Vector<FloatDPBounds>({2, 2}, dp));
+        ValidatedNumber scalar(5);
+        ARIADNE_TESTING_PROVE(definitely(max(exact, scalar)(point) == FloatDPBounds(5, dp)));
+        ARIADNE_TESTING_PROVE(definitely(min(exact, scalar)(point) == FloatDPBounds(2, dp)));
+        ARIADNE_TESTING_PROVE(definitely(max(scalar, exact)(point) == FloatDPBounds(5, dp)));
+        ARIADNE_TESTING_PROVE(definitely(min(scalar, exact)(point) == FloatDPBounds(2, dp)));
+        using Operations = AlgebraOperations<ScalarTaylor>;
+        ARIADNE_TESTING_PROVE(definitely(Operations::apply(BinaryElementaryOperator(Sub()), FloatDPBounds(5, dp), exact)(point) == FloatDPBounds(3, dp)));
+    }
+    Void test_model_handles_and_factories() {
+        BoxDomainType domain{
+            { 2, 6},
+            {-2, 2}
+        },
+            small{{3, 5}, {-1, 1}};
+        Sweeper<FloatDP> sweeper = ThresholdSweeper<FloatDP>(dp, 1e-12);
+        TaylorFunctionFactory concrete(sweeper);
+        FunctionModelFactory<ValidatedTag, DoublePrecision> backend(new TaylorFunctionFactory(sweeper));
+        auto x = concrete.create_coordinate(domain, 0u), y = concrete.create_coordinate(domain, 1u);
+        ScalarModel scalar = 2 * x + y;
+        VectorModel vector = VectorTaylor{2 * x + y, x - y};
+        const VectorModel& cv = vector;
+        Vector<FloatDPBounds> point({3, 1}, dp), reduced{FloatDPBounds(3, dp)};
+        Vector<ValidatedNumber> generic_point{3, 1};
+        ARIADNE_TESTING_PROVE(definitely(unchecked_evaluate(scalar, point) == FloatDPBounds(7, dp)));
+        ARIADNE_TESTING_PROVE(definitely(unchecked_evaluate(scalar, generic_point) == ValidatedNumber(7)));
+        ARIADNE_TESTING_EXPECT_EQUAL(unchecked_evaluate(vector, point), Vector<FloatDPBounds>({7, 2}, dp));
+        ARIADNE_TESTING_PROVE(definitely(partial_evaluate(scalar, 1u, FloatDPBounds(1, dp))(reduced) == FloatDPBounds(7, dp)));
+        ARIADNE_TESTING_PROVE(definitely(partial_evaluate(scalar, 1u, ValidatedNumber(1))(reduced) == FloatDPBounds(7, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(vector.values(), Vector<FloatDP>({8, 4}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(vector.errors()[1u].raw(), FloatDP(0, dp));
+        ARIADNE_TESTING_PROVE(decide(norm(vector).raw() >= FloatDP(7, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(cv[Range(1u, 2u)](point), Vector<FloatDPBounds>{FloatDPBounds(2, dp)});
+        auto projected = backend.create_projection(domain, Range(0u, 2u));
+        ARIADNE_TESTING_EXPECT_EQUAL(projected(point), point);
+        ARIADNE_TESTING_PROVE(definitely(backend.create_coordinate(domain, 1u)(point) == FloatDPBounds(1, dp)));
+        ARIADNE_TESTING_PROVE(definitely(backend.create_zero(domain)(point) == FloatDPBounds(0, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(backend.create_zeros(0u, domain)(point).size(), 0u);
+        ARIADNE_TESTING_EXPECT_EQUAL(backend.create_constants(domain, Vector<ValidatedNumber>{2, 3})(point), Vector<FloatDPBounds>({2, 3}, dp));
+        auto creator = factory(scalar);
+        ARIADNE_TESTING_PROVE(definitely(creator.create_constant(ValidatedNumber(5))(point) == FloatDPBounds(5, dp)));
+        ARIADNE_TESTING_PROVE(definitely(creator.create_zero()(point) == FloatDPBounds(0, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(creator.create_zeros(0u)(point).size(), 0u);
+        ARIADNE_TESTING_EXPECT_EQUAL(creator.create_identity()(point), point);
+        auto restricted = restriction(vector, small);
+        auto restricted_scalar = restriction(scalar, small);
+        Vector<FloatDPBounds> centre({4, 0}, dp);
+        ARIADNE_TESTING_EXPECT_EQUAL(restricted(centre), Vector<FloatDPBounds>({8, 4}, dp));
+        ARIADNE_TESTING_PROVE(definitely(restricted_scalar(centre) == FloatDPBounds(8, dp)));
+        ARIADNE_TESTING_EXPECT_EQUAL(antiderivative(vector, 0u, FloatDPBounds(2, dp))(point), Vector<FloatDPBounds>({6, 1.5_x}, dp));
+        ARIADNE_TESTING_PROVE(definitely(antiderivative(scalar, 0u, FloatDPBounds(2, dp))(point) == FloatDPBounds(6, dp)));
+        ScalarModel copy = scalar;
+        copy.clobber();
+        ARIADNE_TESTING_EXPECT_EQUAL(copy.error().raw(), FloatDP(0, dp));
+        VectorModel clone(vector.reference()._concrete_clone());
+        clone.clobber();
+        ARIADNE_TESTING_EXPECT_EQUAL(clone(point), vector(point));
+        std::ostringstream text;
+        text << backend << scalar.reference() << vector.reference();
+        ARIADNE_TESTING_PROVE(!text.str().empty());
+    }
 
-Void test_vector_model_interface_delegation() {
-    const BoxDomainType domain{{2,6},{-2,2}},prefix{{-1,1}},suffix{{0,1}};
-    const Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
-    const auto x=ScalarTaylor::coordinate(domain,0u,sweeper),y=ScalarTaylor::coordinate(domain,1u,sweeper);
-    const VectorModel model=VectorTaylor{2*x+y,x-y};
-    const auto& interface=model.reference();
-    const auto from_patch=[](auto* patch) {
-        return VectorModel(dynamic_cast<VectorModel::Interface*>(patch));
-    };
-    const Vector<FloatDPBounds> point({3,1},dp),expected({7,2},dp),reduced{FloatDPBounds(3,dp)},enlarged({0,3,1,0.5_x},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._range().dimension(), 2u);
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._errors()[0u].get(dp).raw(), FloatDP(0,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._error().get(dp).raw(), FloatDP(0,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._concrete_error().raw(), FloatDP(0,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._norm().get(dp).raw(), FloatDP(14,dp));
-    const VectorModel primitive(interface._antiderivative(0u));
-    ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(primitive.reference()._concrete_derivative(0u))(point), expected);
-    ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._antiderivative(0u,ValidatedNumber(2)))(point), Vector<FloatDPBounds>({6,1.5_x},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._concrete_antiderivative(0u,FloatDPBounds(2,dp)))(point), Vector<FloatDPBounds>({6,1.5_x},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._embed(prefix,suffix))(enlarged), expected);
-    VectorModel appended(interface._concrete_clone());
-    appended.reference()._concrete_adjoin(ScalarModel(x).reference());
-    ARIADNE_TESTING_EXPECT_EQUAL(appended(point), Vector<FloatDPBounds>({7,2,3},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._concrete_join(interface))(point), Vector<FloatDPBounds>({7,2,7,2},dp));
-    const Vector<FloatDPBounds> doubled_point({3,1,3,1},dp);
-    ARIADNE_TESTING_EXPECT_EQUAL(from_patch(interface._combine(interface))(doubled_point), Vector<FloatDPBounds>({7,2,7,2},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._concrete_combine(interface))(doubled_point), Vector<FloatDPBounds>({7,2,7,2},dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(Vector<FloatDPBounds>(interface._unchecked_evaluate(Vector<ValidatedNumber>{3,1}),dp), expected);
-    const MultiplePrecision mp(128u);
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._unchecked_evaluate(Vector<FloatMPBounds>({3,1},mp)), Vector<FloatMPBounds>({7,2},mp));
-    ARIADNE_TESTING_EXPECT_EQUAL(interface._concrete_unchecked_evaluate(point), expected);
-    const auto a=ValidatedScalarMultivariateFunction::coordinate(2u,0u),b=ValidatedScalarMultivariateFunction::coordinate(2u,1u);
-    ARIADNE_TESTING_EXPECT_SAME(ScalarModel(interface._unchecked_compose(a+b))(point), FloatDPBounds(9,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._unchecked_compose(ValidatedVectorMultivariateFunction{a,b}))(point), expected);
-    ARIADNE_TESTING_EXPECT_EQUAL(from_patch(interface._partial_evaluate(1u,ValidatedNumber(1)))(reduced), expected);
-    ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._concrete_partial_evaluate(1u,FloatDPBounds(1,dp)))(reduced), expected);
-    const auto broad_scalar=ScalarTaylor::constant(domain,FloatDPBounds(1,3,dp),sweeper);
-    const auto exact_scalar=ScalarTaylor::constant(domain,FloatDPBounds(2,dp),sweeper);
-    const auto far_scalar=ScalarTaylor::constant(domain,FloatDPBounds(7,dp),sweeper);
-    const VectorModel broad=VectorTaylor{broad_scalar,broad_scalar},exact=VectorTaylor{exact_scalar,exact_scalar},far=VectorTaylor{exact_scalar,far_scalar};
-    ARIADNE_TESTING_PROVE(exact.reference()._refines(broad.reference()));
-    ARIADNE_TESTING_PROVE(decide(exact.reference()._concrete_refines(broad.reference())));
-    ARIADNE_TESTING_PROVE(decide(exact.reference()._concrete_inconsistent(far.reference())));
-    ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(exact.reference()._concrete_refinement(broad.reference()))(point), Vector<FloatDPBounds>({2,2},dp));
-    ScalarTaylor uncertain=2*x+y;uncertain.set_error(FloatDPError(0.125_x,dp));
-    VectorModel cleared=VectorTaylor{uncertain,x-y};cleared.reference()._clobber();
-    ARIADNE_TESTING_EXPECT_EQUAL(cleared.error().raw(), FloatDP(0,dp));
-    ARIADNE_TESTING_EXPECT_EQUAL(cleared(point), expected);
-}
+    Void test_model_factory_interfaces() {
+        using FactoryInterface = FunctionModelFactoryInterface<ValidatedTag, DoublePrecision>;
+        const BoxDomainType domain{
+            {-1, 1},
+            {-1, 1}
+        };
+        const Vector<FloatDPBounds> point({0.25_x, 0.5_x}, dp);
+        const auto x = ValidatedScalarMultivariateFunction::coordinate(2u, 0u);
+        const auto y = ValidatedScalarMultivariateFunction::coordinate(2u, 1u);
+        const ValidatedVectorMultivariateFunction identity{x, y};
+        const Sweeper<FloatDP> sweeper = ThresholdSweeper<FloatDP>(dp, 1e-12);
+        std::array<std::unique_ptr<FactoryInterface>, 2> factories{
+            std::unique_ptr<FactoryInterface>(make_taylor_function_factory()),
+            std::unique_ptr<FactoryInterface>(make_taylor_function_factory(sweeper))};
+        for (const auto& ptr: factories) {
+            const auto& backend = *ptr;
+            ARIADNE_TESTING_EXPECT_SAME(backend.create(ValidatedNumber(3)), FloatDPBounds(3, dp));
+            ARIADNE_TESTING_EXPECT_SAME(backend.create_number(ValidatedNumber(3)), FloatDPBounds(3, dp));
+            ARIADNE_TESTING_EXPECT_SAME(backend.create(domain, (x + y).reference())(point), FloatDPBounds(0.75_x, dp));
+            ARIADNE_TESTING_EXPECT_EQUAL(backend.create(domain, identity.reference())(point), point);
+            ARIADNE_TESTING_EXPECT_SAME(backend.create_zero(domain)(point), FloatDPBounds(0, dp));
+            ARIADNE_TESTING_EXPECT_SAME(backend.create_constant(domain, ValidatedNumber(4))(point), FloatDPBounds(4, dp));
+            ARIADNE_TESTING_EXPECT_SAME(backend.create_constant(domain, FloatDPBounds(5, dp))(point), FloatDPBounds(5, dp));
+            ARIADNE_TESTING_EXPECT_SAME(backend.create_coordinate(domain, 1u)(point), point[1u]);
+            ARIADNE_TESTING_EXPECT_EQUAL(backend.create_zeros(2u, domain)(point), Vector<FloatDPBounds>({0, 0}, dp));
+            ARIADNE_TESTING_EXPECT_EQUAL(backend.create_constants(domain, Vector<ValidatedNumber>{2, 3})(point), Vector<FloatDPBounds>({2, 3}, dp));
+            ARIADNE_TESTING_EXPECT_EQUAL(backend.create_projection(domain, Range(1u, 2u))(point), Vector<FloatDPBounds>{point[1u]});
+            ARIADNE_TESTING_EXPECT_EQUAL(backend.create_identity(domain)(point), point);
+            const Vector<FloatDPBounds> parameter{point[0u]};
+            ARIADNE_TESTING_EXPECT_SAME(backend.create_identity(IntervalDomainType(-1, 1))(parameter), point[0u]);
+            std::unique_ptr<FactoryInterface> copied(backend._copy());
+            ARIADNE_TESTING_EXPECT_EQUAL(copied->create_identity(domain)(point), point);
+        }
+        std::array<FunctionPatchFactory<ValidatedTag>, 2> patch_factories{
+            FunctionPatchFactory<ValidatedTag>(make_taylor_function_patch_factory()),
+            FunctionPatchFactory<ValidatedTag>(make_taylor_function_patch_factory(sweeper))};
+        for (const auto& backend: patch_factories) {
+            ARIADNE_TESTING_EXPECT_SAME(backend.create_coordinate(domain, 1u)(point), point[1u]);
+        }
+        FunctionModelFactory<ValidatedTag, DoublePrecision> backend(make_taylor_function_factory(sweeper));
+        auto creator = factory(backend.create_coordinate(domain, 0u));
+        const FloatDPBounds coefficient(7, dp);
+        ARIADNE_TESTING_PROVE(&creator.create(coefficient) == &coefficient);
+    }
 
-Void test_model_representation_contracts() {
-    const BoxDomainType domain{{-1,1},{-1,1}};
-    const Sweeper<FloatDP> sweeper=ThresholdSweeper<FloatDP>(dp,1e-12);
-    const auto native=ScalarTaylor::constant(domain,FloatDPBounds(2,dp),sweeper);
-    using BoundsScalar=ValidatedScalarMultivariateBoundsTaylorFunctionModelDP;
-    using BoundsVector=ValidatedVectorMultivariateBoundsTaylorFunctionModelDP;
-    const auto alternate=BoundsScalar::constant(domain,FloatDPBounds(2,dp),sweeper);
-    const ScalarModel scalar=native,alien_scalar=alternate;
-    const auto& interface=scalar.reference();
-    const ElementaryAlgebraInterface<FloatDPBounds>& canonical=interface;
-    const ElementaryAlgebraInterface<ValidatedNumber>& generic=interface;
-    const ElementaryAlgebraInterface<FloatDPBounds>& alien_canonical=alien_scalar.reference();
-    const ElementaryAlgebraInterface<ValidatedNumber>& alien_generic=alien_scalar.reference();
-    ARIADNE_TESTING_EXPECT_EXCEPTION(canonical._apply(BinaryElementaryOperator(Add()),alien_canonical));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(generic._apply(BinaryElementaryOperator(Add()),alien_generic));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(interface._refines(alien_scalar.reference()));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(interface._concrete_refines(alien_scalar.reference()));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(interface._concrete_inconsistent(alien_scalar.reference()));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(interface._concrete_refinement(alien_scalar.reference()));
-    const Vector<FloatDPBounds> point({0,0},dp);
-    const ScalarModel subtracted(dynamic_cast<ScalarModel::Interface*>(generic._rapply(BinaryElementaryOperator(Sub()),ValidatedNumber(5))));
-    ARIADNE_TESTING_EXPECT_SAME(subtracted(point), FloatDPBounds(3,dp));
-    ARIADNE_TESTING_PROVE(definitely(interface._unchecked_evaluate(Vector<ValidatedNumber>{0,0})==ValidatedNumber(2)));
-    const VectorTaylor native_vector{native,native};
-    VectorModel vector=native_vector;
-    const VectorModel alien_vector=BoundsVector{alternate,alternate};
-    ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._set(0u,alien_scalar.reference()));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._concrete_set(0u,alien_scalar.reference()));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._refines(alien_vector.reference()));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._concrete_refines(alien_vector.reference()));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._concrete_inconsistent(alien_vector.reference()));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._concrete_refinement(alien_vector.reference()));
-    ARIADNE_TESTING_EXPECT_EQUAL(vector(point), Vector<FloatDPBounds>({2,2},dp));
-    // The reusable mixin's default formatting must agree with the concrete
-    // model representation when selected explicitly by an implementation.
-    std::ostringstream scalar_base,scalar_concrete,vector_base,vector_concrete;
-    using ScalarMixin=ScalarMultivariateFunctionModelMixin<ScalarTaylor,ValidatedTag>;
-    static_cast<const ScalarMixin&>(native).ScalarMixin::_write(scalar_base);
-    using VectorMixin=VectorMultivariateFunctionModelMixin<VectorTaylor,ValidatedTag>;
-    static_cast<const VectorMixin&>(native_vector).VectorMixin::_write(vector_base);
-    scalar_concrete<<native;vector_concrete<<native_vector;
-    ARIADNE_TESTING_EXPECT_EQUAL(scalar_base.str(), scalar_concrete.str());
-    ARIADNE_TESTING_EXPECT_EQUAL(vector_base.str(), vector_concrete.str());
-}
+    Void test_scalar_model_interface_delegation() {
+        const BoxDomainType domain{
+            { 2, 6},
+            {-2, 2}
+        },
+            prefix{{-1, 1}}, suffix{{0, 1}};
+        const Sweeper<FloatDP> sweeper = ThresholdSweeper<FloatDP>(dp, 1e-12);
+        const auto x = ScalarTaylor::coordinate(domain, 0u, sweeper), y = ScalarTaylor::coordinate(domain, 1u, sweeper);
+        const ScalarModel model = 2 * x + y;
+        const auto& interface = model.reference();
+        const ElementaryAlgebraInterface<FloatDPBounds>& canonical = interface;
+        const ElementaryAlgebraInterface<ValidatedNumber>& generic = interface;
+        const auto from_algebra = [](auto* algebra) {
+            return ScalarModel(dynamic_cast<ScalarModel::Interface*>(algebra));
+        };
+        const Vector<FloatDPBounds> point({3, 1}, dp), reduced{FloatDPBounds(3, dp)}, enlarged({0, 3, 1, 0.5_x}, dp);
+        ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._create_copy())(point), FloatDPBounds(7, dp));
+        ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._create_zero())(point), FloatDPBounds(0, dp));
+        ARIADNE_TESTING_EXPECT_SAME(from_algebra(generic._create_constant(ValidatedNumber(5)))(point), FloatDPBounds(5, dp));
+        ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._create_constant(FloatDPBounds(6, dp)))(point), FloatDPBounds(6, dp));
+        ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._apply(BinaryElementaryOperator(Add()), FloatDPBounds(5, dp)))(point), FloatDPBounds(12, dp));
+        ARIADNE_TESTING_EXPECT_SAME(from_algebra(canonical._rapply(BinaryElementaryOperator(Sub()), FloatDPBounds(5, dp)))(point), FloatDPBounds(-2, dp));
+        ARIADNE_TESTING_EXPECT_SAME(from_algebra(generic._apply(BinaryElementaryOperator(Add()), ValidatedNumber(5)))(point), FloatDPBounds(12, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._errors().get(dp).raw(), FloatDP(0, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._error().get(dp).raw(), FloatDP(0, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._norm().get(dp).raw(), FloatDP(14, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._concrete_norm().raw(), FloatDP(14, dp));
+        const ScalarModel primitive(interface._antiderivative(0u));
+        ARIADNE_TESTING_EXPECT_SAME(derivative(primitive, 0u)(point), FloatDPBounds(7, dp));
+        ARIADNE_TESTING_EXPECT_SAME(ScalarModel(interface._concrete_antiderivative(0u, FloatDPBounds(2, dp)))(point), FloatDPBounds(6, dp));
+        const MultiplePrecision mp(128u);
+        ARIADNE_TESTING_EXPECT_SAME(interface._unchecked_evaluate(Vector<FloatMPBounds>({3, 1}, mp)), FloatMPBounds(7, mp));
+        ARIADNE_TESTING_EXPECT_SAME(interface._concrete_unchecked_evaluate(point), FloatDPBounds(7, dp));
+        ARIADNE_TESTING_EXPECT_SAME(from_algebra(interface._partial_evaluate(1u, ValidatedNumber(1)))(reduced), FloatDPBounds(7, dp));
+        ARIADNE_TESTING_EXPECT_SAME(ScalarModel(interface._embed(prefix, suffix))(enlarged), FloatDPBounds(7, dp));
+        const ScalarModel broad = ScalarTaylor::constant(domain, FloatDPBounds(1, 3, dp), sweeper);
+        const ScalarModel exact = ScalarTaylor::constant(domain, FloatDPBounds(2, dp), sweeper);
+        const ScalarModel far = ScalarTaylor::constant(domain, FloatDPBounds(7, dp), sweeper);
+        ARIADNE_TESTING_PROVE(exact.reference()._refines(broad.reference()));
+        ARIADNE_TESTING_PROVE(decide(exact.reference()._concrete_refines(broad.reference())));
+        ARIADNE_TESTING_PROVE(decide(exact.reference()._concrete_inconsistent(far.reference())));
+        ARIADNE_TESTING_EXPECT_SAME(ScalarModel(exact.reference()._concrete_refinement(broad.reference()))(point), FloatDPBounds(2, dp));
+        ScalarTaylor uncertain = 2 * x + y;
+        uncertain.set_error(FloatDPError(0.125_x, dp));
+        ScalarModel cleared = uncertain;
+        cleared.reference()._clobber();
+        ARIADNE_TESTING_EXPECT_EQUAL(cleared.error().raw(), FloatDP(0, dp));
+        ARIADNE_TESTING_EXPECT_SAME(cleared(point), FloatDPBounds(7, dp));
+    }
 
-Void test_multivariate_factory_signature_contract() {
-    const FunctionPatchFactory<ValidatedTag> backend(make_taylor_function_patch_factory());
-    const IntervalDomainType interval(-1,1);
-    const auto t=ValidatedScalarUnivariateFunction::coordinate();
-    const ValidatedVectorUnivariateFunction curve{t,t};
-    // The multivariate Taylor backend cannot manufacture univariate patches;
-    // requests through the common factory interface must fail explicitly.
-    ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create(interval,t));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create(interval,curve));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_zero(interval));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_zeros(2u,interval));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_constant(interval,ValidatedNumber(2)));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_constants(interval,Vector<ValidatedNumber>{2,3}));
-    ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_identity(interval));
-}
+    Void test_vector_model_interface_delegation() {
+        const BoxDomainType domain{
+            { 2, 6},
+            {-2, 2}
+        },
+            prefix{{-1, 1}}, suffix{{0, 1}};
+        const Sweeper<FloatDP> sweeper = ThresholdSweeper<FloatDP>(dp, 1e-12);
+        const auto x = ScalarTaylor::coordinate(domain, 0u, sweeper), y = ScalarTaylor::coordinate(domain, 1u, sweeper);
+        const VectorModel model = VectorTaylor{2 * x + y, x - y};
+        const auto& interface = model.reference();
+        const auto from_patch = [](auto* patch) {
+            return VectorModel(dynamic_cast<VectorModel::Interface*>(patch));
+        };
+        const Vector<FloatDPBounds> point({3, 1}, dp), expected({7, 2}, dp), reduced{FloatDPBounds(3, dp)}, enlarged({0, 3, 1, 0.5_x}, dp);
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._range().dimension(), 2u);
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._errors()[0u].get(dp).raw(), FloatDP(0, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._error().get(dp).raw(), FloatDP(0, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._concrete_error().raw(), FloatDP(0, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._norm().get(dp).raw(), FloatDP(14, dp));
+        const VectorModel primitive(interface._antiderivative(0u));
+        ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(primitive.reference()._concrete_derivative(0u))(point), expected);
+        ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._antiderivative(0u, ValidatedNumber(2)))(point), Vector<FloatDPBounds>({6, 1.5_x}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._concrete_antiderivative(0u, FloatDPBounds(2, dp)))(point), Vector<FloatDPBounds>({6, 1.5_x}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._embed(prefix, suffix))(enlarged), expected);
+        VectorModel appended(interface._concrete_clone());
+        appended.reference()._concrete_adjoin(ScalarModel(x).reference());
+        ARIADNE_TESTING_EXPECT_EQUAL(appended(point), Vector<FloatDPBounds>({7, 2, 3}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._concrete_join(interface))(point), Vector<FloatDPBounds>({7, 2, 7, 2}, dp));
+        const Vector<FloatDPBounds> doubled_point({3, 1, 3, 1}, dp);
+        ARIADNE_TESTING_EXPECT_EQUAL(from_patch(interface._combine(interface))(doubled_point), Vector<FloatDPBounds>({7, 2, 7, 2}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._concrete_combine(interface))(doubled_point), Vector<FloatDPBounds>({7, 2, 7, 2}, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(Vector<FloatDPBounds>(interface._unchecked_evaluate(Vector<ValidatedNumber>{3, 1}), dp), expected);
+        const MultiplePrecision mp(128u);
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._unchecked_evaluate(Vector<FloatMPBounds>({3, 1}, mp)), Vector<FloatMPBounds>({7, 2}, mp));
+        ARIADNE_TESTING_EXPECT_EQUAL(interface._concrete_unchecked_evaluate(point), expected);
+        const auto a = ValidatedScalarMultivariateFunction::coordinate(2u, 0u), b = ValidatedScalarMultivariateFunction::coordinate(2u, 1u);
+        ARIADNE_TESTING_EXPECT_SAME(ScalarModel(interface._unchecked_compose(a + b))(point), FloatDPBounds(9, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._unchecked_compose(ValidatedVectorMultivariateFunction{a, b}))(point), expected);
+        ARIADNE_TESTING_EXPECT_EQUAL(from_patch(interface._partial_evaluate(1u, ValidatedNumber(1)))(reduced), expected);
+        ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(interface._concrete_partial_evaluate(1u, FloatDPBounds(1, dp)))(reduced), expected);
+        const auto broad_scalar = ScalarTaylor::constant(domain, FloatDPBounds(1, 3, dp), sweeper);
+        const auto exact_scalar = ScalarTaylor::constant(domain, FloatDPBounds(2, dp), sweeper);
+        const auto far_scalar = ScalarTaylor::constant(domain, FloatDPBounds(7, dp), sweeper);
+        const VectorModel broad = VectorTaylor{broad_scalar, broad_scalar}, exact = VectorTaylor{exact_scalar, exact_scalar}, far = VectorTaylor{exact_scalar, far_scalar};
+        ARIADNE_TESTING_PROVE(exact.reference()._refines(broad.reference()));
+        ARIADNE_TESTING_PROVE(decide(exact.reference()._concrete_refines(broad.reference())));
+        ARIADNE_TESTING_PROVE(decide(exact.reference()._concrete_inconsistent(far.reference())));
+        ARIADNE_TESTING_EXPECT_EQUAL(VectorModel(exact.reference()._concrete_refinement(broad.reference()))(point), Vector<FloatDPBounds>({2, 2}, dp));
+        ScalarTaylor uncertain = 2 * x + y;
+        uncertain.set_error(FloatDPError(0.125_x, dp));
+        VectorModel cleared = VectorTaylor{uncertain, x - y};
+        cleared.reference()._clobber();
+        ARIADNE_TESTING_EXPECT_EQUAL(cleared.error().raw(), FloatDP(0, dp));
+        ARIADNE_TESTING_EXPECT_EQUAL(cleared(point), expected);
+    }
 
+    Void test_model_representation_contracts() {
+        const BoxDomainType domain{
+            {-1, 1},
+            {-1, 1}
+        };
+        const Sweeper<FloatDP> sweeper = ThresholdSweeper<FloatDP>(dp, 1e-12);
+        const auto native = ScalarTaylor::constant(domain, FloatDPBounds(2, dp), sweeper);
+        using BoundsScalar = ValidatedScalarMultivariateBoundsTaylorFunctionModelDP;
+        using BoundsVector = ValidatedVectorMultivariateBoundsTaylorFunctionModelDP;
+        const auto alternate = BoundsScalar::constant(domain, FloatDPBounds(2, dp), sweeper);
+        const ScalarModel scalar = native, alien_scalar = alternate;
+        const auto& interface = scalar.reference();
+        const ElementaryAlgebraInterface<FloatDPBounds>& canonical = interface;
+        const ElementaryAlgebraInterface<ValidatedNumber>& generic = interface;
+        const ElementaryAlgebraInterface<FloatDPBounds>& alien_canonical = alien_scalar.reference();
+        const ElementaryAlgebraInterface<ValidatedNumber>& alien_generic = alien_scalar.reference();
+        ARIADNE_TESTING_EXPECT_EXCEPTION(canonical._apply(BinaryElementaryOperator(Add()), alien_canonical));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(generic._apply(BinaryElementaryOperator(Add()), alien_generic));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(interface._refines(alien_scalar.reference()));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(interface._concrete_refines(alien_scalar.reference()));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(interface._concrete_inconsistent(alien_scalar.reference()));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(interface._concrete_refinement(alien_scalar.reference()));
+        const Vector<FloatDPBounds> point({0, 0}, dp);
+        const ScalarModel subtracted(dynamic_cast<ScalarModel::Interface*>(generic._rapply(BinaryElementaryOperator(Sub()), ValidatedNumber(5))));
+        ARIADNE_TESTING_EXPECT_SAME(subtracted(point), FloatDPBounds(3, dp));
+        ARIADNE_TESTING_PROVE(definitely(interface._unchecked_evaluate(Vector<ValidatedNumber>{0, 0}) == ValidatedNumber(2)));
+        const VectorTaylor native_vector{native, native};
+        VectorModel vector = native_vector;
+        const VectorModel alien_vector = BoundsVector{alternate, alternate};
+        ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._set(0u, alien_scalar.reference()));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._concrete_set(0u, alien_scalar.reference()));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._refines(alien_vector.reference()));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._concrete_refines(alien_vector.reference()));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._concrete_inconsistent(alien_vector.reference()));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(vector.reference()._concrete_refinement(alien_vector.reference()));
+        ARIADNE_TESTING_EXPECT_EQUAL(vector(point), Vector<FloatDPBounds>({2, 2}, dp));
+        // The reusable mixin's default formatting must agree with the concrete
+        // model representation when selected explicitly by an implementation.
+        std::ostringstream scalar_base, scalar_concrete, vector_base, vector_concrete;
+        using ScalarMixin = ScalarMultivariateFunctionModelMixin<ScalarTaylor, ValidatedTag>;
+        static_cast<const ScalarMixin&>(native).ScalarMixin::_write(scalar_base);
+        using VectorMixin = VectorMultivariateFunctionModelMixin<VectorTaylor, ValidatedTag>;
+        static_cast<const VectorMixin&>(native_vector).VectorMixin::_write(vector_base);
+        scalar_concrete << native;
+        vector_concrete << native_vector;
+        ARIADNE_TESTING_EXPECT_EQUAL(scalar_base.str(), scalar_concrete.str());
+        ARIADNE_TESTING_EXPECT_EQUAL(vector_base.str(), vector_concrete.str());
+    }
+
+    Void test_multivariate_factory_signature_contract() {
+        const FunctionPatchFactory<ValidatedTag> backend(make_taylor_function_patch_factory());
+        const IntervalDomainType interval(-1, 1);
+        const auto t = ValidatedScalarUnivariateFunction::coordinate();
+        const ValidatedVectorUnivariateFunction curve{t, t};
+        // The multivariate Taylor backend cannot manufacture univariate patches;
+        // requests through the common factory interface must fail explicitly.
+        ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create(interval, t));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create(interval, curve));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_zero(interval));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_zeros(2u, interval));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_constant(interval, ValidatedNumber(2)));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_constants(interval, Vector<ValidatedNumber>{2, 3}));
+        ARIADNE_TESTING_EXPECT_EXCEPTION(backend.create_identity(interval));
+    }
 };
 
 int main(int argc, char** argv) {

@@ -31,7 +31,8 @@
 
 namespace Ariadne {
 
-template<class Y> class Formula;
+template<class Y>
+class Formula;
 
 } // namespace Ariadne
 

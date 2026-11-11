@@ -22,24 +22,23 @@
  *  along with Ariadne Function.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "numeric/numeric.hpp"
-#include "numeric/numeric.hpp"
+#include "function/affine.hpp"
+
 #include "algebra/vector.hpp"
 #include "function/function.hpp"
-#include "function/affine.hpp"
+#include "numeric/numeric.hpp"
 
 namespace Ariadne {
 
 template class Affine<FloatDPApproximation>;
 template class Affine<FloatDPBounds>;
-template struct ProvideAlgebraOperations<Affine<FloatDPApproximation>,FloatDPApproximation>;
-template struct ProvideAlgebraOperations<Affine<FloatDPBounds>,FloatDPBounds>;
+template struct ProvideAlgebraOperations<Affine<FloatDPApproximation>, FloatDPApproximation>;
+template struct ProvideAlgebraOperations<Affine<FloatDPBounds>, FloatDPBounds>;
 
 template class Affine<FloatMPApproximation>;
 template class Affine<FloatMPBounds>;
-template struct ProvideAlgebraOperations<Affine<FloatMPApproximation>,FloatMPApproximation>;
-template struct ProvideAlgebraOperations<Affine<FloatMPBounds>,FloatMPBounds>;
+template struct ProvideAlgebraOperations<Affine<FloatMPApproximation>, FloatMPApproximation>;
+template struct ProvideAlgebraOperations<Affine<FloatMPBounds>, FloatMPBounds>;
 
-} //namespace Ariadne
-
+} // namespace Ariadne
 

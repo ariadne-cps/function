@@ -25,7 +25,6 @@
 #include "function/function_patch.hpp"
 
 #include "algebra/algebra.hpp"
-
 #include "function/formula.hpp"
 #include "function/taylor_model.hpp"
 
@@ -34,17 +33,17 @@ namespace Ariadne {
 template class FunctionPatchFactory<ValidatedTag>;
 template class FunctionPatchFactory<ApproximateTag>;
 
-template class FunctionPatchCreator<FunctionPatchFactory<ValidatedTag>,RealScalar>;
-template class FunctionPatchCreator<FunctionPatchFactory<ValidatedTag>,RealVector>;
+template class FunctionPatchCreator<FunctionPatchFactory<ValidatedTag>, RealScalar>;
+template class FunctionPatchCreator<FunctionPatchFactory<ValidatedTag>, RealVector>;
 
-template class FunctionPatch<ValidatedTag,RealScalar(RealScalar)>;
-template class FunctionPatch<ValidatedTag,RealScalar(RealVector)>;
-template class FunctionPatch<ValidatedTag,RealVector(RealScalar)>;
-template class FunctionPatch<ValidatedTag,RealVector(RealVector)>;
+template class FunctionPatch<ValidatedTag, RealScalar(RealScalar)>;
+template class FunctionPatch<ValidatedTag, RealScalar(RealVector)>;
+template class FunctionPatch<ValidatedTag, RealVector(RealScalar)>;
+template class FunctionPatch<ValidatedTag, RealVector(RealVector)>;
 
-template class FunctionPatch<ApproximateTag,RealScalar(RealScalar)>;
-template class FunctionPatch<ApproximateTag,RealScalar(RealVector)>;
-template class FunctionPatch<ApproximateTag,RealVector(RealScalar)>;
-template class FunctionPatch<ApproximateTag,RealVector(RealVector)>;
+template class FunctionPatch<ApproximateTag, RealScalar(RealScalar)>;
+template class FunctionPatch<ApproximateTag, RealScalar(RealVector)>;
+template class FunctionPatch<ApproximateTag, RealVector(RealScalar)>;
+template class FunctionPatch<ApproximateTag, RealVector(RealVector)>;
 
 } // namespace Ariadne

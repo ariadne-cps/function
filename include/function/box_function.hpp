@@ -32,20 +32,20 @@
 #ifndef ARIADNE_FUNCTION_BOX_FUNCTION_HPP
 #define ARIADNE_FUNCTION_BOX_FUNCTION_HPP
 
-#include "geometry/box.decl.hpp"
 #include "function/function.decl.hpp"
+#include "geometry/box.decl.hpp"
 
 namespace Ariadne {
 
-UpperIntervalType apply(ValidatedScalarUnivariateFunction const& f, UpperIntervalType const& ivl);
-UpperBoxType apply(ValidatedVectorUnivariateFunction const& f, UpperIntervalType const& ivl);
-UpperIntervalType apply(ValidatedScalarMultivariateFunction const& f, UpperBoxType const& bx);
-UpperBoxType apply(ValidatedVectorMultivariateFunction const& f, UpperBoxType const& bx);
+UpperIntervalType apply(const ValidatedScalarUnivariateFunction& f, const UpperIntervalType& ivl);
+UpperBoxType apply(const ValidatedVectorUnivariateFunction& f, const UpperIntervalType& ivl);
+UpperIntervalType apply(const ValidatedScalarMultivariateFunction& f, const UpperBoxType& bx);
+UpperBoxType apply(const ValidatedVectorMultivariateFunction& f, const UpperBoxType& bx);
 
-UpperIntervalType image(UpperIntervalType const& ivl, ValidatedScalarUnivariateFunction const& f);
-UpperBoxType image(UpperIntervalType const& ivl, ValidatedVectorUnivariateFunction const& f);
-UpperIntervalType image(UpperBoxType const& bx, ValidatedScalarMultivariateFunction const& f);
-UpperBoxType image(UpperBoxType const& bx, ValidatedVectorMultivariateFunction const& f);
+UpperIntervalType image(const UpperIntervalType& ivl, const ValidatedScalarUnivariateFunction& f);
+UpperBoxType image(const UpperIntervalType& ivl, const ValidatedVectorUnivariateFunction& f);
+UpperIntervalType image(const UpperBoxType& bx, const ValidatedScalarMultivariateFunction& f);
+UpperBoxType image(const UpperBoxType& bx, const ValidatedVectorMultivariateFunction& f);
 
 } // namespace Ariadne
 #endif // ARIADNE_FUNCTION_BOX_FUNCTION_HPP

@@ -30,9 +30,9 @@
 #ifndef ARIADNE_TAYLOR_SERIES_HPP
 #define ARIADNE_TAYLOR_SERIES_HPP
 
-#include "numeric/numeric.hpp"
 #include "algebra/series.hpp"
 #include "function/domain.hpp"
+#include "numeric/numeric.hpp"
 #include "utility/container.hpp"
 
 namespace Ariadne {
@@ -44,61 +44,59 @@ class AnalyticFunction;
 // uses floating-point coefficients and an interval remainder, and is only
 // valid on a subdomain, while a Series class uses arbitrary coefficients
 // and is valid within the entire radius of convergence
-template<class X> class TaylorSeries;
+template<class X>
+class TaylorSeries;
 
-template<> class TaylorSeries<FloatDPBounds> {
+template<>
+class TaylorSeries<FloatDPBounds> {
     IntervalDomainType _domain;
     Array<FloatDP> _expansion;
     FloatDPError _error;
+
   public:
-    TaylorSeries(const IntervalDomainType& dom, DegreeType deg) : _domain(dom), _expansion(deg+1u,FloatDP(dp)), _error(0u,dp) { }
+    TaylorSeries(const IntervalDomainType& dom, DegreeType deg) : _domain(dom), _expansion(deg + 1u, FloatDP(dp)), _error(0u, dp) {}
 
     TaylorSeries(const IntervalDomainType& domain, const FloatDP& centre, DegreeType degree,
-                 AnalyticFunction const& function);
+                 const AnalyticFunction& function);
 
-    template<class OP> TaylorSeries(OP unary_operator, const IntervalDomainType& domain, const FloatDP& centre, DegreeType degree);
+    template<class OP>
+    TaylorSeries(OP unary_operator, const IntervalDomainType& domain, const FloatDP& centre, DegreeType degree);
 
-    DegreeType degree() const { return static_cast<DegreeType>(_expansion.size()-1u); }
-    FloatDP const& operator[](DegreeType i) const { return _expansion[i]; }
+    DegreeType degree() const { return static_cast<DegreeType>(_expansion.size() - 1u); }
+    const FloatDP& operator[](DegreeType i) const { return _expansion[i]; }
     Array<FloatDP> expansion() const { return _expansion; }
     FloatDPError error() const { return _error; }
     Void sweep(FloatDP threshold);
 
-    friend OutputStream& operator<<(OutputStream&, TaylorSeries<FloatDPBounds> const&);
+    friend OutputStream& operator<<(OutputStream&, const TaylorSeries<FloatDPBounds>&);
 };
 
-
-template<class OP> inline
-TaylorSeries<FloatDPBounds>::TaylorSeries(OP unary_operator, const IntervalDomainType& domain, const FloatDP& centre, DegreeType degree)
-    : _domain(domain), _expansion(degree+1u,FloatDP(dp)), _error(0u,dp)
-{
-    Series<FloatDPBounds> centre_series=Series<FloatDPBounds>(unary_operator,FloatDPBounds(centre));
-    Series<FloatDPBounds> range_series=Series<FloatDPBounds>(unary_operator,FloatDPBounds(cast_singleton(domain)));
-    for(DegreeType i=0; i!=degree; ++i) {
-        this->_expansion[i]=centre_series[i].value();
-        this->_error+=mag(centre_series[i]-this->_expansion[i]);
+template<class OP>
+inline TaylorSeries<FloatDPBounds>::TaylorSeries(OP unary_operator, const IntervalDomainType& domain, const FloatDP& centre, DegreeType degree)
+    : _domain(domain), _expansion(degree + 1u, FloatDP(dp)), _error(0u, dp) {
+    Series<FloatDPBounds> centre_series = Series<FloatDPBounds>(unary_operator, FloatDPBounds(centre));
+    Series<FloatDPBounds> range_series = Series<FloatDPBounds>(unary_operator, FloatDPBounds(cast_singleton(domain)));
+    for (DegreeType i = 0; i != degree; ++i) {
+        this->_expansion[i] = centre_series[i].value();
+        this->_error += mag(centre_series[i] - this->_expansion[i]);
     }
-    DegreeType d=degree;
-    this->_expansion[d]=range_series[d].value();
-    this->_error+=mag(range_series[d]-this->_expansion[d]);
+    DegreeType d = degree;
+    this->_expansion[d] = range_series[d].value();
+    this->_error += mag(range_series[d] - this->_expansion[d]);
 }
 
-
-inline
-Void TaylorSeries<FloatDPBounds>::sweep(FloatDP threshold) {
-    for(DegreeType i=0; i<=degree(); ++i) {
-        if(definitely(mag(_expansion[i])<=threshold)) {
-            _error+=mag(_expansion[i]);
-            _expansion[i]=0;
+inline Void TaylorSeries<FloatDPBounds>::sweep(FloatDP threshold) {
+    for (DegreeType i = 0; i <= degree(); ++i) {
+        if (definitely(mag(_expansion[i]) <= threshold)) {
+            _error += mag(_expansion[i]);
+            _expansion[i] = 0;
         }
     }
 }
 
-inline
-OutputStream& operator<<(OutputStream& os, const TaylorSeries<FloatDPBounds>& ts) {
-    return os<<"TS("<<ts._expansion<<"+/-"<<ts._error<<")";
+inline OutputStream& operator<<(OutputStream& os, const TaylorSeries<FloatDPBounds>& ts) {
+    return os << "TS(" << ts._expansion << "+/-" << ts._error << ")";
 }
-
 
 } // namespace Ariadne
 

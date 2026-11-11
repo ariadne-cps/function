@@ -31,19 +31,18 @@
 
 #include <iosfwd>
 
+#include "foundation/logical.decl.hpp"
+#include "foundation/paradigm.hpp"
+#include "function/function.decl.hpp"
 #include "utility/metaprogramming.hpp"
 #include "utility/typedefs.hpp"
 
-#include "foundation/paradigm.hpp"
-#include "foundation/logical.decl.hpp"
-
-#include "function/function.decl.hpp"
-
 namespace Ariadne {
 
-
-template<class P, class F> class AffineModel;
-template<class P, class F> class TaylorModel;
+template<class P, class F>
+class AffineModel;
+template<class P, class F>
+class TaylorModel;
 
 } // namespace Ariadne
 

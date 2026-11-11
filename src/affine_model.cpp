@@ -22,37 +22,34 @@
  *  along with Ariadne Function.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "numeric/numeric.hpp"
-#include "algebra/algebra.hpp"
-#include "algebra/vector.hpp"
-#include "function/function.hpp"
-#include "function/formula.hpp"
-#include "function/taylor_model.hpp"
 #include "function/affine_model.hpp"
 
-#include "function/affine.hpp"
-#include "function/taylor_function.hpp"
-
+#include "algebra/algebra.hpp"
 #include "algebra/expansion.inl.hpp"
+#include "algebra/vector.hpp"
+#include "function/affine.hpp"
 #include "function/affine_model.tpl.hpp"
-
+#include "function/formula.hpp"
+#include "function/function.hpp"
+#include "function/taylor_function.hpp"
+#include "function/taylor_model.hpp"
+#include "numeric/numeric.hpp"
 
 namespace Ariadne {
 
-template class AffineModel<ApproximateTag,FloatDP>;
-template class AffineModel<ApproximateTag,FloatMP>;
+template class AffineModel<ApproximateTag, FloatDP>;
+template class AffineModel<ApproximateTag, FloatMP>;
 
-template class AffineModel<ValidatedTag,FloatDP>;
-template class AffineModel<ValidatedTag,FloatMP>;
+template class AffineModel<ValidatedTag, FloatDP>;
+template class AffineModel<ValidatedTag, FloatMP>;
 
-template struct AlgebraOperations<AffineModel<ApproximateTag,FloatDP>>;
-template struct AlgebraOperations<AffineModel<ApproximateTag,FloatMP>>;
+template struct AlgebraOperations<AffineModel<ApproximateTag, FloatDP>>;
+template struct AlgebraOperations<AffineModel<ApproximateTag, FloatMP>>;
 
-template struct AlgebraOperations<AffineModel<ValidatedTag,FloatDP>>;
-template struct AlgebraOperations<AffineModel<ValidatedTag,FloatMP>>;
+template struct AlgebraOperations<AffineModel<ValidatedTag, FloatDP>>;
+template struct AlgebraOperations<AffineModel<ValidatedTag, FloatMP>>;
 
-template AffineModel<ValidatedTag,FloatDP> affine_model(const ExactBoxType&, const ScalarMultivariateFunction<ValidatedTag>&, DoublePrecision);
+template AffineModel<ValidatedTag, FloatDP> affine_model(const ExactBoxType&, const ScalarMultivariateFunction<ValidatedTag>&, DoublePrecision);
 
-} //namespace Ariadne
-
+} // namespace Ariadne
 

@@ -34,11 +34,13 @@
 
 namespace Ariadne {
 
-template<class F> class Sweeper;
-template<class P> class FunctionPatchFactoryInterface;
+template<class F>
+class Sweeper;
+template<class P>
+class FunctionPatchFactoryInterface;
 
 FunctionPatchFactoryInterface<ValidatedTag>* make_taylor_function_patch_factory();
-FunctionPatchFactoryInterface<ValidatedTag>* make_taylor_function_patch_factory(Sweeper<FloatDP> const& sweeper);
+FunctionPatchFactoryInterface<ValidatedTag>* make_taylor_function_patch_factory(const Sweeper<FloatDP>& sweeper);
 
 } // namespace Ariadne
 

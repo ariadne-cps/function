@@ -29,121 +29,135 @@
 #ifndef ARIADNE_SCALING_HPP
 #define ARIADNE_SCALING_HPP
 
-#include "numeric/dyadic.hpp"
 #include "function/domain.hpp"
+#include "numeric/dyadic.hpp"
 
 namespace Ariadne {
 
 struct UnscalingException : std::runtime_error {
     IntervalDomainType domain;
-    inline UnscalingException(String msg, IntervalDomainType dom) : std::runtime_error(msg+to_str(dom)), domain(dom) { }
+    inline UnscalingException(String msg, IntervalDomainType dom) : std::runtime_error(msg + to_str(dom)), domain(dom) {}
 };
 
-template<class F> inline Approximation<F> med_apprx(Interval<F> const& ivl) {
-    return Approximation<F>(hlf(add(approx,ivl.lower_bound().raw(),ivl.upper_bound().raw())));
+template<class F>
+inline Approximation<F> med_apprx(const Interval<F>& ivl) {
+    return Approximation<F>(hlf(add(approx, ivl.lower_bound().raw(), ivl.upper_bound().raw())));
 }
 
-template<class F> inline Approximation<F> rad_apprx(Interval<F> const& ivl) {
-    return Approximation<F>(hlf(sub(approx,ivl.upper_bound().raw(),ivl.lower_bound().raw())));
+template<class F>
+inline Approximation<F> rad_apprx(const Interval<F>& ivl) {
+    return Approximation<F>(hlf(sub(approx, ivl.upper_bound().raw(), ivl.lower_bound().raw())));
 }
 
-template<class F> inline Bounds<F> med_val(Interval<F> const& ivl) {
-    return hlf(ivl.lower_bound()+ivl.upper_bound());
+template<class F>
+inline Bounds<F> med_val(const Interval<F>& ivl) {
+    return hlf(ivl.lower_bound() + ivl.upper_bound());
 }
 
-template<class F> inline Bounds<F> rad_val(Interval<F> const& ivl) {
-    return hlf(ivl.upper_bound()-ivl.lower_bound());
+template<class F>
+inline Bounds<F> rad_val(const Interval<F>& ivl) {
+    return hlf(ivl.upper_bound() - ivl.lower_bound());
 }
 
-inline Dyadic med(IntervalDomainType const& ivl) {
-    return hlf(add( Dyadic(ivl.lower_bound()), Dyadic(ivl.upper_bound()) ));
+inline Dyadic med(const IntervalDomainType& ivl) {
+    return hlf(add(Dyadic(ivl.lower_bound()), Dyadic(ivl.upper_bound())));
 }
 
-inline Dyadic rad(IntervalDomainType const& ivl) {
-    return hlf(sub( Dyadic(ivl.upper_bound()), Dyadic(ivl.lower_bound()) ));
+inline Dyadic rad(const IntervalDomainType& ivl) {
+    return hlf(sub(Dyadic(ivl.upper_bound()), Dyadic(ivl.lower_bound())));
 }
 
-inline Interval<FloatDP> convert_interval(Interval<FloatDP> const& ivl, DoublePrecision) {
-    return ivl; }
-
-inline Interval<FloatMP> convert_interval(Interval<FloatDP> const& ivl, MultiplePrecision pr) {
-    return Interval<FloatMP>(FloatMP(ivl.lower_bound().raw(),pr),FloatMP(ivl.upper_bound().raw(),pr)); }
-
-template<class T> inline
-T scale(T x, const IntervalDomainType& cd) {
-    return std::move(x)*rad(cd)+med(cd);
+inline Interval<FloatDP> convert_interval(const Interval<FloatDP>& ivl, DoublePrecision) {
+    return ivl;
 }
 
-template<class T> inline
-T unscale(T x, const IntervalDomainType& d) {
-    if(d.lower_bound()==d.upper_bound()) {
-        return std::move(x)*0;
+inline Interval<FloatMP> convert_interval(const Interval<FloatDP>& ivl, MultiplePrecision pr) {
+    return Interval<FloatMP>(FloatMP(ivl.lower_bound().raw(), pr), FloatMP(ivl.upper_bound().raw(), pr));
+}
+
+template<class T>
+inline T scale(T x, const IntervalDomainType& cd) {
+    return std::move(x) * rad(cd) + med(cd);
+}
+
+template<class T>
+inline T unscale(T x, const IntervalDomainType& d) {
+    if (d.lower_bound() == d.upper_bound()) {
+        return std::move(x) * 0;
         // throw UnscalingException{"Cannot unscale "+to_str(x)+" over empty interval ",d};
     } else {
-        return (std::move(x)-med(d))/rad(d);
+        return (std::move(x) - med(d)) / rad(d);
     }
 }
 
-template<class X> inline
-Vector<X> scale(const Vector<X>& v, const BoxDomainType& cd) {
-    ARIADNE_PRECONDITION(v.size()==cd.dimension());
-    return Vector<X>(v.size(),[&](SizeType i){return scale(v[i],cd[i]);},v.element_characteristics());
+template<class X>
+inline Vector<X> scale(const Vector<X>& v, const BoxDomainType& cd) {
+    ARIADNE_PRECONDITION(v.size() == cd.dimension());
+    return Vector<X>(v.size(), [&](SizeType i) { return scale(v[i], cd[i]); }, v.element_characteristics());
 }
 
-template<class F, class T> struct MyConvertible {
-    template<class TT> static Void convert(TT const&);
-    template<class FF, class TT, class=decltype(convert<TT>(std::declval<FF>()))>
-        static std::true_type test(int);
+template<class F, class T>
+struct MyConvertible {
+    template<class TT>
+    static Void convert(TT const&);
+    template<class FF, class TT, class = decltype(convert<TT>(std::declval<FF>()))>
+    static std::true_type test(int);
     template<class FF, class TT>
-        static std::false_type test(...);
-    static const bool value = decltype(test<F,T>(1))::value;
+    static std::false_type test(...);
+    static const bool value = decltype(test<F, T>(1))::value;
 };
 
-template<class X> inline
-Vector<X> unscale(const Vector<X>& v, const BoxDomainType& d) {
-    ARIADNE_PRECONDITION(v.size()==d.dimension());
-    return Vector<X>(v.size(),[&](SizeType i){return unscale(v[i],d[i]);},v.element_characteristics());
+template<class X>
+inline Vector<X> unscale(const Vector<X>& v, const BoxDomainType& d) {
+    ARIADNE_PRECONDITION(v.size() == d.dimension());
+    return Vector<X>(v.size(), [&](SizeType i) { return unscale(v[i], d[i]); }, v.element_characteristics());
 }
-
 
 class Scaling {
     IntervalDomainType _codom;
+
   public:
-    Scaling(IntervalDomainType codom) : _codom(codom) { }
+    Scaling(IntervalDomainType codom) : _codom(codom) {}
     UnitInterval domain() const { return UnitInterval(); }
     IntervalDomainType codomain() const { return _codom; }
-    template<class X> X operator() (X x) const { return scale(std::move(x),_codom); }
+    template<class X>
+    X operator()(X x) const { return scale(std::move(x), _codom); }
 };
 
 class VectorScaling {
     Box<IntervalDomainType> _codom;
+
   public:
-    VectorScaling(Box<IntervalDomainType> codom) : _codom(codom) { }
+    VectorScaling(Box<IntervalDomainType> codom) : _codom(codom) {}
     SizeType size() const { return _codom.dimension(); }
-    Scaling operator[] (SizeType i) const { return Scaling(_codom[i]); }
-    Box<IntervalDomainType> const& codomain() const { return _codom; }
-    template<class X> Vector<X> operator() (Vector<X> const& v) const { return scale(v,_codom); }
+    Scaling operator[](SizeType i) const { return Scaling(_codom[i]); }
+    const Box<IntervalDomainType>& codomain() const { return _codom; }
+    template<class X>
+    Vector<X> operator()(const Vector<X>& v) const { return scale(v, _codom); }
 };
 
 class Unscaling {
     IntervalDomainType _dom;
+
   public:
-    Unscaling(IntervalDomainType dom) : _dom(dom) { }
+    Unscaling(IntervalDomainType dom) : _dom(dom) {}
     IntervalDomainType domain() const { return _dom; }
     UnitInterval codomain() const { return UnitInterval(); }
-    template<class X> X operator() (X x) const { return unscale(std::move(x),_dom); }
+    template<class X>
+    X operator()(X x) const { return unscale(std::move(x), _dom); }
 };
 
 class VectorUnscaling {
     Box<IntervalDomainType> _dom;
-  public:
-    VectorUnscaling(Box<IntervalDomainType> dom) : _dom(dom) { }
-    SizeType size() const { return _dom.dimension(); }
-    Unscaling operator[] (SizeType i) const { return Unscaling(_dom[i]); }
-    Box<IntervalDomainType> const& domain() const { return _dom; }
-    template<class X> Vector<X> operator() (Vector<X> const& v) const { return unscale(v,_dom); }
-};
 
+  public:
+    VectorUnscaling(Box<IntervalDomainType> dom) : _dom(dom) {}
+    SizeType size() const { return _dom.dimension(); }
+    Unscaling operator[](SizeType i) const { return Unscaling(_dom[i]); }
+    const Box<IntervalDomainType>& domain() const { return _dom; }
+    template<class X>
+    Vector<X> operator()(const Vector<X>& v) const { return unscale(v, _dom); }
+};
 
 } // namespace Ariadne
 
