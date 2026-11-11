@@ -38,6 +38,7 @@
 #include "algebra/operations.hpp"
 #include "algebra/vector.hpp"
 #include "function/declarations.hpp"
+#include "function/function.hpp"
 #include "numeric/numeric.hpp"
 #include "utility/macros.hpp"
 #include "utility/pointer.hpp"
