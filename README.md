@@ -50,13 +50,9 @@ With a compatible Python >= 3.11 development environment, the standalone build p
 
 The extension installs under the chosen prefix (`lib/pythonX.Y/site-packages` on Unix, `Lib/site-packages` on Windows), not into a global Python installation.
 
-## Tutorials
-
-- C++: `tutorial/tutorial_function.cpp`, built separately against an installed `ariadne-function`.
-- Python: `python/tutorial.py`.
-
 ## Contribution guidelines
 
 If you would like to contribute to Ariadne Function, please contact the developer:
 
 - Luca Geretti <luca.geretti@univr.it>
+
