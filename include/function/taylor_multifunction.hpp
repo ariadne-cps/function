@@ -139,7 +139,11 @@ class VectorScaledFunctionPatchMixin<ValidatedIntervalTaylorModel<F>>
     virtual OutputStream& _write(OutputStream&) const override = 0;
 };
 
-/** @brief Validated function model using interval Taylor coefficients. */
+/** @brief Validated scalar Taylor model with interval coefficients.
+ *  Evaluation gives a validated enclosure of pointwise values. It does not
+ *  impose a shared coefficient selection between evaluations at distinct
+ *  arguments; such temporal correlations require an explicit model.
+ */
 template<class F>
 class ValidatedIntervalTaylorFunctionModel
     : public ScaledFunctionPatch<ValidatedIntervalTaylorModel<F>> {
@@ -159,7 +163,10 @@ class ValidatedIntervalTaylorFunctionModel
     CompactSet<P, RES> operator()(const Vector<Number<P>>& x) const { return this->_call(x); }
 };
 
-/** @brief Vector of validated models using interval Taylor coefficients. */
+/** @brief Vector of validated Taylor models with interval coefficients.
+ *  Pointwise evaluation yields a compact box enclosure. The box need not
+ *  preserve dependencies between components or coefficient choices.
+ */
 template<class F>
 class ValidatedVectorIntervalTaylorFunctionModel
     : public VectorScaledFunctionPatch<ValidatedIntervalTaylorModel<F>> {
@@ -233,7 +240,11 @@ class ValidatedVectorIntervalTaylorFunctionSet
     virtual OutputStream& _write(OutputStream& os) const { return os << *this; }
 };
 
-/** @brief Curried interval Taylor representation of a trajectory set. */
+/** @brief Curried interval Taylor representation of a trajectory set.
+ *  The underlying model has n+1 arguments (n initial-state coordinates,
+ *  followed by time) and n output components. This is a representation
+ *  of candidate trajectories, not an integration certificate.
+ */
 template<class F>
 class ValidatedIntervalTaylorCurriedTrajectorySet
     : public CompactSet<ValidatedTag, RealVector(Real)>::Interface {
@@ -246,7 +257,12 @@ class ValidatedIntervalTaylorCurriedTrajectorySet
   public:
     /** @brief Construct a \c ValidatedIntervalTaylorCurriedTrajectorySet from phi, x0. */
     ValidatedIntervalTaylorCurriedTrajectorySet(const ValidatedVectorIntervalTaylorFunctionModel<F>& phi, Vector<Number<P>> x0)
-        : _flow_model(phi), _initial_state(x0) {}
+        : _flow_model(phi), _initial_state(x0) {
+        ARIADNE_PRECONDITION_MSG(phi.argument_size() == phi.result_size() + 1u,
+                                "The multiflow model requires one time argument after the state coordinates");
+        ARIADNE_PRECONDITION_MSG(x0.size() == phi.result_size(),
+                                "The initial-state dimension must match the multiflow result dimension");
+    }
     /** @brief Apply the callable to the supplied arguments. */
     CompactSet<P, RES> operator()(const Scalar<Number<P>>& t) const { return this->_flow_model(join(this->_initial_state, t)); }
     /** @brief Write the value to the output stream. */
@@ -263,7 +279,11 @@ class ValidatedIntervalTaylorCurriedTrajectorySet
     virtual OutputStream& _write(OutputStream& os) const override { return os << *this; }
 };
 
-/** @brief Interval Taylor representation of a set-valued flow. */
+/** @brief Interval Taylor representation of a set-valued flow.
+ *  Expects n state arguments, one time argument, and n output components.
+ *  Constructing this wrapper does not certify that the model encloses
+ *  solutions of any differential inclusion; integration must establish that.
+ */
 template<class F>
 class ValidatedIntervalTaylorMultiflow
     : public ValidatedCompactMultiflow::Interface {
@@ -277,7 +297,10 @@ class ValidatedIntervalTaylorMultiflow
 
   public:
     /** @brief Construct a \c ValidatedIntervalTaylorMultiflow from f. */
-    ValidatedIntervalTaylorMultiflow(const VectorScaledFunctionPatch<M>& f) : _flow_model(f) {}
+    ValidatedIntervalTaylorMultiflow(const VectorScaledFunctionPatch<M>& f) : _flow_model(f) {
+        ARIADNE_PRECONDITION_MSG(f.argument_size() == f.result_size() + 1u,
+                                "A multiflow needs n initial-state arguments and one time argument for n results");
+    }
     /** @brief Apply the callable to the supplied arguments. */
     TrajectorySetType operator()(const Vector<Number<P>>& x0) const {
         return TrajectorySetType(this->_flow_model, x0);

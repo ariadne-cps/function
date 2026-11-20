@@ -111,6 +111,15 @@ template<class P>
 using VectorMultivariateMultifunction = Multifunction<P, RealVector(RealVector)>;
 using ValidatedVectorMultivariateMultifunction = VectorMultivariateMultifunction<ValidatedTag>;
 
+/** @brief Set-valued function with compact pointwise images. */
+template<class P, class SIG>
+using CompactMultifunction = Multifunction<P, SIG, CompactSet>;
+
+/** @brief Validated compact-valued scalar multifunction on a vector argument. */
+using ValidatedCompactScalarMultivariateMultifunction = CompactMultifunction<ValidatedTag, Real(RealVector)>;
+/** @brief Validated compact-valued vector multifunction on a vector argument. */
+using ValidatedCompactVectorMultivariateMultifunction = CompactMultifunction<ValidatedTag, RealVector(RealVector)>;
+
 template<class P, class SIG, template<class, class> class SET = LocatedSet>
 class MultifunctionInterface;
 

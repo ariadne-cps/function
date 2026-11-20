@@ -74,6 +74,7 @@ class TestMultifunction : public Ariadne::Testing::ContextFixture {
     Void test_double_precision_evaluate();
     Void test_function_set();
     Void test_multiflow_representation();
+    Void test_multiflow_dimensions();
 };
 
 Void TestMultifunction::test_taylor_concept() {
@@ -224,9 +225,11 @@ Void TestMultifunction::test_function_set() {
     const auto scalar_image = gset(origin);
     ARIADNE_TESTING_PROVE(same(cast_exact_interval(scalar_image.bounding_box()), ExactIntervalType(7, 11)));
     ARIADNE_TESTING_PROVE(same(cast_exact_interval(gfset(origin).bounding_box()), ExactIntervalType(7, 11)));
-    Multifunction<ValidatedTag, Real(RealVector), CompactSet> multifunction(sf);
+    ValidatedCompactScalarMultivariateMultifunction multifunction(sf);
     ARIADNE_TESTING_PROVE(same(cast_exact_interval(multifunction(origin).bounding_box()), ExactIntervalType(7, 11)));
     VectorIntervalFunctionModel vf{sf, x0 + x1};
+    ValidatedCompactVectorMultivariateMultifunction vector_multifunction(vf);
+    ARIADNE_TESTING_PROVE(same(vector_multifunction(origin).bounding_box(), vf(origin).bounding_box()));
     ValidatedVectorIntervalTaylorFunctionSet<FloatMP> vfset(vf);
     CompactSet<ValidatedTag, RealVector(RealVector)> vector_set(vfset);
     const CompactSet<ValidatedTag, RealVector(RealVector)>::Interface& vector_set_interface = vfset;
@@ -301,6 +304,40 @@ Void TestMultifunction::test_multiflow_representation() {
     ARIADNE_TESTING_INSPECT("phif_w0_s", phif_w0_s);
 }
 
+Void TestMultifunction::test_multiflow_dimensions() {
+    using Ivl = Interval<FloatMPUpperBound>;
+    MultiplePrecision pr(128);
+    ThresholdSweeper<FloatMP> swp(pr, 1e-10);
+    BoxDomainType state_domain({{-1, 1}, {-1, 1}});
+    ScalarIntervalFunctionModel x0 = ScalarIntervalFunctionModel::coordinate(state_domain, 0, swp);
+    ScalarIntervalFunctionModel x1 = ScalarIntervalFunctionModel::coordinate(state_domain, 1, swp);
+
+    // A two-dimensional state cannot have a flow model with only two arguments.
+    VectorIntervalFunctionModel missing_time({x0, x1});
+    bool rejected_missing_time = false;
+    try {
+        [[maybe_unused]] ValidatedIntervalTaylorMultiflow<FloatMP> invalid(missing_time);
+    } catch (const std::exception&) {
+        rejected_missing_time = true;
+    }
+    ARIADNE_TESTING_PROVE(rejected_missing_time);
+
+    BoxDomainType flow_domain({{-1, 1}, {-1, 1}, {0, 1}});
+    ScalarIntervalFunctionModel state0 = ScalarIntervalFunctionModel::coordinate(flow_domain, 0, swp);
+    ScalarIntervalFunctionModel state1 = ScalarIntervalFunctionModel::coordinate(flow_domain, 1, swp);
+    VectorIntervalFunctionModel valid_model({state0 + Ivl(0, 0, pr), state1});
+    ValidatedIntervalTaylorMultiflow<FloatMP> valid(valid_model);
+
+    // A curried trajectory requires exactly one initial value per state variable.
+    bool rejected_wrong_state_size = false;
+    try {
+        [[maybe_unused]] auto invalid = valid(Vector<ValidatedNumber>({0.25_x}));
+    } catch (const std::exception&) {
+        rejected_wrong_state_size = true;
+    }
+    ARIADNE_TESTING_PROVE(rejected_wrong_state_size);
+}
+
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_multifunction");
     // test_taylor_concept deliberately remains compile-time only.
@@ -308,5 +345,6 @@ int main(int argc, char** argv) {
     ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_double_precision_evaluate);
     ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_function_set);
     ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_multiflow_representation);
+    ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_multiflow_dimensions);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }
