@@ -308,7 +308,10 @@ Void TestMultifunction::test_multiflow_dimensions() {
     using Ivl = Interval<FloatMPUpperBound>;
     MultiplePrecision pr(128);
     ThresholdSweeper<FloatMP> swp(pr, 1e-10);
-    BoxDomainType state_domain({{-1, 1}, {-1, 1}});
+    BoxDomainType state_domain({
+        {-1, 1},
+        {-1, 1}
+    });
     ScalarIntervalFunctionModel x0 = ScalarIntervalFunctionModel::coordinate(state_domain, 0, swp);
     ScalarIntervalFunctionModel x1 = ScalarIntervalFunctionModel::coordinate(state_domain, 1, swp);
 
@@ -322,7 +325,11 @@ Void TestMultifunction::test_multiflow_dimensions() {
     }
     ARIADNE_TESTING_PROVE(rejected_missing_time);
 
-    BoxDomainType flow_domain({{-1, 1}, {-1, 1}, {0, 1}});
+    BoxDomainType flow_domain({
+        {-1, 1},
+        {-1, 1},
+        { 0, 1}
+    });
     ScalarIntervalFunctionModel state0 = ScalarIntervalFunctionModel::coordinate(flow_domain, 0, swp);
     ScalarIntervalFunctionModel state1 = ScalarIntervalFunctionModel::coordinate(flow_domain, 1, swp);
     VectorIntervalFunctionModel valid_model({state0 + Ivl(0, 0, pr), state1});
