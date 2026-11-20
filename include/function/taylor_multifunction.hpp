@@ -259,9 +259,9 @@ class ValidatedIntervalTaylorCurriedTrajectorySet
     ValidatedIntervalTaylorCurriedTrajectorySet(const ValidatedVectorIntervalTaylorFunctionModel<F>& phi, Vector<Number<P>> x0)
         : _flow_model(phi), _initial_state(x0) {
         ARIADNE_PRECONDITION_MSG(phi.argument_size() == phi.result_size() + 1u,
-                                "The multiflow model requires one time argument after the state coordinates");
+                             "The multiflow model requires one time argument after the state coordinates");
         ARIADNE_PRECONDITION_MSG(x0.size() == phi.result_size(),
-                                "The initial-state dimension must match the multiflow result dimension");
+                             "The initial-state dimension must match the multiflow result dimension");
     }
     /** @brief Apply the callable to the supplied arguments. */
     CompactSet<P, RES> operator()(const Scalar<Number<P>>& t) const { return this->_flow_model(join(this->_initial_state, t)); }
@@ -299,7 +299,7 @@ class ValidatedIntervalTaylorMultiflow
     /** @brief Construct a \c ValidatedIntervalTaylorMultiflow from f. */
     ValidatedIntervalTaylorMultiflow(const VectorScaledFunctionPatch<M>& f) : _flow_model(f) {
         ARIADNE_PRECONDITION_MSG(f.argument_size() == f.result_size() + 1u,
-                                "A multiflow needs n initial-state arguments and one time argument for n results");
+                             "A multiflow needs n initial-state arguments and one time argument for n results");
     }
     /** @brief Apply the callable to the supplied arguments. */
     TrajectorySetType operator()(const Vector<Number<P>>& x0) const {
