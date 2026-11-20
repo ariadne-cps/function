@@ -71,8 +71,9 @@ class TestMultifunction : public Ariadne::Testing::ContextFixture {
 
     Void test_taylor_concept();
     Void test_taylor_evaluate();
+    Void test_double_precision_evaluate();
     Void test_function_set();
-    Void test_inclusion_solutions();
+    Void test_multiflow_representation();
 };
 
 Void TestMultifunction::test_taylor_concept() {
@@ -171,6 +172,31 @@ Void TestMultifunction::test_taylor_evaluate() {
     ARIADNE_TESTING_EXPECT_SAME(vf(v), Box<UpperInterval>({c01 * v[0] * v[1] + c, one * v[0] + v[1]}));
 }
 
+Void TestMultifunction::test_double_precision_evaluate() {
+    using ScalarDP = ValidatedIntervalTaylorFunctionModel<FloatDP>;
+    using VectorDP = ValidatedVectorIntervalTaylorFunctionModel<FloatDP>;
+    using IntervalDP = Interval<FloatDPUpperBound>;
+
+    BoxDomainType dom({
+        {0, 1},
+        {1, 3}
+    });
+    ThresholdSweeper<FloatDP> swp(dp, 1e-10);
+    ScalarDP x0 = ScalarDP::coordinate(dom, 0, swp);
+    ScalarDP x1 = ScalarDP::coordinate(dom, 1, swp);
+    IntervalDP c01(3, 5, dp);
+    IntervalDP c(7, 11, dp);
+    IntervalDP one(1, 1, dp);
+
+    Vector<ValidatedNumber> point({0.75_x, 2.5_x});
+    Vector<FloatDPBounds> x(point, dp);
+    ScalarDP sf(c01 * x0 * x1 + c);
+    VectorDP vf({sf, x0 + x1});
+
+    ARIADNE_TESTING_EXPECT_SAME(sf(x), c01 * x[0] * x[1] + c);
+    ARIADNE_TESTING_EXPECT_SAME(vf(x), Box<IntervalDP>({c01 * x[0] * x[1] + c, one * x[0] + x[1]}));
+}
+
 Void TestMultifunction::test_function_set() {
     using Ivl = Interval<FloatMPUpperBound>;
 
@@ -221,7 +247,7 @@ Void TestMultifunction::test_function_set() {
     ARIADNE_TESTING_PROVE(text.str().find("FunctionSet(") != String::npos);
 }
 
-Void TestMultifunction::test_inclusion_solutions() {
+Void TestMultifunction::test_multiflow_representation() {
     using Ivl = Interval<FloatMPUpperBound>;
     using P = ValidatedTag;
 
@@ -235,7 +261,8 @@ Void TestMultifunction::test_inclusion_solutions() {
     ThresholdSweeper<FloatMP> swp(pr, 1e-10);
     ScalarIntervalFunctionModel x0 = ScalarIntervalFunctionModel::coordinate(dom, 0, swp);
     ScalarIntervalFunctionModel x1 = ScalarIntervalFunctionModel::coordinate(dom, 1, swp);
-    ScalarIntervalFunctionModel t = ScalarIntervalFunctionModel::coordinate(dom, 1, swp);
+    // The time coordinate follows the two initial-state coordinates.
+    ScalarIntervalFunctionModel t = ScalarIntervalFunctionModel::coordinate(dom, 2, swp);
 
     VectorIntervalFunctionModel vf = {Ivl(3, 5, pr) * x0 * x1 * +Ivl(7, 11, pr), x1 * cos(t)};
 
@@ -250,6 +277,15 @@ Void TestMultifunction::test_inclusion_solutions() {
     const ValidatedCompactMultiflow::Interface& phif = phi;
     CompactSet<P, RealVector(Real)> phif_w0 = phif._call(w0);
     CompactSet<P, RealVector> phif_w0_s = phif_w0(s);
+
+    // A multiflow built from a model must use the full (initial state, time)
+    // argument, including the distinct time coordinate.
+    const auto direct_image = vf(join(w0, s));
+    ARIADNE_TESTING_PROVE(same(direct_image.bounding_box(), phi_w0_s.bounding_box()));
+    const ValidatedNumber later_time(0.75_x);
+    const auto later_image = phi_w0(later_time).bounding_box();
+    ARIADNE_TESTING_PROVE(same(phi_w0_s.bounding_box()[0u], later_image[0u]));
+    ARIADNE_TESTING_PROVE(phi_w0_s.bounding_box()[1u].lower_bound().raw() > later_image[1u].upper_bound().raw());
 
     const auto reach = phi.curry();
     const auto erased_reach = phif._curry();
@@ -267,8 +303,10 @@ Void TestMultifunction::test_inclusion_solutions() {
 
 int main(int argc, char** argv) {
     ARIADNE_TESTING_SUITE("test_multifunction");
+    // test_taylor_concept deliberately remains compile-time only.
     ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_taylor_evaluate);
+    ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_double_precision_evaluate);
     ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_function_set);
-    ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_inclusion_solutions);
+    ARIADNE_TESTING_ADD_TEST(TestMultifunction, test_multiflow_representation);
     return ARIADNE_TESTING_RUN_TESTS_WITH_ARGS(argc, argv);
 }
